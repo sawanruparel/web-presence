@@ -21,7 +21,7 @@ function renderPage(pageData: PageData) {
     case 'ideas':
       return <IdeasPage ideas={pageData.data.ideas} />
     case 'content':
-      return <ContentPage content={pageData.data.content} type={pageData.data.type} />
+      return <ContentPage content={pageData.data.content} type={pageData.data.type} slug={pageData.data.slug} />
     default:
       return <AboutPage />
   }

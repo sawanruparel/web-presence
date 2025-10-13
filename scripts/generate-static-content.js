@@ -8,6 +8,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const contentDir = path.join(__dirname, '..', 'content')
+const protectedContentDir = path.join(__dirname, '..', 'content-protected')
 const distDir = path.join(__dirname, '..', 'dist')
 const tempContentDir = path.join(__dirname, '..', 'temp-content')
 const rivveOutputDir = path.join(__dirname, '..', 'rivve', 'html-output')
@@ -86,7 +87,9 @@ function extractBodyContent(htmlContent) {
 function processMarkdownFiles() {
   const allContent = {}
   const contentMetadata = {}
+  const protectedContent = {}
 
+  // Process public content
   contentTypes.forEach(type => {
     const typeDir = path.join(contentDir, type)
     const distTypeDir = path.join(tempContentDir, type)
@@ -134,7 +137,8 @@ function processMarkdownFiles() {
         type: frontmatter?.type || type.slice(0, -1),
         content: body,
         html: htmlWithoutTitle,
-        excerpt
+        excerpt,
+        isProtected: false
       }
 
       typeContent.push(contentItem)
@@ -146,7 +150,8 @@ function processMarkdownFiles() {
         type: contentItem.type,
         excerpt: contentItem.excerpt,
         content: contentItem.content,
-        html: contentItem.html
+        html: contentItem.html,
+        isProtected: false
       })
 
       // Generate individual HTML file using rivve's approach for the Vite plugin
@@ -163,6 +168,69 @@ function processMarkdownFiles() {
     contentMetadata[type] = typeMetadata.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   })
 
+  // Process protected content
+  contentTypes.forEach(type => {
+    const protectedTypeDir = path.join(protectedContentDir, type)
+    
+    if (!fs.existsSync(protectedTypeDir)) {
+      protectedContent[type] = []
+      return
+    }
+
+    const files = fs.readdirSync(protectedTypeDir).filter(file => file.endsWith('.md'))
+    const typeProtectedContent = []
+
+    files.forEach(file => {
+      const slug = file.replace('.md', '')
+      const filePath = path.join(protectedTypeDir, file)
+      const fileContents = fs.readFileSync(filePath, 'utf8')
+      const { frontmatter, body } = parseFrontmatter(fileContents)
+      
+      // Only process if marked as protected
+      if (!frontmatter?.protected) {
+        return
+      }
+      
+      // Generate excerpt
+      const excerpt = body.split('\n\n')[0]?.replace(/[#*]/g, '').trim().substring(0, 150) + '...'
+      
+      // Convert markdown to HTML
+      const html = marked(body)
+      
+      // Remove the first h1 tag from HTML since we'll display the title separately
+      const htmlWithoutTitle = html.replace(/<h1[^>]*>.*?<\/h1>\s*/i, '')
+      
+      // Clean up title by removing type prefixes
+      let cleanTitle = frontmatter?.title || slug
+      const typePrefixes = ['Idea: ', 'Publication: ', 'Note: ']
+      for (const prefix of typePrefixes) {
+        if (cleanTitle.startsWith(prefix)) {
+          cleanTitle = cleanTitle.substring(prefix.length)
+          break
+        }
+      }
+
+      const protectedItem = {
+        slug,
+        title: cleanTitle,
+        date: frontmatter?.date || new Date().toISOString().split('T')[0],
+        readTime: frontmatter?.readTime || '1 min',
+        type: frontmatter?.type || type.slice(0, -1),
+        content: body,
+        html: htmlWithoutTitle,
+        excerpt,
+        isProtected: true
+      }
+
+      typeProtectedContent.push(protectedItem)
+
+      // Do NOT add protected content to public metadata
+      // Protected content is only available through the backend API
+    })
+
+    protectedContent[type] = typeProtectedContent.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  })
+
   // Write content index for React app
   const contentIndex = {
     notes: contentMetadata.notes,
@@ -174,10 +242,24 @@ function processMarkdownFiles() {
       .slice(0, 3)
   }
 
+  // Write protected content for backend
+  const protectedContentIndex = {
+    notes: protectedContent.notes || [],
+    publications: protectedContent.publications || [],
+    ideas: protectedContent.ideas || [],
+    pages: protectedContent.pages || []
+  }
+
   // Write metadata index for content processor to dist directory
   fs.writeFileSync(
     path.join(distDir, 'content-metadata.json'),
     JSON.stringify(contentIndex, null, 2)
+  )
+
+  // Write protected content for backend (not bundled with frontend)
+  fs.writeFileSync(
+    path.join(distDir, 'protected-content.json'),
+    JSON.stringify(protectedContentIndex, null, 2)
   )
 
   // Also write to src directory for development
@@ -195,6 +277,7 @@ function processMarkdownFiles() {
   console.log(`- Publications: ${allContent.publications.length}`)
   console.log(`- Ideas: ${allContent.ideas.length}`)
   console.log(`- Pages: ${allContent.pages.length}`)
+  console.log(`- Protected content written to protected-content.json`)
 }
 
 function generateRivveHTML(frontmatter, body, slug) {

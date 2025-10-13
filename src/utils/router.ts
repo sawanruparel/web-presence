@@ -40,8 +40,14 @@ export function getCurrentPage(): PageData {
     const [, type, slug] = contentMatch
     const content = getContentBySlug(type as 'notes' | 'publications' | 'ideas', slug)
     
-    if (content) {
-      return { type: 'content', data: { content, type: type as 'notes' | 'publications' | 'ideas' } }
+    // Always return content page, even if content is null (for protected content)
+    return { 
+      type: 'content', 
+      data: { 
+        content, 
+        type: type as 'notes' | 'publications' | 'ideas',
+        slug 
+      } 
     }
   }
 

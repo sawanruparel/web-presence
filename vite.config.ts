@@ -28,5 +28,10 @@ export default defineConfig({
     fs: {
       allow: ['..']
     }
+  },
+  define: {
+    // Make environment variables available to the client
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || 'http://localhost:3001'),
+    'import.meta.env.VITE_DEV_MODE': JSON.stringify(process.env.VITE_DEV_MODE || 'true')
   }
 })

@@ -7,6 +7,7 @@ export interface ContentItem {
   excerpt: string
   content?: string
   html?: string
+  isProtected?: boolean
 }
 
 export interface ContentList {
