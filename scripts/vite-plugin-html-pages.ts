@@ -400,6 +400,11 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
         // Generate index page
         generateIndexPage(outputDir, metadata)
         
+        // Copy content metadata to dist directory
+        const metadataPath = path.join(outputDir, 'content-metadata.json')
+        fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2))
+        console.log('Copied content-metadata.json to dist directory')
+        
       } catch (error) {
         console.error('Error generating HTML pages:', error)
       }
