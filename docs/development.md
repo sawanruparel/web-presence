@@ -159,7 +159,7 @@ src/
 ├── components/          # Reusable UI components
 │   ├── button.tsx      # Button component
 │   ├── container.tsx   # Layout wrapper
-│   ├── navbar.tsx      # Navigation
+│   ├── page-navigation.tsx # Page navigation
 │   └── ...
 ├── pages/              # Page components
 │   ├── HomePage.tsx    # Landing page

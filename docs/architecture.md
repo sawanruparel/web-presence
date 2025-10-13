@@ -101,11 +101,10 @@ web-presence/
 ### UI Components
 
 - **`Container.tsx`** - Layout wrapper component
-- **`Navbar.tsx`** - Navigation header
+- **`PageNavigation.tsx`** - Page-level navigation component
 - **`Footer.tsx`** - Site footer
 - **`Button.tsx`** - Reusable button component
 - **`Link.tsx`** - Internal/external link component
-- **`Logo.tsx`** - Site logo component
 
 ### Error Handling
 

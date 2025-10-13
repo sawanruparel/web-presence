@@ -1,5 +1,6 @@
 import type { ContentItem } from '../utils/content-processor'
 import { Footer } from '../components/footer'
+import { PageNavigation } from '../components/page-navigation'
 
 interface HomePageProps {
   entries: ContentItem[]
@@ -14,13 +15,7 @@ export function HomePage({ entries }: HomePageProps) {
           Founder at Quoppo. Building ventures at the intersection of AI and hardware.
           Teaching applications of generative AI at the University of Connecticut.
         </p>
-        <nav className="mt-4 flex gap-4 text-sm" style={{ color: 'var(--color-text-muted)' }}>
-          <a href="#about" className="hover:underline">About</a>
-          <a href="/notes" className="hover:underline">Notes</a>
-          <a href="/publications" className="hover:underline">Publications</a>
-          <a href="/ideas" className="hover:underline">Ideas</a>
-          <a href="/contact" className="hover:underline">Contact</a>
-        </nav>
+        <PageNavigation currentPage="about" />
       </header>
 
       <section id="about" className="mt-10">

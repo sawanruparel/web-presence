@@ -1,5 +1,6 @@
 import type { ContentItem } from '../utils/content-processor'
 import { Footer } from '../components/footer'
+import { PageNavigation } from '../components/page-navigation'
 
 interface ContentPageProps {
   content: ContentItem
@@ -27,13 +28,7 @@ export function ContentPage({ content, type }: ContentPageProps) {
           {type === 'publications' && 'Books, papers, talks, and other external publications.'}
           {type === 'ideas' && 'Concepts and explorations in technology and design.'}
         </p>
-        <nav className="mt-4 flex gap-4 text-sm" style={{ color: 'var(--color-text-muted)' }}>
-          <a href="/" className="hover:underline">About</a>
-          <a href="/notes" className="hover:underline">Notes</a>
-          <a href="/publications" className="hover:underline">Publications</a>
-          <a href="/ideas" className="hover:underline">Ideas</a>
-          <a href="/contact" className="hover:underline">Contact</a>
-        </nav>
+        <PageNavigation currentPage={type} />
       </header>
 
       <section className="mt-10">

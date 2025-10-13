@@ -178,23 +178,23 @@ export function Link(props: LinkProps): JSX.Element
 - Consistent styling
 - Accessibility support
 
-### Navbar
+### PageNavigation
 
-**Site navigation component.**
+**Page-level navigation component.**
 
 ```typescript
-interface NavbarProps {
-  className?: string
+interface PageNavigationProps {
+  currentPage?: string
 }
 
-export function Navbar(props: NavbarProps): JSX.Element
+export function PageNavigation(props: PageNavigationProps): JSX.Element
 ```
 
 **Features:**
-- Responsive navigation
 - Active page highlighting
-- Mobile menu support
-- Logo integration
+- Consistent navigation across pages
+- Reusable component
+- Clean, minimal design
 
 ### Footer
 

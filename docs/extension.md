@@ -118,16 +118,16 @@ function renderPage(pageData: PageData) {
 
 ### 5. Update Navigation
 
-**Add to navbar:**
+**Add to PageNavigation component:**
 ```typescript
-// src/components/navbar.tsx
-const navigation = [
-  { name: 'About', href: '/about' },
-  { name: 'Notes', href: '/notes' },
-  { name: 'Publications', href: '/publications' },
-  { name: 'Ideas', href: '/ideas' },
-  { name: 'Tutorials', href: '/tutorials' }, // Add new item
-  { name: 'Contact', href: '/contact' },
+// src/components/page-navigation.tsx
+const links = [
+  { href: '/', label: 'About', key: 'about' },
+  { href: '/notes', label: 'Notes', key: 'notes' },
+  { href: '/publications', label: 'Publications', key: 'publications' },
+  { href: '/ideas', label: 'Ideas', key: 'ideas' },
+  { href: '/tutorials', label: 'Tutorials', key: 'tutorials' }, // Add new item
+  { href: '/contact', label: 'Contact', key: 'contact' },
 ]
 ```
 

@@ -1,5 +1,6 @@
 import type { ContentItem } from '../utils/content-processor'
 import { Footer } from '../components/footer'
+import { PageNavigation } from '../components/page-navigation'
 
 interface NotesPageProps {
   notes: ContentItem[]
@@ -13,13 +14,7 @@ export function NotesPage({ notes }: NotesPageProps) {
         <p className="mt-2" style={{ color: 'var(--color-text-muted)' }}>
           Thoughts and observations on building and making.
         </p>
-        <nav className="mt-4 flex gap-4 text-sm" style={{ color: 'var(--color-text-muted)' }}>
-          <a href="/" className="hover:underline">About</a>
-          <a href="/notes" className="hover:underline font-semibold">Notes</a>
-          <a href="/publications" className="hover:underline">Publications</a>
-          <a href="/ideas" className="hover:underline">Ideas</a>
-          <a href="/contact" className="hover:underline">Contact</a>
-        </nav>
+        <PageNavigation currentPage="notes" />
       </header>
 
       <section className="mt-10">
