@@ -173,8 +173,12 @@ function processMarkdownFiles() {
   )
 
   // Also write to src directory for development
+  const srcDataDir = path.join(__dirname, '..', 'src', 'data')
+  if (!fs.existsSync(srcDataDir)) {
+    fs.mkdirSync(srcDataDir, { recursive: true })
+  }
   fs.writeFileSync(
-    path.join(__dirname, '..', 'src', 'data', 'content-metadata.json'),
+    path.join(srcDataDir, 'content-metadata.json'),
     JSON.stringify(contentIndex, null, 2)
   )
 
