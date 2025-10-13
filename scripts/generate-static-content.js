@@ -21,7 +21,7 @@ if (!fs.existsSync(distDir)) {
 }
 
 // Create content subdirectories
-const contentTypes = ['notes', 'publications', 'ideas']
+const contentTypes = ['notes', 'publications', 'ideas', 'pages']
 contentTypes.forEach(type => {
   const typeDir = path.join(tempContentDir, type)
   if (!fs.existsSync(typeDir)) {
@@ -168,6 +168,7 @@ function processMarkdownFiles() {
     notes: contentMetadata.notes,
     publications: contentMetadata.publications,
     ideas: contentMetadata.ideas,
+    pages: contentMetadata.pages,
     latest: [...contentMetadata.notes, ...contentMetadata.publications, ...contentMetadata.ideas]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 3)
@@ -193,6 +194,7 @@ function processMarkdownFiles() {
   console.log(`- Notes: ${allContent.notes.length}`)
   console.log(`- Publications: ${allContent.publications.length}`)
   console.log(`- Ideas: ${allContent.ideas.length}`)
+  console.log(`- Pages: ${allContent.pages.length}`)
 }
 
 function generateRivveHTML(frontmatter, body, slug) {

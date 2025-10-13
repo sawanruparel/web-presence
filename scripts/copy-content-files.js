@@ -10,7 +10,7 @@ const tempContentDir = path.join(__dirname, '..', 'temp-content')
 
 // Copy content files to final dist directory
 function copyContentFiles() {
-  const contentTypes = ['notes', 'publications', 'ideas']
+  const contentTypes = ['notes', 'publications', 'ideas', 'pages']
   
   contentTypes.forEach(type => {
     const sourceDir = path.join(tempContentDir, type)

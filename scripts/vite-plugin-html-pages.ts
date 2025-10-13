@@ -33,7 +33,7 @@ function parseFrontmatter(content: string) {
 export function generateContentMetadata(contentDir: string, rivveOutputDir: string) {
   const allContent = {}
   const contentMetadata = {}
-  const contentTypes = ['notes', 'publications', 'ideas']
+  const contentTypes = ['notes', 'publications', 'ideas', 'pages']
 
   contentTypes.forEach(type => {
     const typeDir = path.join(contentDir, type)
@@ -105,6 +105,7 @@ export function generateContentMetadata(contentDir: string, rivveOutputDir: stri
     notes: contentMetadata.notes,
     publications: contentMetadata.publications,
     ideas: contentMetadata.ideas,
+    pages: contentMetadata.pages,
     latest: [...contentMetadata.notes, ...contentMetadata.publications, ...contentMetadata.ideas]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 3)
@@ -117,7 +118,7 @@ export function generateRivveHTMLFiles(contentDir: string, rivveOutputDir: strin
     fs.mkdirSync(rivveOutputDir, { recursive: true })
   }
 
-  const contentTypes = ['notes', 'publications', 'ideas']
+  const contentTypes = ['notes', 'publications', 'ideas', 'pages']
 
   contentTypes.forEach(type => {
     const typeDir = path.join(contentDir, type)
