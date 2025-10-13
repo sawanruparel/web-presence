@@ -339,7 +339,7 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
         fs.mkdirSync(outputDir, { recursive: true })
       }
     },
-    generateBundle() {
+    writeBundle() {
       try {
         // Generate content metadata during build
         const metadata = generateContentMetadata(contentDir, rivveOutputDir)
@@ -349,6 +349,20 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
         
         // Process each content type
         const contentTypes = ['notes', 'publications', 'ideas']
+        
+        // Find built asset files
+        const assetsDir = path.join(outputDir, 'assets')
+        let jsAsset = '/src/main.tsx' // fallback for dev
+        let cssAsset = '/src/style.css' // fallback for dev
+        
+        if (fs.existsSync(assetsDir)) {
+          const assetFiles = fs.readdirSync(assetsDir)
+          const jsFile = assetFiles.find(file => file.endsWith('.js'))
+          const cssFile = assetFiles.find(file => file.endsWith('.css'))
+          
+          if (jsFile) jsAsset = `/assets/${jsFile}`
+          if (cssFile) cssAsset = `/assets/${cssFile}`
+        }
         
         contentTypes.forEach(type => {
           const typeContent = metadata[type] || []
@@ -368,7 +382,7 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
             if (fs.existsSync(rivveHtmlPath)) {
               // Process rivve HTML and generate template
               const contentData = processRivveHTML(rivveHtmlPath, item)
-              const html = generateHTMLTemplate(contentData)
+              const html = generateHTMLTemplate(contentData, { js: jsAsset, css: cssAsset })
               
               // Write to output directory
               const outputPath = path.join(typeDir, `${slug}.html`)

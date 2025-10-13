@@ -72,7 +72,7 @@ export function extractBodyContent(htmlContent: string): string {
 /**
  * Generate HTML template that combines React layout with rivve content
  */
-export function generateHTMLTemplate(contentData: ContentData): string {
+export function generateHTMLTemplate(contentData: ContentData, assetPaths?: { js: string; css: string }): string {
   const { title, description, body, metaTags, frontmatter } = contentData
   
   // Generate meta tags HTML
@@ -84,6 +84,10 @@ export function generateHTMLTemplate(contentData: ContentData): string {
     }
     return ''
   }).filter(Boolean).join('\n')
+  
+  // Use actual asset paths if provided, otherwise fall back to dev paths
+  const jsPath = assetPaths?.js || '/src/main.tsx'
+  const cssPath = assetPaths?.css || '/src/style.css'
   
   return `<!DOCTYPE html>
 <html lang="en">
@@ -102,7 +106,7 @@ export function generateHTMLTemplate(contentData: ContentData): string {
     ${metaTagsHTML}
     
     <!-- App Styles -->
-    <link rel="stylesheet" href="/src/style.css">
+    <link rel="stylesheet" href="${cssPath}">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -160,7 +164,7 @@ export function generateHTMLTemplate(contentData: ContentData): string {
     </div>
     
     <!-- React app will hydrate here -->
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="${jsPath}"></script>
 </body>
 </html>`
 }
