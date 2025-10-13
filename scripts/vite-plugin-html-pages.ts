@@ -32,7 +32,7 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
         const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'))
         
         // Process each content type
-        const contentTypes = ['notes', 'teachings', 'ideas']
+        const contentTypes = ['notes', 'publications', 'ideas']
         
         contentTypes.forEach(type => {
           const typeContent = metadata[type] || []
@@ -80,7 +80,7 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Presence</title>
-    <meta name="description" content="Personal website with notes, teachings, and ideas">
+    <meta name="description" content="Personal website with notes, publications, and ideas">
     <meta name="robots" content="index, follow">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="stylesheet" href="/src/style.css">

@@ -3,14 +3,14 @@ import { Footer } from '../components/footer'
 
 interface ContentPageProps {
   content: ContentItem
-  type: 'notes' | 'teachings' | 'ideas'
+  type: 'notes' | 'publications' | 'ideas'
 }
 
 export function ContentPage({ content, type }: ContentPageProps) {
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'notes': return 'Note'
-      case 'teachings': return 'Teaching'
+      case 'publications': return 'Publication'
       case 'ideas': return 'Idea'
       default: return 'Article'
     }
@@ -24,13 +24,13 @@ export function ContentPage({ content, type }: ContentPageProps) {
         </h1>
         <p className="mt-2" style={{ color: 'var(--color-text-muted)' }}>
           {type === 'notes' && 'Quick thoughts and observations.'}
-          {type === 'teachings' && 'Educational content and tutorials.'}
+          {type === 'publications' && 'Books, papers, talks, and other external publications.'}
           {type === 'ideas' && 'Concepts and explorations in technology and design.'}
         </p>
         <nav className="mt-4 flex gap-4 text-sm" style={{ color: 'var(--color-text-muted)' }}>
           <a href="/" className="hover:underline">About</a>
           <a href="/notes" className="hover:underline">Notes</a>
-          <a href="/teachings" className="hover:underline">Teachings</a>
+          <a href="/publications" className="hover:underline">Publications</a>
           <a href="/ideas" className="hover:underline">Ideas</a>
           <a href="/contact" className="hover:underline">Contact</a>
         </nav>

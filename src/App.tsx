@@ -4,7 +4,7 @@ import { getCurrentPage, type PageData } from './utils/router'
 import { AboutPage } from './pages/AboutPage'
 import { ContactPage } from './pages/ContactPage'
 import { NotesPage } from './pages/NotesPage'
-import { TeachingsPage } from './pages/TeachingsPage'
+import { PublicationsPage } from './pages/PublicationsPage'
 import { IdeasPage } from './pages/IdeasPage'
 import { ContentPage } from './pages/ContentPage'
 
@@ -16,8 +16,8 @@ function renderPage(pageData: PageData) {
       return <ContactPage />
     case 'notes':
       return <NotesPage notes={pageData.data.notes} />
-    case 'teachings':
-      return <TeachingsPage teachings={pageData.data.teachings} />
+    case 'publications':
+      return <PublicationsPage publications={pageData.data.publications} />
     case 'ideas':
       return <IdeasPage ideas={pageData.data.ideas} />
     case 'content':

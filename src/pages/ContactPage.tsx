@@ -11,7 +11,7 @@ export function ContactPage() {
         <nav className="mt-4 flex gap-4 text-sm" style={{ color: 'var(--color-text-muted)' }}>
           <a href="/" className="hover:underline">About</a>
           <a href="/notes" className="hover:underline">Notes</a>
-          <a href="/teachings" className="hover:underline">Teachings</a>
+          <a href="/publications" className="hover:underline">Publications</a>
           <a href="/ideas" className="hover:underline">Ideas</a>
           <a href="/contact" className="hover:underline font-semibold">Contact</a>
         </nav>

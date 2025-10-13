@@ -1,6 +1,6 @@
 import { getAllContent, getContentBySlug } from './content-processor'
 
-export type PageType = 'about' | 'notes' | 'teachings' | 'ideas' | 'content' | 'contact' | '404'
+export type PageType = 'about' | 'notes' | 'publications' | 'ideas' | 'content' | 'contact' | '404'
 
 export interface PageData {
   type: PageType
@@ -26,8 +26,8 @@ export function getCurrentPage(): PageData {
     return { type: 'notes', data: { notes: allContent.notes } }
   }
 
-  if (path === '/teachings') {
-    return { type: 'teachings', data: { teachings: allContent.teachings } }
+  if (path === '/publications') {
+    return { type: 'publications', data: { publications: allContent.publications } }
   }
 
   if (path === '/ideas') {
@@ -35,13 +35,13 @@ export function getCurrentPage(): PageData {
   }
 
   // Individual content pages
-  const contentMatch = path.match(/^\/(notes|teachings|ideas)\/(.+)$/)
+  const contentMatch = path.match(/^\/(notes|publications|ideas)\/(.+)$/)
   if (contentMatch) {
     const [, type, slug] = contentMatch
-    const content = getContentBySlug(type as 'notes' | 'teachings' | 'ideas', slug)
+    const content = getContentBySlug(type as 'notes' | 'publications' | 'ideas', slug)
     
     if (content) {
-      return { type: 'content', data: { content, type: type as 'notes' | 'teachings' | 'ideas' } }
+      return { type: 'content', data: { content, type: type as 'notes' | 'publications' | 'ideas' } }
     }
   }
 

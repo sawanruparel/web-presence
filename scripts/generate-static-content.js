@@ -18,7 +18,7 @@ if (!fs.existsSync(tempContentDir)) {
 }
 
 // Create content subdirectories
-const contentTypes = ['notes', 'teachings', 'ideas']
+const contentTypes = ['notes', 'publications', 'ideas']
 contentTypes.forEach(type => {
   const typeDir = path.join(tempContentDir, type)
   if (!fs.existsSync(typeDir)) {
@@ -115,7 +115,7 @@ function processMarkdownFiles() {
       
       // Clean up title by removing type prefixes
       let cleanTitle = frontmatter?.title || slug
-      const typePrefixes = ['Idea: ', 'Teaching: ', 'Note: ']
+      const typePrefixes = ['Idea: ', 'Publication: ', 'Note: ']
       for (const prefix of typePrefixes) {
         if (cleanTitle.startsWith(prefix)) {
           cleanTitle = cleanTitle.substring(prefix.length)
@@ -159,9 +159,9 @@ function processMarkdownFiles() {
   // Write content index for React app
   const contentIndex = {
     notes: contentMetadata.notes,
-    teachings: contentMetadata.teachings,
+    publications: contentMetadata.publications,
     ideas: contentMetadata.ideas,
-    latest: [...contentMetadata.notes, ...contentMetadata.teachings, ...contentMetadata.ideas]
+    latest: [...contentMetadata.notes, ...contentMetadata.publications, ...contentMetadata.ideas]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 3)
   }
@@ -184,7 +184,7 @@ function processMarkdownFiles() {
 
   console.log('Static content generated successfully!')
   console.log(`- Notes: ${allContent.notes.length}`)
-  console.log(`- Teachings: ${allContent.teachings.length}`)
+  console.log(`- Publications: ${allContent.publications.length}`)
   console.log(`- Ideas: ${allContent.ideas.length}`)
 }
 

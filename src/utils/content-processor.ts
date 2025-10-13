@@ -3,7 +3,7 @@ export interface ContentItem {
   title: string
   date: string
   readTime: string
-  type: 'note' | 'teaching' | 'idea'
+  type: 'note' | 'publication' | 'idea'
   excerpt: string
   content?: string
   html?: string
@@ -11,7 +11,7 @@ export interface ContentItem {
 
 export interface ContentList {
   notes: ContentItem[]
-  teachings: ContentItem[]
+  publications: ContentItem[]
   ideas: ContentItem[]
   latest: ContentItem[]
 }
@@ -26,11 +26,11 @@ export function getAllContent(): ContentList {
   return contentData
 }
 
-export function getContentByType(type: 'notes' | 'teachings' | 'ideas'): ContentItem[] {
+export function getContentByType(type: 'notes' | 'publications' | 'ideas'): ContentItem[] {
   return contentData[type]
 }
 
-export function getContentBySlug(type: 'notes' | 'teachings' | 'ideas', slug: string): ContentItem | null {
+export function getContentBySlug(type: 'notes' | 'publications' | 'ideas', slug: string): ContentItem | null {
   const typeContent = contentData[type]
   return typeContent.find(item => item.slug === slug) || null
 }
