@@ -1,0 +1,47 @@
+{
+  "name": "rivve",
+  "version": "1.0.0",
+  "description": "AI-powered markdown to HTML conversion and content management tools",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "generate-frontmatter": "tsx src/cli/generate-frontmatter.ts",
+    "test-api": "tsx src/cli/test-api-key.ts",
+    "convert-html": "tsx src/cli/convert-to-html.ts",
+    "update-index": "tsx src/cli/update-index.ts",
+    "dev-server": "vite --config config/vite.config.js",
+    "convert-and-serve": "npm run convert-html && npm run update-index && npm run dev-server",
+    "auto-scan": "tsx src/cli/auto-scan-and-convert.ts",
+    "auto-scan-force": "tsx src/cli/auto-scan-and-convert.ts --force",
+    "auto-scan-no-ai": "tsx src/cli/auto-scan-and-convert.ts --skip-ai",
+    "auto-scan-and-serve": "npm run auto-scan && npm run dev-server",
+    "build": "tsc --project config/tsconfig.json",
+    "dev": "tsx src/cli/generate-frontmatter.ts"
+  },
+  "keywords": [
+    "markdown",
+    "html",
+    "ai",
+    "openai",
+    "seo",
+    "content-management",
+    "obsidian",
+    "frontmatter",
+    "typescript"
+  ],
+  "author": "Rivve Team",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "openai": "^5.22.0",
+    "tsx": "^4.20.5",
+    "marked": "^12.0.0",
+    "yaml": "^2.6.0",
+    "vite": "^5.4.0"
+  }
+}

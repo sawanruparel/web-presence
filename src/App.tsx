@@ -31,10 +31,10 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<PageData | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const loadPage = async () => {
+  const loadPage = () => {
     setLoading(true)
     try {
-      const pageData = await getCurrentPage()
+      const pageData = getCurrentPage()
       setCurrentPage(pageData)
     } catch (error) {
       console.error('Error loading page:', error)

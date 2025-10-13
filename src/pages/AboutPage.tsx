@@ -1,3 +1,5 @@
+import { Footer } from '../components/footer'
+
 export function AboutPage() {
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 leading-relaxed" style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }}>
@@ -66,14 +68,7 @@ export function AboutPage() {
         </div>
       </section>
 
-      <footer className="mt-12 text-sm flex justify-between items-center" style={{ color: 'var(--color-text-muted)' }}>
-        <span>© 2025 · built by hand.</span>
-        <div className="flex gap-4">
-          <a href="/rss" className="hover:underline">RSS</a>
-          <a href="/resume" className="hover:underline">Resume</a>
-          <a href="https://linkedin.com/in/sawanruparel" className="hover:underline" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-        </div>
-      </footer>
+      <Footer />
     </main>
   )
 }

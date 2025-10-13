@@ -1,4 +1,5 @@
 import type { ContentItem } from '../utils/content-processor'
+import { Footer } from '../components/footer'
 
 interface IdeasPageProps {
   ideas: ContentItem[]
@@ -41,14 +42,7 @@ export function IdeasPage({ ideas }: IdeasPageProps) {
         </ul>
       </section>
 
-      <footer className="mt-12 text-sm flex justify-between items-center" style={{ color: 'var(--color-text-muted)' }}>
-        <span>© 2025 · built by hand.</span>
-        <div className="flex gap-4">
-          <a href="/rss" className="hover:underline">RSS</a>
-          <a href="/resume" className="hover:underline">Resume</a>
-          <a href="https://linkedin.com/in/sawanruparel" className="hover:underline" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-        </div>
-      </footer>
+      <Footer />
     </main>
   )
 }

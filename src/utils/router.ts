@@ -7,9 +7,9 @@ export interface PageData {
   data?: any
 }
 
-export async function getCurrentPage(): Promise<PageData> {
+export function getCurrentPage(): PageData {
   const path = window.location.pathname
-  const allContent = await getAllContent()
+  const allContent = getAllContent()
 
   // About page (default/home)
   if (path === '/' || path === '' || path === '/about') {
@@ -38,7 +38,7 @@ export async function getCurrentPage(): Promise<PageData> {
   const contentMatch = path.match(/^\/(notes|teachings|ideas)\/(.+)$/)
   if (contentMatch) {
     const [, type, slug] = contentMatch
-    const content = await getContentBySlug(type as 'notes' | 'teachings' | 'ideas', slug)
+    const content = getContentBySlug(type as 'notes' | 'teachings' | 'ideas', slug)
     
     if (content) {
       return { type: 'content', data: { content, type: type as 'notes' | 'teachings' | 'ideas' } }

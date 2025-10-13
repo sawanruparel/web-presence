@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rivve - Markdown to HTML Preview</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background: #f8f9fa;
+        }
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+        }
+        .header p {
+            color: #666;
+            font-size: 1.2em;
+            margin: 0;
+        }
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .article-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .article-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .article-card h3 {
+            margin: 0;
+            padding: 20px 20px 10px 20px;
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+        .article-card .meta {
+            padding: 0 20px 10px 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .article-card .description {
+            padding: 0 20px 20px 20px;
+            color: #555;
+            line-height: 1.5;
+        }
+        .article-card .link {
+            display: block;
+            padding: 15px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .article-card .link:hover {
+            background: #0056b3;
+        }
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 0 20px 15px 20px;
+        }
+        .tag {
+            background: #e9ecef;
+            color: #495057;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+        .no-articles {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        .no-articles h3 {
+            color: #999;
+            margin-bottom: 10px;
+        }
+        .instructions {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        .instructions code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Rivve</h1>
+        <p>Markdown to HTML Preview Server</p>
+    </div>
+
+    <div class="instructions">
+        <h3>📖 How to Use</h3>
+        <p>Convert your markdown files to HTML and preview them here:</p>
+        <ol>
+            <li>Run <code>npm run auto-scan</code> to automatically convert all markdown files</li>
+            <li>Or run <code>npm run auto-scan-and-serve</code> to convert and start the dev server</li>
+            <li>Your converted HTML files will appear as cards below</li>
+        </ol>
+    </div>
+
+    <div id="articles-container">
+        <div class="loading">
+            <h3>Loading articles...</h3>
+            <p>Scanning for converted HTML files...</p>
+        </div>
+    </div>
+
+    <script>
+        // List of known HTML files (populated by auto-scan)
+        const knownArticles = [
+            {{ARTICLES_LIST}}
+        ];
+
+        // Auto-discover and display HTML files
+        async function loadArticles() {
+            const container = document.getElementById('articles-container');
+            
+            try {
+                const articles = [];
+                
+                // Try to load each known article
+                for (const filename of knownArticles) {
+                    try {
+                        const response = await fetch(`/${filename}`);
+                        if (response.ok) {
+                            const html = await response.text();
+                            const articleData = extractArticleData(html, filename);
+                            if (articleData) {
+                                articles.push(articleData);
+                            }
+                        }
+                    } catch (error) {
+                        console.log(`Could not load ${filename}:`, error.message);
+                    }
+                }
+                
+                if (articles.length === 0) {
+                    container.innerHTML = `
+                        <div class="no-articles">
+                            <h3>No articles found</h3>
+                            <p>Convert some markdown files to see them here!</p>
+                            <p>Run: <code>npm run auto-scan</code></p>
+                        </div>
+                    `;
+                } else {
+                    displayArticles(articles, container);
+                }
+            } catch (error) {
+                console.error('Error loading articles:', error);
+                container.innerHTML = `
+                    <div class="no-articles">
+                        <h3>Error loading articles</h3>
+                        <p>There was an error loading the articles. Please check the console for details.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function extractArticleData(html, filename) {
+            try {
+                // Extract title
+                const titleMatch = html.match(/<title>(.*?)<\/title>/);
+                const title = titleMatch ? titleMatch[1] : filename.replace('.html', '');
+
+                // Extract description
+                const descMatch = html.match(/<meta name="description" content="(.*?)">/);
+                const description = descMatch ? descMatch[1] : '';
+
+                // Extract author
+                const authorMatch = html.match(/<meta name="author" content="(.*?)">/);
+                const author = authorMatch ? authorMatch[1] : 'Unknown Author';
+
+                // Extract reading time
+                const readingTimeMatch = html.match(/<meta name="reading-time" content="(.*?)">/);
+                const readingTime = readingTimeMatch ? readingTimeMatch[1] : '0';
+
+                // Extract tags from the HTML content
+                const tagsMatch = html.match(/<div class="tags">(.*?)<\/div>/s);
+                let tags = [];
+                if (tagsMatch) {
+                    const tagMatches = tagsMatch[1].match(/<span class="tag">(.*?)<\/span>/g);
+                    if (tagMatches) {
+                        tags = tagMatches.map(tag => tag.replace(/<span class="tag">(.*?)<\/span>/, '$1'));
+                    }
+                }
+
+                // Extract date
+                const dateMatch = html.match(/<p><strong>Published:<\/strong> (.*?)<\/p>/);
+                const date = dateMatch ? dateMatch[1] : 'Not specified';
+
+                return {
+                    filename,
+                    title,
+                    description,
+                    author,
+                    readingTime,
+                    tags,
+                    date
+                };
+            } catch (error) {
+                console.error(`Error extracting data from ${filename}:`, error);
+                return null;
+            }
+        }
+
+        function displayArticles(articles, container) {
+            const articlesHtml = articles.map(article => `
+                <div class="article-card">
+                    <h3>${escapeHtml(article.title)}</h3>
+                    <div class="meta">
+                        <strong>Author:</strong> ${escapeHtml(article.author)} | 
+                        <strong>Published:</strong> ${escapeHtml(article.date)} | 
+                        <strong>Reading Time:</strong> ${article.readingTime} min
+                    </div>
+                    ${article.description ? `<div class="description">${escapeHtml(article.description)}</div>` : ''}
+                    ${article.tags.length > 0 ? `
+                        <div class="tags">
+                            ${article.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                    <a href="${article.filename}" class="link">Read Article →</a>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="content-grid">
+                    ${articlesHtml}
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, (m) => map[m]);
+        }
+
+        // Load articles on page load
+        loadArticles();
+    </script>
+</body>
+</html>
+
