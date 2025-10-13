@@ -1,0 +1,376 @@
+# Build System Documentation
+
+This document describes the build system, Vite configuration, and deployment process for the Web Presence project.
+
+## 🏗️ Build System Overview
+
+The project uses Vite as the primary build tool with custom plugins for content processing and static HTML generation.
+
+### Build Tools
+
+- **Vite** - Main build tool and dev server
+- **TypeScript** - Type checking and compilation
+- **PostCSS** - CSS processing with Tailwind
+- **Custom Plugins** - HTML generation and content processing
+
+## ⚙️ Vite Configuration
+
+### Main Configuration (`vite.config.ts`)
+
+```typescript
+export default defineConfig({
+  plugins: [
+    react(),                                    // React support
+    htmlPagesPlugin({                          // Custom HTML generation
+      contentDir: './content',
+      outputDir: './dist',
+      rivveOutputDir: './rivve/html-output'
+    }),
+    devServerPlugin('./content', './rivve/html-output')  // Dev server
+  ],
+  build: {
+    outDir: 'dist',
+    rollupOptions: {
+      input: {
+        main: './index.html'                   // Entry point
+      }
+    }
+  }
+})
+```
+
+### Plugin Configuration
+
+#### HTML Pages Plugin
+- **Purpose**: Generate static HTML files for content pages
+- **Input**: Markdown files from `/content/`
+- **Output**: SEO-optimized HTML files in `/dist/`
+- **Features**: Metadata extraction, template processing
+
+#### Dev Server Plugin
+- **Purpose**: Watch content files and serve static HTML
+- **Features**: Live reload, content file watching
+- **Integration**: Works with Vite dev server
+
+## 📦 Build Process
+
+### Development Build
+
+```bash
+npm run dev
+```
+
+**Process:**
+1. Start Vite dev server
+2. Watch content files for changes
+3. Serve React app with hot reload
+4. Serve static HTML files for content
+
+### Production Build
+
+```bash
+npm run build
+```
+
+**Process:**
+1. **Content Processing** (`npm run build:content`)
+   - Scan `/content/` directories
+   - Parse markdown and frontmatter
+   - Generate content metadata JSON
+   - Create Rivve HTML files
+
+2. **TypeScript Compilation** (`tsc`)
+   - Type checking
+   - Compile TypeScript to JavaScript
+
+3. **Vite Build** (`vite build`)
+   - Bundle React application
+   - Optimize assets
+   - Generate static HTML files
+   - Copy static assets
+
+## 🔧 Content Processing Pipeline
+
+### Static Content Generation (`scripts/generate-static-content.js`)
+
+**Input:** Markdown files in `/content/`
+**Output:** Processed content and metadata
+
+**Steps:**
+1. **File Discovery**
+   ```javascript
+   const contentTypes = ['notes', 'publications', 'ideas', 'pages']
+   // Scan each content type directory
+   ```
+
+2. **Frontmatter Parsing**
+   ```javascript
+   const { frontmatter, body } = parseFrontmatter(fileContents)
+   // Extract YAML metadata and markdown body
+   ```
+
+3. **Content Processing**
+   ```javascript
+   const html = marked(body)  // Markdown → HTML
+   const excerpt = generateExcerpt(body)  // Auto-generate excerpt
+   ```
+
+4. **Metadata Generation**
+   ```javascript
+   const contentItem = {
+     slug, title, date, readTime, type,
+     content: body, html: htmlWithoutTitle, excerpt
+   }
+   ```
+
+5. **Rivve HTML Generation**
+   ```javascript
+   const rivveHtml = generateRivveHTML(frontmatter, body, slug)
+   // Generate SEO-optimized HTML with metadata
+   ```
+
+6. **Output Writing**
+   ```javascript
+   // Write content metadata JSON
+   fs.writeFileSync(metadataPath, JSON.stringify(contentIndex, null, 2))
+   // Write individual HTML files
+   fs.writeFileSync(htmlFile, rivveHtml, 'utf8')
+   ```
+
+### HTML Template Processing (`scripts/html-template.ts`)
+
+**Purpose:** Generate final HTML files with React integration
+
+**Features:**
+- SEO metadata injection
+- Asset path resolution
+- Template variable substitution
+- Social media optimization
+
+## 📁 Output Structure
+
+### Development Output
+
+```
+dist/
+├── assets/
+│   ├── main-[hash].js      # React bundle
+│   └── main-[hash].css     # Tailwind CSS
+├── content-metadata.json   # Content index
+└── index.html             # Main React app
+```
+
+### Production Output
+
+```
+dist/
+├── assets/
+│   ├── main-[hash].js      # Optimized React bundle
+│   └── main-[hash].css     # Optimized CSS
+├── notes/                  # Static HTML for notes
+│   └── *.html
+├── publications/           # Static HTML for publications
+│   └── *.html
+├── ideas/                  # Static HTML for ideas
+│   └── *.html
+├── content-metadata.json   # Content index
+└── index.html             # Main React app
+```
+
+## 🚀 Deployment Process
+
+### Static Hosting (Recommended)
+
+**Compatible with:**
+- Vercel
+- Netlify
+- GitHub Pages
+- AWS S3 + CloudFront
+- Any static hosting service
+
+**Deployment Steps:**
+1. Build the project: `npm run build`
+2. Upload `/dist` contents to hosting service
+3. Configure redirects for SPA routing
+
+### Server-Side Rendering (Optional)
+
+**For advanced use cases:**
+- Node.js server with Express
+- Custom routing for content pages
+- Server-side content processing
+
+## 🔍 Build Optimization
+
+### Asset Optimization
+
+**JavaScript:**
+- Tree shaking (unused code elimination)
+- Code splitting (lazy loading)
+- Minification and compression
+- Source map generation
+
+**CSS:**
+- Tailwind purging (unused styles removal)
+- PostCSS optimization
+- Critical CSS extraction
+
+**Images:**
+- Format optimization (WebP, AVIF)
+- Responsive image generation
+- Lazy loading implementation
+
+### Performance Monitoring
+
+**Build Metrics:**
+- Bundle size analysis
+- Asset count and sizes
+- Build time measurement
+- Dependency analysis
+
+**Runtime Metrics:**
+- First Contentful Paint (FCP)
+- Largest Contentful Paint (LCP)
+- Cumulative Layout Shift (CLS)
+- Time to Interactive (TTI)
+
+## 🛠️ Development Workflow
+
+### Local Development
+
+1. **Start Dev Server**
+   ```bash
+   npm run dev
+   ```
+
+2. **Content Changes**
+   - Edit markdown files in `/content/`
+   - Changes auto-reload in browser
+   - No build step required
+
+3. **Code Changes**
+   - Edit React components in `/src/`
+   - Hot module replacement
+   - Instant feedback
+
+### Content Management
+
+1. **Add New Content**
+   ```bash
+   # Create new markdown file
+   touch content/notes/my-new-note.md
+   
+   # Add frontmatter
+   ---
+   title: "My New Note"
+   date: "2024-01-01"
+   type: "note"
+   ---
+   
+   # Content here...
+   ```
+
+2. **Process Content**
+   ```bash
+   # Generate content metadata
+   npm run build:content
+   
+   # Or full build
+   npm run build
+   ```
+
+### Debugging
+
+**Build Issues:**
+- Check TypeScript errors: `npx tsc --noEmit`
+- Verify content files: Check `/content/` structure
+- Review plugin logs: Look for Vite plugin output
+
+**Runtime Issues:**
+- Use React DevTools
+- Check browser console
+- Verify content metadata JSON
+
+## 🔧 Configuration Files
+
+### TypeScript (`tsconfig.json`)
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx"
+  }
+}
+```
+
+### PostCSS (`postcss.config.js`)
+
+```javascript
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+```
+
+### Tailwind (`config.tailwind.ts`)
+
+```typescript
+import type { Config } from 'tailwindcss'
+
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+} satisfies Config
+```
+
+## 🚨 Troubleshooting
+
+### Common Build Issues
+
+**TypeScript Errors:**
+- Check import paths
+- Verify type definitions
+- Update dependencies
+
+**Content Processing Errors:**
+- Validate frontmatter YAML
+- Check file permissions
+- Verify content directory structure
+
+**Asset Loading Issues:**
+- Check asset paths in generated HTML
+- Verify public directory contents
+- Review Vite asset handling
+
+### Performance Issues
+
+**Large Bundle Size:**
+- Analyze bundle with `npm run build -- --analyze`
+- Implement code splitting
+- Remove unused dependencies
+
+**Slow Build Times:**
+- Check file watching configuration
+- Optimize content processing
+- Use build caching
+
+---
+
+This build system provides a robust foundation for both development and production deployment of the Web Presence project.
