@@ -339,7 +339,7 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
         fs.mkdirSync(outputDir, { recursive: true })
       }
     },
-    writeBundle() {
+    closeBundle() {
       try {
         // Generate content metadata during build
         const metadata = generateContentMetadata(contentDir, rivveOutputDir)
@@ -362,6 +362,8 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
           
           if (jsFile) jsAsset = `/assets/${jsFile}`
           if (cssFile) cssAsset = `/assets/${cssFile}`
+          
+          console.log(`Using assets: JS=${jsAsset}, CSS=${cssAsset}`)
         }
         
         contentTypes.forEach(type => {
