@@ -16,6 +16,9 @@ const rivveOutputDir = path.join(__dirname, '..', 'rivve', 'html-output')
 if (!fs.existsSync(tempContentDir)) {
   fs.mkdirSync(tempContentDir, { recursive: true })
 }
+if (!fs.existsSync(distDir)) {
+  fs.mkdirSync(distDir, { recursive: true })
+}
 
 // Create content subdirectories
 const contentTypes = ['notes', 'publications', 'ideas']
@@ -146,9 +149,13 @@ function processMarkdownFiles() {
         html: contentItem.html
       })
 
-      // Generate individual HTML file using rivve's approach
+      // Generate individual HTML file using rivve's approach for the Vite plugin
       const rivveHtml = generateRivveHTML(frontmatter, body, slug)
-      const htmlFile = path.join(distTypeDir, `${slug}.html`)
+      const rivveOutputDir = path.join(__dirname, '..', 'rivve', 'html-output')
+      if (!fs.existsSync(rivveOutputDir)) {
+        fs.mkdirSync(rivveOutputDir, { recursive: true })
+      }
+      const htmlFile = path.join(rivveOutputDir, `${slug}.html`)
       fs.writeFileSync(htmlFile, rivveHtml, 'utf8')
     })
 
@@ -166,9 +173,9 @@ function processMarkdownFiles() {
       .slice(0, 3)
   }
 
-  // Write metadata index for content processor
+  // Write metadata index for content processor to dist directory
   fs.writeFileSync(
-    path.join(tempContentDir, 'content-metadata.json'),
+    path.join(distDir, 'content-metadata.json'),
     JSON.stringify(contentIndex, null, 2)
   )
 

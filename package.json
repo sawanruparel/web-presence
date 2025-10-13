@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:content && tsc && vite build && npm run copy:content",
+    "build": "npm run build:content && tsc && vite build",
     "build:content": "node scripts/generate-static-content.js",
     "copy:content": "node scripts/copy-content-files.js",
     "preview": "vite preview"

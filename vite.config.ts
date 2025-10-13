@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { htmlPagesPlugin } from './scripts/vite-plugin-html-pages'
+import { devServerPlugin } from './scripts/dev-server-plugin'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -10,7 +11,8 @@ export default defineConfig({
       contentDir: './content',
       outputDir: './dist',
       rivveOutputDir: './rivve/html-output'
-    })
+    }),
+    devServerPlugin('./content', './rivve/html-output')
   ],
   build: {
     outDir: 'dist',
@@ -18,6 +20,13 @@ export default defineConfig({
       input: {
         main: './index.html'
       }
+    }
+  },
+  server: {
+    // Serve static HTML files for content pages in development
+    middlewareMode: false,
+    fs: {
+      allow: ['..']
     }
   }
 })
