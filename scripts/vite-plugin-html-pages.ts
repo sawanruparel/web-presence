@@ -398,7 +398,7 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
         })
         
         // Generate index page
-        generateIndexPage(outputDir, metadata)
+        generateIndexPage(outputDir, metadata, jsAsset, cssAsset)
         
         // Copy content metadata to dist directory
         const metadataPath = path.join(outputDir, 'content-metadata.json')
@@ -412,7 +412,11 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
   }
 }
 
-function generateIndexPage(outputDir: string, metadata: any) {
+function generateIndexPage(outputDir: string, metadata: any, jsAsset?: string, cssAsset?: string) {
+  // Use actual asset paths if provided, otherwise fall back to dev paths
+  const jsPath = jsAsset || '/src/main.tsx'
+  const cssPath = cssAsset || '/src/style.css'
+  
   const indexHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -422,7 +426,7 @@ function generateIndexPage(outputDir: string, metadata: any) {
     <meta name="description" content="Personal website with notes, publications, and ideas">
     <meta name="robots" content="index, follow">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="stylesheet" href="/src/style.css">
+    <link rel="stylesheet" href="${cssPath}">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -448,7 +452,7 @@ function generateIndexPage(outputDir: string, metadata: any) {
     <div id="app" class="app-container">
         <!-- React app will render here -->
     </div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="${jsPath}"></script>
 </body>
 </html>`
   
