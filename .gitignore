@@ -265,3 +265,8 @@ temp-content/
 # Generated content
 content-metadata.json
 protected-content.json
+
+# Cloudflare Workers
+api/.dev.vars
+api/.wrangler/
+api/dist/

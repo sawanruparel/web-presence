@@ -7,14 +7,14 @@ This document describes the system architecture, component structure, and data f
 ### High-Level Architecture
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Content       │    │   Build System  │    │   Runtime       │
-│   Management    │    │                 │    │                 │
-│                 │    │                 │    │                 │
-│ • Markdown      │───▶│ • Vite          │───▶│ • React SPA     │
-│ • Frontmatter   │    │ • Custom Plugins│    │ • Static HTML   │
-│ • Rivve AI      │    │ • TypeScript    │    │ • SEO Metadata  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Content       │    │   Frontend      │    │   Backend API   │    │   Deployment    │
+│   Management    │    │   (React SPA)   │    │   (Hono + CF)   │    │                 │
+│                 │    │                 │    │                 │    │                 │
+│ • Markdown      │───▶│ • Vite Build    │───▶│ • Cloudflare    │───▶│ • Pages (Web)   │
+│ • Frontmatter   │    │ • React App     │    │   Workers       │    │ • Workers (API) │
+│ • Rivve AI      │    │ • Static HTML   │    │ • JWT Auth      │    │ • Separate Deploys│
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
 ### Core Components
@@ -24,47 +24,65 @@ This document describes the system architecture, component structure, and data f
    - Organized by content type (notes, publications, ideas, pages)
    - Processed by Rivve for AI-enhanced metadata
 
-2. **Build Layer** (`/scripts/`, `vite.config.ts`)
-   - Vite with custom HTML pages plugin
-   - Content processing and static generation
-   - TypeScript compilation and asset optimization
-
-3. **Application Layer** (`/src/`)
+2. **Frontend Layer** (`/web/`)
    - React SPA with client-side routing
+   - Vite build system with custom plugins
    - Component-based architecture
    - Error boundaries and loading states
+   - Static HTML generation for SEO
 
-4. **Output Layer** (`/dist/`)
-   - Static HTML files for content pages
-   - React bundle for interactive features
-   - SEO-optimized metadata
+3. **Backend API Layer** (`/api/`)
+   - Hono-based API server
+   - Cloudflare Workers runtime
+   - JWT-based authentication
+   - Protected content access
+   - CORS-enabled for frontend communication
+
+4. **Shared Layer** (`/types/`)
+   - Shared TypeScript types
+   - API contract definitions
+   - Type safety between frontend and backend
+
+5. **Deployment Layer**
+   - Frontend: Cloudflare Pages (static hosting)
+   - Backend: Cloudflare Workers (serverless functions)
+   - Separate deployment pipelines
 
 ## 📁 Directory Structure
 
 ```
 web-presence/
-├── content/                 # Content management
-│   ├── notes/              # Personal notes
-│   ├── publications/       # Articles and papers
-│   ├── ideas/             # Creative concepts
-│   └── pages/             # Static pages
-├── src/                   # React application
-│   ├── components/        # Reusable UI components
-│   ├── pages/            # Page components
-│   ├── hooks/            # Custom React hooks
-│   ├── utils/            # Utility functions
-│   └── data/             # Generated content metadata
-├── scripts/              # Build system
-│   ├── generate-static-content.js
-│   ├── vite-plugin-html-pages.ts
-│   └── html-template.ts
-├── rivve/                # AI content processing
+├── api/                   # Backend API (Hono + Cloudflare Workers)
+│   ├── src/
+│   │   ├── index.ts      # Hono app entry point
+│   │   ├── routes/       # API route handlers
+│   │   ├── middleware/   # Custom middleware
+│   │   ├── services/     # Business logic
+│   │   └── utils/        # Helper functions
+│   ├── wrangler.toml     # Cloudflare Workers config
+│   └── package.json      # API dependencies
+├── web/                  # Frontend (React SPA)
+│   ├── src/             # React application
+│   │   ├── components/  # Reusable UI components
+│   │   ├── pages/       # Page components
+│   │   ├── hooks/       # Custom React hooks
+│   │   └── utils/       # Utility functions
+│   ├── scripts/         # Build system
+│   ├── dist/            # Build output
+│   ├── vite.config.ts   # Vite configuration
+│   └── package.json     # Frontend dependencies
+├── content/             # Content management (shared)
+│   ├── notes/           # Personal notes
+│   ├── publications/    # Articles and papers
+│   ├── ideas/           # Creative concepts
+│   └── pages/           # Static pages
+├── rivve/               # AI content processing (shared)
 │   ├── src/             # Rivve core functionality
 │   └── html-output/     # Generated HTML files
-└── dist/                # Build output
-    ├── assets/          # Bundled CSS/JS
-    ├── *.html           # Static content pages
-    └── content-metadata.json
+├── types/               # Shared TypeScript types
+├── docs/                # Documentation
+├── prompts/             # AI prompts
+└── package.json         # Root orchestration scripts
 ```
 
 ## 🔄 Data Flow

@@ -88,7 +88,7 @@ export function NotesPage({ notes }: NotesPageProps) {
         onSubmit={handlePasswordSubmit}
         title={selectedContent?.title || ''}
         isLoading={isLoading}
-        error={error}
+        error={error || undefined}
       />
 
       <Footer />

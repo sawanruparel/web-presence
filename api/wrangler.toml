@@ -1,0 +1,13 @@
+name = "web-presence-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[env.development]
+name = "web-presence-api-dev"
+
+[env.production]
+name = "web-presence-api"
+
+# Environment variables (set via .dev.vars for local development)
+# JWT_SECRET - Secret key for JWT signing
+# CONTENT_PASSWORD - Password for protected content access
