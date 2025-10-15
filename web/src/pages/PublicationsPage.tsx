@@ -5,12 +5,12 @@ import { PageNavigation } from '../components/page-navigation'
 import { PasswordModal } from '../components/password-modal'
 import { useProtectedContentNavigation } from '../hooks/use-protected-content'
 
-interface NotesPageProps {
-  notes: ContentItem[]
+interface PublicationsPageProps {
+  publications: ContentItem[]
 }
 
-export function NotesPage({ notes }: NotesPageProps) {
-  const [selectedContent, setSelectedContent] = useState<{ type: 'notes', slug: string, title: string } | null>(null)
+export function PublicationsPage({ publications }: PublicationsPageProps) {
+  const [selectedContent, setSelectedContent] = useState<{ type: 'publications', slug: string, title: string } | null>(null)
   const { 
     navigateToProtectedContent, 
     verifyPassword, 
@@ -20,15 +20,15 @@ export function NotesPage({ notes }: NotesPageProps) {
     closeModal 
   } = useProtectedContentNavigation()
 
-  const handleContentClick = async (e: React.MouseEvent, note: ContentItem) => {
+  const handleContentClick = async (e: React.MouseEvent, publication: ContentItem) => {
     e.preventDefault()
     
-    if (note.isProtected) {
-      setSelectedContent({ type: 'notes', slug: note.slug, title: note.title })
-      await navigateToProtectedContent('notes', note.slug)
+    if (publication.isProtected) {
+      setSelectedContent({ type: 'publications', slug: publication.slug, title: publication.title })
+      await navigateToProtectedContent('publications', publication.slug)
     } else {
       // Navigate to regular content
-      window.location.href = `/notes/${note.slug}`
+      window.location.href = `/publications/${publication.slug}`
     }
   }
 
@@ -46,35 +46,35 @@ export function NotesPage({ notes }: NotesPageProps) {
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 leading-relaxed" style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }}>
       <header>
-        <h1 className="text-3xl font-semibold" style={{ color: 'var(--color-text)' }}>Notes</h1>
+        <h1 className="text-3xl font-semibold" style={{ color: 'var(--color-text)' }}>Publications</h1>
         <p className="mt-2" style={{ color: 'var(--color-text-muted)' }}>
-          Thoughts and observations on building and making.
+          Books, papers, talks, and other external publications.
         </p>
-        <PageNavigation currentPage="notes" />
+        <PageNavigation currentPage="publications" />
       </header>
 
       <section className="mt-10">
         <ul className="space-y-6">
-          {notes.map((note) => (
-            <li key={note.slug} className="border-b pb-6" style={{ borderColor: 'var(--color-divider)' }}>
+          {publications.map((publication) => (
+            <li key={publication.slug} className="border-b pb-6" style={{ borderColor: 'var(--color-divider)' }}>
               <a 
-                href={`/notes/${note.slug}`} 
+                href={`/publications/${publication.slug}`} 
                 className="block hover:underline"
-                onClick={(e) => handleContentClick(e, note)}
+                onClick={(e) => handleContentClick(e, publication)}
               >
                 <h2 className="text-xl font-medium mb-2" style={{ color: 'var(--color-text)' }}>
-                  {note.title}
-                  {note.isProtected && (
+                  {publication.title}
+                  {publication.isProtected && (
                     <span className="ml-2 text-xs bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
                       🔒 Protected
                     </span>
                   )}
                 </h2>
                 <p className="text-sm mb-2" style={{ color: 'var(--color-text-muted)' }}>
-                  {note.date} · {note.readTime}
+                  {publication.date} · {publication.readTime}
                 </p>
                 <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                  {note.excerpt}
+                  {publication.excerpt}
                 </p>
               </a>
             </li>
@@ -88,7 +88,7 @@ export function NotesPage({ notes }: NotesPageProps) {
         onSubmit={handlePasswordSubmit}
         title={selectedContent?.title || ''}
         isLoading={isLoading}
-        error={error ?? undefined}
+        error={error || undefined}
       />
 
       <Footer />

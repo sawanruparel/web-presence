@@ -1,0 +1,8 @@
+# Cloudflare Workers environment variables for local development
+# Copy this file to .dev.vars and update the values
+
+# JWT secret for token signing (use a strong secret in production)
+JWT_SECRET=your-super-secret-jwt-key-here
+
+# Password for accessing protected content
+CONTENT_PASSWORD=your-content-password-here

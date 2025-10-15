@@ -8,11 +8,11 @@ export default defineConfig({
   plugins: [
     react(),
     htmlPagesPlugin({
-      contentDir: './content',
+      contentDir: '../content',
       outputDir: './dist',
-      rivveOutputDir: './rivve/html-output'
+      rivveOutputDir: '../rivve/html-output'
     }),
-    devServerPlugin('./content', './rivve/html-output')
+    devServerPlugin('../content', '../rivve/html-output')
   ],
   build: {
     outDir: 'dist',
@@ -27,11 +27,18 @@ export default defineConfig({
     middlewareMode: false,
     fs: {
       allow: ['..']
+    },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8787',
+        changeOrigin: true,
+        secure: false
+      }
     }
   },
   define: {
     // Make environment variables available to the client
-    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || 'http://localhost:3001'),
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || 'http://localhost:5173'),
     'import.meta.env.VITE_DEV_MODE': JSON.stringify(process.env.VITE_DEV_MODE || 'true')
   }
 })
