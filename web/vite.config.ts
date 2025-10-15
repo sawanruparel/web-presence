@@ -8,11 +8,11 @@ export default defineConfig({
   plugins: [
     react(),
     htmlPagesPlugin({
-      contentDir: '../content',
+      contentDir: '../../content',
       outputDir: './dist',
-      rivveOutputDir: '../rivve/html-output'
+      rivveOutputDir: '../../rivve/html-output'
     }),
-    devServerPlugin('../content', '../rivve/html-output')
+    devServerPlugin('../../content', '../../rivve/html-output')
   ],
   build: {
     outDir: 'dist',

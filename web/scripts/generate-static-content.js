@@ -7,11 +7,12 @@ import { parse } from 'yaml'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const contentDir = path.join(__dirname, '..', 'content')
-const protectedContentDir = path.join(__dirname, '..', 'content-protected')
+// From /web/scripts/ directory, go up two levels to web-presence, then into content
+const contentDir = path.join(__dirname, '..', '..', 'content')
+const protectedContentDir = path.join(__dirname, '..', '..', 'content-protected')
 const distDir = path.join(__dirname, '..', 'dist')
 const tempContentDir = path.join(__dirname, '..', 'temp-content')
-const rivveOutputDir = path.join(__dirname, '..', 'rivve', 'html-output')
+const rivveOutputDir = path.join(__dirname, '..', '..', 'rivve', 'html-output')
 
 // Ensure directories exist
 if (!fs.existsSync(tempContentDir)) {
@@ -89,10 +90,16 @@ function processMarkdownFiles() {
   const contentMetadata = {}
   const protectedContent = {}
 
+  console.log('Processing content from:', contentDir)
+  console.log('Content directory exists:', fs.existsSync(contentDir))
+
   // Process public content
   contentTypes.forEach(type => {
     const typeDir = path.join(contentDir, type)
     const distTypeDir = path.join(tempContentDir, type)
+    
+    console.log(`Processing ${type} from:`, typeDir)
+    console.log(`${type} directory exists:`, fs.existsSync(typeDir))
     
     if (!fs.existsSync(typeDir)) {
       allContent[type] = []
@@ -101,6 +108,8 @@ function processMarkdownFiles() {
     }
 
     const files = fs.readdirSync(typeDir).filter(file => file.endsWith('.md'))
+    console.log(`${type} markdown files:`, files)
+    
     const typeContent = []
     const typeMetadata = []
 
@@ -156,7 +165,7 @@ function processMarkdownFiles() {
 
       // Generate individual HTML file using rivve's approach for the Vite plugin
       const rivveHtml = generateRivveHTML(frontmatter, body, slug)
-      const rivveOutputDir = path.join(__dirname, '..', 'rivve', 'html-output')
+      const rivveOutputDir = path.join(__dirname, '..', '..', 'rivve', 'html-output')
       if (!fs.existsSync(rivveOutputDir)) {
         fs.mkdirSync(rivveOutputDir, { recursive: true })
       }
