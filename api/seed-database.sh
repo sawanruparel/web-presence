@@ -50,9 +50,9 @@ curl -s -X POST "$BASE_URL/api/internal/access-rules" \
   -d '{
     "type": "ideas",
     "slug": "sample-protected-idea",
-    "accessMode": "email-list",
-    "description": "Email-restricted sample idea",
-    "allowedEmails": ["admin@example.com", "team@example.com", "reviewer@example.com"]
+    "accessMode": "password",
+    "password": "ideas-sample-protected-idea-test123",
+    "description": "Sample protected idea"
   }' | jq -r '.slug + " - " + .access_mode'
 
 # Publications - email-list

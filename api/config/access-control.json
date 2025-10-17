@@ -4,10 +4,6 @@
       "physical-interfaces": {
         "mode": "open",
         "description": "Physical interfaces concepts"
-      },
-      "sample-protected-idea": {
-        "mode": "password",
-        "description": "Sample protected note"
       }
     },
     "publications": {
@@ -28,6 +24,10 @@
       "local-first-ai": {
         "mode": "password",
         "description": "Local-first AI implementation"
+      },
+      "sample-protected-idea": {
+        "mode": "password",
+        "description": "Sample protected idea"
       }
     },
     "pages": {
