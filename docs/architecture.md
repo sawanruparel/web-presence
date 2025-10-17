@@ -17,6 +17,19 @@ This document describes the system architecture, component structure, and data f
 └─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
+### Technology Stack Clarification
+
+**Runtime Environments:**
+- **Frontend**: React SPA running in browsers
+- **Backend**: Hono framework running on Cloudflare Workers
+
+**Build-Time Tools (Node.js):**
+- **Vite**: Frontend build system and dev server
+- **TypeScript**: Type checking and compilation
+- **Content Processing**: Markdown → HTML conversion scripts
+- **Testing**: Playwright E2E testing framework
+- **Development Scripts**: Password generation, environment validation, etc.
+
 ### Core Components
 
 1. **Content Layer** (`/content/`)
@@ -47,6 +60,12 @@ This document describes the system architecture, component structure, and data f
    - Frontend: Cloudflare Pages (static hosting)
    - Backend: Cloudflare Workers (serverless functions)
    - Separate deployment pipelines
+
+6. **Build Tools Layer** (Node.js)
+   - Content processing scripts
+   - Development server and tooling
+   - Testing framework
+   - Build orchestration
 
 ## 📁 Directory Structure
 

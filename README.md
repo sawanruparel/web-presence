@@ -36,6 +36,13 @@ A modern full-stack personal website showcasing expertise in AI, healthcare inno
 - JWT authentication
 - TypeScript for type safety
 
+### Build Tools & Scripts
+- **Node.js** - Used exclusively for build tools, content processing, and development scripts
+- **Vite** - Frontend build system and dev server
+- **TypeScript** - Type checking across all components
+- **Playwright** - E2E testing framework
+- **Custom Scripts** - Content processing, password generation, and environment validation
+
 ## Project Structure
 
 ```
@@ -58,9 +65,9 @@ web-presence/
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or yarn
-- Cloudflare account (for API deployment)
+- **Node.js 18+** - Required for build tools, content processing, and development scripts
+- **npm or yarn** - Package manager for dependencies
+- **Cloudflare account** - For API deployment (backend runs on Cloudflare Workers, not Node.js)
 
 ### Development
 
@@ -193,6 +200,7 @@ docs/
 ```
 
 ### Key Documentation
+- **[Technology Stack](docs/tech-stack.md)** - Complete technology breakdown
 - **[Access Control System](docs/api/access-control.md)** - Content protection system
 - **[Build System](docs/web/build-system.md)** - Vite configuration and build process
 - **[Component Reference](docs/web/components.md)** - React component documentation

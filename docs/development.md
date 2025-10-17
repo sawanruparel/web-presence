@@ -6,9 +6,10 @@ This document provides comprehensive guidance for setting up, developing, and ma
 
 ### Prerequisites
 
-- **Node.js** 18+ (recommended: latest LTS)
-- **npm** 9+ (comes with Node.js)
+- **Node.js 18+** (recommended: latest LTS) - Required for build tools, content processing, and development scripts
+- **npm 9+** (comes with Node.js) - Package manager for dependencies
 - **Git** (for version control)
+- **Cloudflare account** - For API deployment (backend runs on Cloudflare Workers, not Node.js)
 
 ### Initial Setup
 
@@ -114,19 +115,31 @@ This document provides comprehensive guidance for setting up, developing, and ma
 
 ## 🔧 Development Tools
 
+### Node.js Usage in Development
+
+**Node.js is used exclusively for:**
+- **Build Tools**: Vite dev server, TypeScript compilation, PostCSS processing
+- **Content Processing**: Markdown → HTML conversion, metadata generation
+- **Development Scripts**: Password generation, environment validation, testing
+- **Package Management**: npm for dependency management
+
+**Node.js is NOT used for:**
+- **Backend Runtime**: API runs on Cloudflare Workers (Hono framework)
+- **Frontend Runtime**: React app runs in browsers
+
 ### Available Scripts
 
 ```bash
-# Development
-npm run dev              # Start dev server
-npm run build:content    # Process content only
+# Development (Node.js build tools)
+npm run dev              # Start Vite dev server
+npm run build:content    # Process content with Node.js scripts
 npm run copy:content     # Copy content files
 
-# Building
+# Building (Node.js build tools)
 npm run build           # Full production build
 npm run preview         # Preview production build
 
-# Rivve (AI Content Processing)
+# Rivve (AI Content Processing - Node.js scripts)
 cd rivve
 npm run auto-scan       # Process all content with AI
 npm run dev-server      # Start Rivve dev server
@@ -192,10 +205,20 @@ content/
 
 ```
 scripts/
-├── generate-static-content.js    # Content processing
-├── vite-plugin-html-pages.ts    # Vite plugin
-├── html-template.ts             # HTML templates
-└── dev-server-plugin.ts         # Dev server plugin
+├── generate-static-content.js    # Node.js content processing script
+├── vite-plugin-html-pages.ts    # Vite plugin (TypeScript)
+├── html-template.ts             # HTML templates (TypeScript)
+└── dev-server-plugin.ts         # Dev server plugin (TypeScript)
+```
+
+### Root Scripts (`/scripts/`)
+
+```
+scripts/
+├── generate-passwords.js         # Node.js password generation
+├── test-e2e.js                  # Node.js E2E test orchestration
+├── check-env.js                 # Node.js environment validation
+└── test-quick.js                # Node.js quick testing utilities
 ```
 
 ## 🎨 Styling Guidelines

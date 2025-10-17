@@ -6,6 +6,7 @@ This directory contains comprehensive documentation for the Web Presence project
 
 ### Core Documentation
 - **[Architecture Overview](./architecture.md)** - System architecture, components, and data flow
+- **[Technology Stack](./tech-stack.md)** - Complete technology breakdown
 - **[Development Guide](./development.md)** - Setup, development workflow, and debugging
 - **[Content Management](./content-management.md)** - Content processing, Rivve integration, and markdown handling
 - **[Extension Guide](./extension.md)** - How to extend and customize the system

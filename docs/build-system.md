@@ -6,12 +6,18 @@ This document describes the build system, Vite configuration, and deployment pro
 
 The project uses Vite as the primary build tool with custom plugins for content processing and static HTML generation.
 
-### Build Tools
+### Build Tools (Node.js)
 
-- **Vite** - Main build tool and dev server
-- **TypeScript** - Type checking and compilation
-- **PostCSS** - CSS processing with Tailwind
-- **Custom Plugins** - HTML generation and content processing
+- **Vite** - Main build tool and dev server (Node.js)
+- **TypeScript** - Type checking and compilation (Node.js)
+- **PostCSS** - CSS processing with Tailwind (Node.js)
+- **Custom Plugins** - HTML generation and content processing (Node.js)
+- **Content Scripts** - Markdown processing and metadata generation (Node.js)
+
+### Runtime Environments
+
+- **Frontend**: React SPA running in browsers
+- **Backend**: Hono framework on Cloudflare Workers
 
 ## ⚙️ Vite Configuration
 
@@ -93,29 +99,30 @@ npm run build
 
 ### Static Content Generation (`scripts/generate-static-content.js`)
 
+**Runtime:** Node.js script (build-time only)
 **Input:** Markdown files in `/content/`
 **Output:** Processed content and metadata
 
 **Steps:**
-1. **File Discovery**
+1. **File Discovery** (Node.js)
    ```javascript
    const contentTypes = ['notes', 'publications', 'ideas', 'pages']
-   // Scan each content type directory
+   // Scan each content type directory using Node.js fs module
    ```
 
-2. **Frontmatter Parsing**
+2. **Frontmatter Parsing** (Node.js)
    ```javascript
    const { frontmatter, body } = parseFrontmatter(fileContents)
-   // Extract YAML metadata and markdown body
+   // Extract YAML metadata and markdown body using Node.js libraries
    ```
 
-3. **Content Processing**
+3. **Content Processing** (Node.js)
    ```javascript
-   const html = marked(body)  // Markdown → HTML
+   const html = marked(body)  // Markdown → HTML using Node.js marked library
    const excerpt = generateExcerpt(body)  // Auto-generate excerpt
    ```
 
-4. **Metadata Generation**
+4. **Metadata Generation** (Node.js)
    ```javascript
    const contentItem = {
      slug, title, date, readTime, type,
@@ -123,29 +130,30 @@ npm run build
    }
    ```
 
-5. **Rivve HTML Generation**
+5. **Rivve HTML Generation** (Node.js)
    ```javascript
    const rivveHtml = generateRivveHTML(frontmatter, body, slug)
-   // Generate SEO-optimized HTML with metadata
+   // Generate SEO-optimized HTML with metadata using Node.js
    ```
 
-6. **Output Writing**
+6. **Output Writing** (Node.js)
    ```javascript
-   // Write content metadata JSON
+   // Write content metadata JSON using Node.js fs module
    fs.writeFileSync(metadataPath, JSON.stringify(contentIndex, null, 2))
-   // Write individual HTML files
+   // Write individual HTML files using Node.js fs module
    fs.writeFileSync(htmlFile, rivveHtml, 'utf8')
    ```
 
 ### HTML Template Processing (`scripts/html-template.ts`)
 
+**Runtime:** TypeScript compiled to Node.js (build-time only)
 **Purpose:** Generate final HTML files with React integration
 
 **Features:**
-- SEO metadata injection
-- Asset path resolution
-- Template variable substitution
-- Social media optimization
+- SEO metadata injection (Node.js)
+- Asset path resolution (Node.js)
+- Template variable substitution (Node.js)
+- Social media optimization (Node.js)
 
 ## 📁 Output Structure
 
@@ -196,9 +204,11 @@ dist/
 ### Server-Side Rendering (Optional)
 
 **For advanced use cases:**
-- Node.js server with Express
+- Node.js server with Express (would require separate Node.js runtime)
 - Custom routing for content pages
 - Server-side content processing
+
+**Note:** This project currently uses static hosting and Cloudflare Workers, avoiding the need for a Node.js runtime server.
 
 ## 🔍 Build Optimization
 
