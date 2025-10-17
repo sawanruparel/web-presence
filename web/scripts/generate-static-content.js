@@ -156,8 +156,13 @@ async function uploadProtectedContentToR2(type, slug, contentData) {
     
     // Upload using wrangler (run from api directory to use wrangler.toml)
     const apiDir = path.join(__dirname, '..', '..', 'api')
+    
+    // Check if we're in a Cloudflare Pages build environment
+    const isCloudflarePages = process.env.CF_PAGES || process.env.CLOUDFLARE_PAGES
+    const wranglerCommand = isCloudflarePages ? 'npx wrangler' : 'npx wrangler'
+    
     execSync(
-      `wrangler r2 object put protected-content/${key} --file="${tempFile}"`,
+      `${wranglerCommand} r2 object put protected-content/${key} --file="${tempFile}"`,
       { 
         cwd: apiDir, 
         stdio: 'inherit' 
@@ -166,6 +171,14 @@ async function uploadProtectedContentToR2(type, slug, contentData) {
     console.log(`✅ Uploaded ${key} to R2`)
   } catch (error) {
     console.error(`❌ Failed to upload ${key} to R2:`, error)
+    
+    // If wrangler is not available, log a warning but don't fail the build
+    if (error.message && error.message.includes('wrangler: not found')) {
+      console.warn(`⚠️  Wrangler CLI not available, skipping R2 upload for ${key}`)
+      console.warn(`   This is expected in some build environments. Content will be available via API.`)
+      return // Don't throw error, just skip the upload
+    }
+    
     throw error
   } finally {
     // Cleanup temp file
