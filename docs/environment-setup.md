@@ -236,6 +236,62 @@ BUILD_API_URL=https://web-presence-api.quoppo.workers.dev
    # Deploy the dist/ folder to your hosting service
    ```
 
+### Syncing Environment Variables to Cloudflare Pages
+
+For Cloudflare Pages deployment, you need to sync your local environment variables to Pages as build-time environment variables (not runtime secrets).
+
+#### Prerequisites
+
+1. **Login to Wrangler**:
+   ```bash
+   npx wrangler login
+   ```
+
+#### Sync Process
+
+1. **Create production environment file** (optional):
+   ```bash
+   # Create .env.production with production-specific values
+   cp web/.env.local web/.env.production
+   # Edit web/.env.production to use production URLs
+   ```
+
+2. **Run the sync script**:
+   ```bash
+   cd web
+   npm run sync:env
+   ```
+
+   This will:
+   - Read variables from `web/.env.production` (if it exists) or `web/.env.local`
+   - Upload them to Cloudflare Pages as build-time environment variables
+   - Use Wrangler's authentication to access the Cloudflare API
+
+#### Variables Synced
+
+The script syncs these variables from your environment file (`.env.production` or `.env.local`):
+- `BUILD_API_KEY` - API key for build-time authentication
+- `BUILD_API_URL` - API endpoint for build process
+- `VITE_API_BASE_URL` - API endpoint for runtime
+- `VITE_DEV_MODE` - Development mode flag
+
+#### Environment File Priority
+
+1. **`.env.production`** - Used if it exists (recommended for production deployments)
+2. **`.env.local`** - Fallback if `.env.production` doesn't exist
+
+#### After Syncing
+
+1. **Trigger a new deployment** in Cloudflare Pages
+2. **Or push a new commit** to trigger automatic deployment
+3. **Check build logs** to verify variables are available during build
+
+#### Troubleshooting Sync Issues
+
+- **Not logged in**: Run `npx wrangler login` and follow the authentication flow
+- **404 Not Found**: Verify the project name "web-presence" exists in your account
+- **Missing variables**: Ensure variables exist in your `.env.local` file
+
 ## Environment Variables Reference
 
 ### API Variables
