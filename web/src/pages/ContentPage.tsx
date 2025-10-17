@@ -22,7 +22,7 @@ export function ContentPage({ content, type, slug }: ContentPageProps) {
     isModalOpen, 
     closeModal,
     accessMode,
-    description,
+    // description, // Not used in this component
     isLoading: hookLoading,
     error: hookError
   } = useProtectedContent()

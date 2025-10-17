@@ -13,7 +13,7 @@ export function NotesPage({ notes }: NotesPageProps) {
   const [selectedContent, setSelectedContent] = useState<{ type: 'notes', slug: string, title: string } | null>(null)
   const { 
     navigateToProtectedContent, 
-    verifyPassword, 
+    verifyCredentials, 
     isLoading, 
     error, 
     isModalOpen, 
@@ -36,7 +36,7 @@ export function NotesPage({ notes }: NotesPageProps) {
     if (!selectedContent) return
     
     try {
-      await verifyPassword(selectedContent.type, selectedContent.slug, password)
+      await verifyCredentials(selectedContent.type, selectedContent.slug, { password })
       // Navigation will be handled by the hook
     } catch (error) {
       // Error is handled by the hook
