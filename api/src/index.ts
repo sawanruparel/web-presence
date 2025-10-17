@@ -25,7 +25,7 @@ app.use('*', cors({
     // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return '*'
     
-    return allowedOrigins.includes(origin) ? origin : false
+    return allowedOrigins.includes(origin) ? origin : null
   },
   allowHeaders: ['Content-Type', 'Authorization'],
   allowMethods: ['GET', 'POST', 'OPTIONS'],
