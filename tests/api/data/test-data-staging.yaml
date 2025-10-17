@@ -1,0 +1,24 @@
+# Test data for staging environment
+# This defines WHAT to test, not WHERE
+
+test_users:
+  - email: user1@example.com
+  - email: user2@example.com
+
+access_rules:
+  password_protected:
+    - type: ideas
+      slug_template: "test-staging-idea-{timestamp}"
+      password: test123
+      description: "[TEST] Staging password-protected idea"
+  
+  email_list:
+    - type: publications
+      slug_template: "test-staging-pub-{timestamp}"
+      allowed_emails: [user1@example.com, user2@example.com]
+      description: "[TEST] Staging email-list publication"
+  
+  open_access:
+    - type: notes
+      slug_template: "test-staging-note-{timestamp}"
+      description: "[TEST] Staging open access note"

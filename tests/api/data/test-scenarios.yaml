@@ -1,0 +1,65 @@
+# Application-specific test scenarios
+scenarios:
+  health_check:
+    type: functional
+    endpoint: /health
+    method: GET
+    expected_status: 200
+    assertions:
+      - field: status
+        value: ok
+      - field: version
+        exists: true
+
+  verify_password_flow:
+    type: functional
+    endpoint: /auth/verify
+    method: POST
+    expected_status: 200
+    description: "Test password verification flow works"
+    # No data-specific assertions
+
+  create_access_rule:
+    type: data_validation
+    endpoint: /api/internal/access-rules
+    method: POST
+    requires_cleanup: true
+    expected_status: [200, 201]
+
+  verify_email_flow:
+    type: functional
+    endpoint: /auth/verify
+    method: POST
+    expected_status: 200
+    description: "Test email verification flow works"
+
+  get_protected_content:
+    type: functional
+    endpoint: /auth/content
+    method: GET
+    requires_auth: true
+    expected_status: [200, 401]
+    description: "Test protected content requires authentication"
+
+  check_access_requirements:
+    type: functional
+    endpoint: /auth/access
+    method: GET
+    expected_status: 200
+    description: "Test access requirements check"
+
+  content_catalog:
+    type: functional
+    endpoint: /api/content-catalog
+    method: GET
+    requires_api_key: true
+    expected_status: 200
+    description: "Test content catalog endpoint"
+
+  admin_access_rules_crud:
+    type: data_validation
+    endpoint: /api/internal/access-rules
+    method: [POST, GET, PUT, DELETE]
+    requires_cleanup: true
+    expected_status: [200, 201, 204]
+    description: "Test admin access rules CRUD operations"

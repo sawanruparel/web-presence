@@ -1,0 +1,36 @@
+# Test data for production environment
+# This defines WHAT to test, not WHERE
+
+# Test data MUST use qualified slugs to distinguish from real data
+slug_prefix: "test-automated-"
+slug_suffix: "-{timestamp}"
+
+# Example: "test-automated-password-idea-1234567890"
+# This makes it easy to identify and cleanup test-created resources
+
+test_users:
+  - email: user1@example.com
+  - email: user2@example.com
+
+access_rules:
+  password_protected:
+    - type: ideas
+      slug_template: "test-automated-idea-{timestamp}"
+      password: test123
+      description: "[TEST] Automated test idea"
+  
+  # Minimal test data for production
+  open_access:
+    - type: notes
+      slug_template: "test-automated-note-{timestamp}"
+      description: "[TEST] Automated test note"
+
+# Cleanup criteria - NEVER delete resources without these markers
+cleanup_criteria:
+  slug_patterns:
+    - "test-automated-*"
+    - "test-*-{timestamp}"
+  description_markers:
+    - "[TEST]"
+    - "[AUTOMATED]"
+  max_age_hours: 24  # Only cleanup test data older than 24h

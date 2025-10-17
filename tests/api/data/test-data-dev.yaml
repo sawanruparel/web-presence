@@ -1,0 +1,24 @@
+# Test data for development environment
+# This defines WHAT to test, not WHERE
+
+test_users:
+  - email: user1@example.com
+  - email: user2@example.com
+
+access_rules:
+  password_protected:
+    - type: ideas
+      slug_template: "test-idea-{timestamp}"
+      password: test123
+      description: Test password-protected idea
+  
+  email_list:
+    - type: publications
+      slug_template: "test-pub-{timestamp}"
+      allowed_emails: [user1@example.com, user2@example.com]
+      description: Test email-list publication
+  
+  open_access:
+    - type: notes
+      slug_template: "test-note-{timestamp}"
+      description: Test open access note

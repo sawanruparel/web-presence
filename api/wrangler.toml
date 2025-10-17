@@ -24,8 +24,8 @@ database_name = "web-presence-db"
 database_id = "22aaa0c4-8060-4417-9649-9cc8cafa7e06"
 
 # Build configuration
-[build]
-command = "npm run build"
+# Note: Wrangler handles TypeScript compilation automatically
+# No custom build command needed to avoid circular dependencies
 
 # Environment variables (set via .dev.vars for local development)
 # JWT_SECRET - Secret key for JWT signing
