@@ -8,11 +8,16 @@ binding = "DB"
 database_name = "web-presence-db"
 database_id = "22aaa0c4-8060-4417-9649-9cc8cafa7e06"
 
+# Environment-specific configurations
 [env.development]
 name = "web-presence-api-dev"
 
 [env.production]
 name = "web-presence-api"
+
+# Build configuration
+[build]
+command = "npm run build"
 
 # Environment variables (set via .dev.vars for local development)
 # JWT_SECRET - Secret key for JWT signing
@@ -21,3 +26,6 @@ name = "web-presence-api"
 
 # Secrets (set via wrangler secret put)
 # These are automatically available in production
+# To set secrets:
+# npx wrangler secret put JWT_SECRET
+# npx wrangler secret put INTERNAL_API_KEY

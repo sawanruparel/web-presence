@@ -13,9 +13,26 @@
     "install:all": "npm install && cd web && npm install && cd ../api && npm install",
     "type-check": "cd web && npm run type-check && cd ../api && npm run type-check",
     "passwords": "node scripts/generate-passwords.js",
-    "passwords:all": "node scripts/generate-passwords.js all"
+    "passwords:all": "node scripts/generate-passwords.js all",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:api": "node scripts/test-e2e.js --suite api",
+    "test:e2e:frontend": "node scripts/test-e2e.js --suite frontend",
+    "test:e2e:integration": "node scripts/test-e2e.js --suite integration",
+    "test:all": "node scripts/test-e2e.js --suite all"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "concurrently": "^8.0.0"
-  }
+  },
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

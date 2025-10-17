@@ -8,7 +8,7 @@
 
 export const config = {
   // API Configuration
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001',
+  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'https://web-presence-api.quoppo.workers.dev',
   
   // Development mode flag
   isDev: import.meta.env.VITE_DEV_MODE === 'true' || import.meta.env.DEV,
