@@ -25,11 +25,16 @@
     "test:e2e:integration": "node scripts/test-e2e.js --suite integration",
     "test:all": "node scripts/test-e2e.js --suite all",
     "test:quick": "node scripts/test-quick.js",
-    "check:env": "node scripts/check-env.js"
+    "check:env": "node scripts/check-env.js",
+    "sync:api-keys": "node scripts/sync-api-keys.js",
+    "sync:api-keys:fix": "node scripts/sync-api-keys.js --fix",
+    "sync:api-keys:sync": "node scripts/sync-api-keys.js --sync",
+    "sync:api-keys:all": "node scripts/sync-api-keys.js --fix --sync"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
-    "concurrently": "^8.0.0"
+    "concurrently": "^8.0.0",
+    "dotenv": "^17.2.3"
   },
   "main": "index.js",
   "directories": {

@@ -178,8 +178,21 @@ The backend API deploys to Cloudflare Workers:
    ```
 
 3. **Set environment variables in Cloudflare dashboard:**
-   - `JWT_SECRET` - Secret for JWT token signing
-   - `CONTENT_PASSWORD` - Password for protected content access
+   - `INTERNAL_API_KEY` - API key for admin operations
+
+### Environment Synchronization
+
+The project uses synchronized API keys between frontend and backend. Use the provided scripts to manage this:
+
+```bash
+# Check API key synchronization status
+npm run sync:api-keys
+
+# Fix any mismatches and sync to services
+npm run sync:api-keys:all
+```
+
+For detailed information, see [Environment Setup](docs/environment-setup.md).
 
 ## Documentation
 

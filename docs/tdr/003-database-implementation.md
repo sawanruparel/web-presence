@@ -590,7 +590,6 @@ npm run build
 
 # API Keys
 BUILD_API_KEY=your-build-api-key-here
-ADMIN_JWT_SECRET=your-jwt-secret-here
 
 # Password hashing
 BCRYPT_ROUNDS=10

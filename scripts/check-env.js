@@ -53,7 +53,7 @@ function checkApiEnvironment() {
   // Check if .dev.vars has required variables
   if (fs.existsSync(devVarsPath)) {
     const content = fs.readFileSync(devVarsPath, 'utf8');
-    const requiredVars = ['JWT_SECRET', 'INTERNAL_API_KEY', 'CONTENT_PASSWORD'];
+    const requiredVars = ['INTERNAL_API_KEY'];
     
     log('\n📋 Required variables in .dev.vars:', 'blue');
     requiredVars.forEach(varName => {
@@ -108,9 +108,7 @@ function checkProductionSecrets() {
   log('To check production secrets, run:', 'yellow');
   log('  npx wrangler secret list', 'blue');
   log('\nRequired production secrets:', 'blue');
-  log('  - JWT_SECRET', 'yellow');
   log('  - INTERNAL_API_KEY', 'yellow');
-  log('  - CONTENT_PASSWORD', 'yellow');
 }
 
 function main() {

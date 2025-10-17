@@ -23,9 +23,6 @@ npm install
 Create a `.dev.vars` file in the `api/` directory:
 
 ```bash
-# JWT secret for token signing
-JWT_SECRET=your-super-secret-jwt-key-here
-
 # Database connection (Cloudflare D1)
 DB=database-name
 
@@ -92,7 +89,6 @@ npm run deploy
 In the Cloudflare dashboard:
 1. Go to Workers & Pages > Your Worker > Settings > Variables
 2. Add the following variables:
-   - `JWT_SECRET` - Strong secret for JWT signing
    - `INTERNAL_API_KEY` - API key for admin endpoints
 
 ## Environment-Specific Deployments
@@ -158,7 +154,6 @@ name = "web-presence-api"
 
 | Variable | Description | Required | Example |
 |----------|-------------|----------|---------|
-| `JWT_SECRET` | Secret for JWT token signing | Yes | `your-super-secret-jwt-key` |
 | `DB` | D1 database binding | Yes | `web-presence-db` |
 | `INTERNAL_API_KEY` | API key for admin endpoints | Yes | `your-internal-api-key` |
 
@@ -189,7 +184,7 @@ Monitor database usage:
    - Ensure migrations have been run
 
 2. **Authentication Failures:**
-   - Verify `JWT_SECRET` is set correctly
+   - Verify `INTERNAL_API_KEY` is set correctly
    - Check token expiration
    - Ensure proper Authorization header format
 

@@ -21,6 +21,45 @@ The frontend build process requires `BUILD_API_KEY` and `BUILD_API_URL` environm
 - `VITE_API_BASE_URL`: Used by the frontend application at runtime
 - `BUILD_API_URL`: Used by the build process to fetch content metadata
 
+## API Key Synchronization
+
+The project uses two API keys that must be identical:
+
+- **`INTERNAL_API_KEY`**: Used by the API server (backend) to validate incoming requests
+- **`BUILD_API_KEY`**: Used by the build script (frontend) to authenticate with the API
+
+These keys serve the same purpose but are stored in different locations and used by different components.
+
+### Synchronization Scripts
+
+Use the provided scripts to manage API key synchronization:
+
+```bash
+# Check API key synchronization status
+npm run sync:api-keys
+
+# Fix mismatches automatically
+npm run sync:api-keys:fix
+
+# Sync to Cloudflare services
+npm run sync:api-keys:sync
+
+# Fix and sync in one command
+npm run sync:api-keys:all
+```
+
+### Individual Service Scripts
+
+```bash
+# Sync API environment to Cloudflare Workers
+cd api && npm run sync:env
+
+# Sync Web environment to Cloudflare Pages
+cd web && npm run sync:env
+```
+
+The synchronization scripts ensure that `INTERNAL_API_KEY` and `BUILD_API_KEY` are always identical across all environments.
+
 ## R2 Storage Setup
 
 The project uses Cloudflare R2 for storing protected content. This requires:
@@ -107,9 +146,6 @@ CORS_ORIGINS=https://your-actual-frontend-domain.com,https://www.your-actual-fro
 Used by Wrangler for local development with `npm run dev` in the `api/` directory.
 
 ```bash
-# JWT Secret for signing tokens (local development)
-JWT_SECRET=dev-jwt-secret-key-change-in-production-12345
-
 # Internal API Key for admin operations (local development)
 INTERNAL_API_KEY=API_KEY_tu1ylu2nm7wnebxz05vfe
 
@@ -130,7 +166,6 @@ These values are set as secrets in Cloudflare Workers, not as environment files.
 
 ```bash
 # Set these via Cloudflare Workers secrets:
-npx wrangler secret put JWT_SECRET
 npx wrangler secret put INTERNAL_API_KEY
 npx wrangler secret put FRONTEND_URL
 npx wrangler secret put CORS_ORIGINS
@@ -215,20 +250,31 @@ BUILD_API_URL=https://web-presence-api.quoppo.workers.dev
    npm run dev
    ```
 
+3. **Synchronize API Keys**:
+   ```bash
+   # Check if API keys are synchronized
+   npm run sync:api-keys
+   
+   # Fix any mismatches automatically
+   npm run sync:api-keys:fix
+   ```
+
 ### For Production Deployment
 
-1. **API Deployment**:
+1. **Synchronize API Keys**:
+   ```bash
+   # Fix any mismatches and sync to Cloudflare services
+   npm run sync:api-keys:all
+   ```
+
+2. **API Deployment**:
    ```bash
    cd api
-   # Set secrets in Cloudflare Workers
-   npx wrangler secret put JWT_SECRET
-   npx wrangler secret put INTERNAL_API_KEY
-   
-   # Deploy
+   # Deploy (secrets already synced)
    npm run deploy
    ```
 
-2. **Frontend Deployment**:
+3. **Frontend Deployment**:
    ```bash
    cd web
    # Build with production environment
@@ -298,7 +344,6 @@ The script syncs these variables from your environment file (`.env.production` o
 
 | Variable | Local | Production | Purpose |
 |----------|-------|------------|---------|
-| `JWT_SECRET` | `.dev.vars` | Cloudflare Secret | JWT token signing |
 | `INTERNAL_API_KEY` | `.dev.vars` | Cloudflare Secret | Admin API authentication |
 | `FRONTEND_URL` | `.dev.vars` | Cloudflare Secret | Frontend URL for CORS and references |
 | `CORS_ORIGINS` | `.dev.vars` | Cloudflare Secret | Comma-separated allowed origins |
@@ -316,6 +361,59 @@ The script syncs these variables from your environment file (`.env.production` o
 | `BUILD_API_KEY` | `API_KEY_tu1ylu2nm7wnebxz05vfe` | `d458ab3fede5cfefb6f33b8aa21cc93988052c020e59075b8bdc6d95b9847246` | Build-time API authentication |
 | `BUILD_API_URL` | `http://localhost:8787` | `https://web-presence-api.quoppo.workers.dev` | Build-time API endpoint |
 
+## API Key Synchronization Workflow
+
+### Quick Commands
+
+```bash
+# Check synchronization status
+npm run sync:api-keys
+
+# Fix mismatches and sync to services
+npm run sync:api-keys:all
+```
+
+### Detailed Workflow
+
+1. **Check Status**:
+   ```bash
+   npm run sync:api-keys
+   ```
+   This will show you the current status of both API keys and whether they match.
+
+2. **Fix Mismatches** (if needed):
+   ```bash
+   npm run sync:api-keys:fix
+   ```
+   This will automatically synchronize mismatched keys.
+
+3. **Sync to Services**:
+   ```bash
+   npm run sync:api-keys:sync
+   ```
+   This will upload the keys to both Cloudflare Workers and Pages.
+
+4. **Complete Workflow**:
+   ```bash
+   npm run sync:api-keys:all
+   ```
+   This combines fixing and syncing in one command.
+
+### Validation
+
+After synchronization, verify the keys are working:
+
+```bash
+# Test API endpoint
+curl -H "X-API-Key: YOUR_API_KEY" http://localhost:8787/api/content-catalog
+
+# Check Cloudflare Workers secrets
+cd api && npx wrangler secret list
+
+# Check Cloudflare Pages environment
+cd web && npm run sync:env
+```
+
 ## Troubleshooting
 
 ### API Issues
@@ -328,10 +426,12 @@ The script syncs these variables from your environment file (`.env.production` o
 
 ### Common Problems
 1. **API not accessible**: Check `VITE_API_BASE_URL` in frontend env files
-2. **Authentication fails**: Check `JWT_SECRET` and `INTERNAL_API_KEY` in API
-3. **Database errors**: Check `DATABASE_ID` matches in both env and wrangler.toml
-4. **CORS errors in production**: Check `CORS_ORIGINS` is set correctly in Cloudflare Workers secrets
-5. **Frontend blocked by CORS**: Verify the frontend domain is included in `CORS_ORIGINS`
+2. **Authentication fails**: Check `INTERNAL_API_KEY` in API
+3. **API keys don't match**: Run `npm run sync:api-keys:fix` to synchronize
+4. **Database errors**: Check `DATABASE_ID` matches in both env and wrangler.toml
+5. **CORS errors in production**: Check `CORS_ORIGINS` is set correctly in Cloudflare Workers secrets
+6. **Frontend blocked by CORS**: Verify the frontend domain is included in `CORS_ORIGINS`
+7. **Build fails with API key error**: Ensure `BUILD_API_KEY` matches `INTERNAL_API_KEY`
 
 ## Security Notes
 

@@ -125,8 +125,7 @@ The Web Presence project uses a **hybrid architecture** that combines:
     "build": "tsc --noEmit"
   },
   "dependencies": {
-    "hono": "^4.0.0",
-    "jose": "^5.0.0"
+    "hono": "^4.0.0"
   },
   "devDependencies": {
     "wrangler": "^4.43.0",

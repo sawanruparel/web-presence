@@ -36,14 +36,13 @@ database_id = "22aaa0c4-8060-4417-9649-9cc8cafa7e06"
 # 
 # Local Development:
 # - Uses .dev.vars file for environment variables
-# - Variables: JWT_SECRET, INTERNAL_API_KEY
+# - Variables: INTERNAL_API_KEY
 # 
 # Production:
 # - Uses Cloudflare Workers secrets
 # - Set via: npx wrangler secret put <SECRET_NAME>
 # 
 # Required Variables:
-# - JWT_SECRET: Secret key for JWT token signing
 # - INTERNAL_API_KEY: API key for internal endpoints (build script, admin operations)
 # 
 # Database Configuration:

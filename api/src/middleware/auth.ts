@@ -1,5 +1,4 @@
 import { Context, Next } from 'hono'
-import { jwtVerify } from 'jose'
 import type { VerifyPasswordRequest } from '../../../types/api'
 
 export interface AuthContext extends Context {

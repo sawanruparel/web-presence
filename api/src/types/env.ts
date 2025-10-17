@@ -9,7 +9,6 @@ export interface Env {
   
   // Environment variables
   INTERNAL_API_KEY: string
-  JWT_SECRET: string
   
   // CORS and Frontend Configuration
   FRONTEND_URL: string

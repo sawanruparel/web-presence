@@ -44,9 +44,6 @@ api/
 Create a `.dev.vars` file in the `api/` directory:
 
 ```bash
-# JWT secret for token signing (use a strong secret in production)
-JWT_SECRET=your-super-secret-jwt-key-here
-
 # Database connection (Cloudflare D1)
 DB=database-name
 
@@ -150,7 +147,7 @@ export const customMiddleware = async (c: Context, next: Next) => {
 
 3. **Set environment variables in Cloudflare dashboard:**
    - Go to Workers & Pages > Your Worker > Settings > Variables
-   - Add `JWT_SECRET`, `DB`, and `INTERNAL_API_KEY`
+   - Add `DB` and `INTERNAL_API_KEY`
 
 ### Environment-Specific Deployments
 
@@ -203,7 +200,7 @@ curl http://localhost:8787/auth/content/notes/test \
    - Ensure frontend domain is whitelisted
 
 2. **Authentication Failures:**
-   - Verify JWT_SECRET is set correctly
+   - Verify INTERNAL_API_KEY is set correctly
    - Check token expiration
    - Ensure proper Authorization header format
 
