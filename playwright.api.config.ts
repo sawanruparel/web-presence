@@ -19,8 +19,10 @@ export default defineConfig({
   timeout: 15000, // 15 seconds per test
   /* Global timeout for the entire test run */
   globalTimeout: 300000, // 5 minutes total
+  /* Output directory for test results */
+  outputDir: 'test-results/runs',
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'line',
+  reporter: [['line'], ['html', { outputFolder: 'test-results/reports' }]],
   
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {

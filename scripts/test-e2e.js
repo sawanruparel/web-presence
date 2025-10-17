@@ -112,7 +112,7 @@ function main() {
 
   // Handle special commands
   if (report) {
-    runCommand('npx playwright show-report');
+    runCommand('npx playwright show-report test-results/reports');
     return;
   }
 
