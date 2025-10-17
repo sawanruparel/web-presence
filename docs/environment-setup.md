@@ -10,6 +10,17 @@ The project has two main components:
 
 Each component has separate environment files for local development and production.
 
+## Build Process Requirements
+
+The frontend build process requires `BUILD_API_KEY` and `BUILD_API_URL` environment variables to:
+- Fetch access control rules from the API during build
+- Generate static content with proper access restrictions
+- Ensure the build process can authenticate with the backend API
+
+**Note**: `BUILD_API_URL` can be the same as `VITE_API_BASE_URL` in most cases, but they serve different purposes:
+- `VITE_API_BASE_URL`: Used by the frontend application at runtime
+- `BUILD_API_URL`: Used by the build process to fetch content metadata
+
 ## API Environment Files
 
 ### Local Development (`api/.env.local`)
@@ -56,6 +67,10 @@ VITE_NODE_ENV=development
 
 # Enable debug logging
 VITE_DEBUG=true
+
+# Build API Configuration (required for build process)
+BUILD_API_KEY=API_KEY_tu1ylu2nm7wnebxz05vfe
+BUILD_API_URL=http://localhost:8787
 ```
 
 ### Production (`web/.env.production`)
@@ -73,6 +88,10 @@ VITE_NODE_ENV=production
 
 # Disable debug logging
 VITE_DEBUG=false
+
+# Build API Configuration (required for build process)
+BUILD_API_KEY=d458ab3fede5cfefb6f33b8aa21cc93988052c020e59075b8bdc6d95b9847246
+BUILD_API_URL=https://web-presence-api.quoppo.workers.dev
 ```
 
 ## Environment File Priority
@@ -143,6 +162,8 @@ VITE_DEBUG=false
 | `VITE_DEV_MODE` | `true` | `false` | Development mode flag |
 | `VITE_NODE_ENV` | `development` | `production` | Environment indicator |
 | `VITE_DEBUG` | `true` | `false` | Debug logging flag |
+| `BUILD_API_KEY` | `API_KEY_tu1ylu2nm7wnebxz05vfe` | `d458ab3fede5cfefb6f33b8aa21cc93988052c020e59075b8bdc6d95b9847246` | Build-time API authentication |
+| `BUILD_API_URL` | `http://localhost:8787` | `https://web-presence-api.quoppo.workers.dev` | Build-time API endpoint |
 
 ## Troubleshooting
 

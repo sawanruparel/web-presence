@@ -14,7 +14,10 @@ export const config = {
   isDev: import.meta.env.VITE_DEV_MODE === 'true' || import.meta.env.DEV,
   
   // Environment
-  environment: import.meta.env.MODE || 'development',
+  environment: import.meta.env.VITE_NODE_ENV || import.meta.env.MODE || 'development',
+  
+  // Debug logging flag
+  debug: import.meta.env.VITE_DEBUG === 'true',
   
   // API endpoints
   endpoints: {
@@ -30,11 +33,12 @@ export const isDevelopment = () => config.isDev
 export const isProduction = () => !config.isDev
 export const getApiUrl = (endpoint: string) => `${config.apiBaseUrl}${endpoint}`
 
-// Log configuration in development
-if (config.isDev) {
+// Log configuration in development or when debug is enabled
+if (config.isDev || config.debug) {
   console.log('🔧 Environment Configuration:', {
     apiBaseUrl: config.apiBaseUrl,
     isDev: config.isDev,
-    environment: config.environment
+    environment: config.environment,
+    debug: config.debug
   })
 }
