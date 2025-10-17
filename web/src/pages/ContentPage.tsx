@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import type { ContentItem } from '../utils/content-processor'
 import { Footer } from '../components/footer'
 import { PageNavigation } from '../components/page-navigation'
-import { PasswordModal } from '../components/password-modal'
+import { AccessModal } from '../components/access-modal'
 import { useProtectedContent } from '../hooks/use-protected-content'
 
 interface ContentPageProps {
@@ -17,10 +17,12 @@ export function ContentPage({ content, type, slug }: ContentPageProps) {
   
   const { 
     checkAccess, 
-    verifyPassword, 
+    verifyCredentials, 
     fetchContent, 
     isModalOpen, 
     closeModal,
+    accessMode,
+    description,
     isLoading: hookLoading,
     error: hookError
   } = useProtectedContent()
@@ -82,9 +84,9 @@ export function ContentPage({ content, type, slug }: ContentPageProps) {
     checkContent()
   }, [content, type, slug, checkAccess, fetchContent])
 
-  const handlePasswordSubmit = async (password: string) => {
+  const handleCredentialsSubmit = async (credentials: { password?: string; email?: string }) => {
     try {
-      await verifyPassword(type, slug, password)
+      await verifyCredentials(type, slug, credentials)
       // Content will be fetched automatically by the hook
     } catch (err) {
       // Error is handled by the hook
@@ -175,11 +177,12 @@ export function ContentPage({ content, type, slug }: ContentPageProps) {
         )}
       </article>
 
-      <PasswordModal
+      <AccessModal
         isOpen={isModalOpen}
         onClose={closeModal}
-        onSubmit={handlePasswordSubmit}
+        onSubmit={handleCredentialsSubmit}
         title={displayContent?.title || 'Protected Content'}
+        accessMode={accessMode || 'password'}
         isLoading={hookLoading}
         error={hookError || undefined}
       />

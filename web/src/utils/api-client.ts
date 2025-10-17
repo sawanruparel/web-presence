@@ -6,33 +6,23 @@
  */
 
 import { config, getApiUrl } from '../config/environment'
+import type {
+  VerifyPasswordRequest,
+  VerifyPasswordResponse,
+  ProtectedContentResponse,
+  AccessCheckResponse,
+  AccessMode,
+  ApiError
+} from '../../../types/api'
 
-export interface VerifyPasswordRequest {
-  type: 'notes' | 'publications' | 'ideas' | 'pages'
-  slug: string
-  password: string
-}
-
-export interface VerifyPasswordResponse {
-  success: boolean
-  token?: string
-  message?: string
-}
-
-export interface ProtectedContentResponse {
-  slug: string
-  title: string
-  date: string
-  readTime: string
-  type: string
-  excerpt: string
-  content: string
-  html: string
-}
-
-export interface ApiError {
-  error: string
-  message?: string
+// Re-export types for convenience
+export type {
+  VerifyPasswordRequest,
+  VerifyPasswordResponse,
+  ProtectedContentResponse,
+  AccessCheckResponse,
+  AccessMode,
+  ApiError
 }
 
 class ApiClient {
@@ -41,7 +31,37 @@ class ApiClient {
   }
 
   /**
-   * Verify password for a protected content item
+   * Check access requirements for a content item
+   */
+  async checkAccess(
+    type: 'notes' | 'publications' | 'ideas' | 'pages',
+    slug: string
+  ): Promise<AccessCheckResponse> {
+    try {
+      const url = getApiUrl(`${config.endpoints.accessCheck}/${type}/${slug}`)
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Content not found')
+        }
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to check access:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Verify password or email for a protected content item
    */
   async verifyPassword(request: VerifyPasswordRequest): Promise<VerifyPasswordResponse> {
     try {

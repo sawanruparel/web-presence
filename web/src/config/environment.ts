@@ -21,9 +21,10 @@ export const config = {
   
   // API endpoints
   endpoints: {
-    verifyPassword: '/api/verify-password',
-    protectedContent: '/api/protected-content',
-    health: '/api/health'
+    verifyPassword: '/auth/verify',
+    protectedContent: '/auth/content',
+    accessCheck: '/auth/access',
+    health: '/health'
   }
 } as const
 

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { apiClient, type ProtectedContentResponse } from '../utils/api-client'
+import { apiClient, type ProtectedContentResponse, type AccessMode } from '../utils/api-client'
 import { 
   isContentVerified, 
   getContentToken, 
@@ -11,11 +11,13 @@ export interface UseProtectedContentState {
   error: string | null
   isModalOpen: boolean
   content: ProtectedContentResponse | null
+  accessMode: AccessMode | null
+  description: string | null
 }
 
 export interface UseProtectedContentActions {
   checkAccess: (type: 'notes' | 'publications' | 'ideas' | 'pages', slug: string) => Promise<boolean>
-  verifyPassword: (type: 'notes' | 'publications' | 'ideas' | 'pages', slug: string, password: string) => Promise<void>
+  verifyCredentials: (type: 'notes' | 'publications' | 'ideas' | 'pages', slug: string, credentials: { password?: string; email?: string }) => Promise<void>
   fetchContent: (type: 'notes' | 'publications' | 'ideas' | 'pages', slug: string) => Promise<ProtectedContentResponse>
   openModal: () => void
   closeModal: () => void
@@ -27,6 +29,8 @@ export function useProtectedContent(): UseProtectedContentState & UseProtectedCo
   const [error, setError] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [content, setContent] = useState<ProtectedContentResponse | null>(null)
+  const [accessMode, setAccessMode] = useState<AccessMode | null>(null)
+  const [description, setDescription] = useState<string | null>(null)
 
   const clearError = useCallback(() => {
     setError(null)
@@ -52,7 +56,26 @@ export function useProtectedContent(): UseProtectedContentState & UseProtectedCo
         return true
       }
 
-      // If not verified, open modal for password input
+      // Call backend to check access requirements
+      const accessInfo = await apiClient.checkAccess(type, slug)
+      setAccessMode(accessInfo.accessMode)
+      setDescription(accessInfo.message)
+
+      // If open access, proceed without modal
+      if (accessInfo.accessMode === 'open') {
+        // For open content, generate a token anyway
+        const response = await apiClient.verifyPassword({
+          type,
+          slug
+        })
+        
+        if (response.success && response.token) {
+          storeContentVerification(type, slug, response.token)
+          return true
+        }
+      }
+
+      // Otherwise, open modal for password/email input
       openModal()
       return false
     } catch (err) {
@@ -62,20 +85,20 @@ export function useProtectedContent(): UseProtectedContentState & UseProtectedCo
     }
   }, [openModal])
 
-  const verifyPassword = useCallback(async (
+  const verifyCredentials = useCallback(async (
     type: 'notes' | 'publications' | 'ideas' | 'pages',
     slug: string,
-    password: string
+    credentials: { password?: string; email?: string }
   ): Promise<void> => {
     setIsLoading(true)
     setError(null)
 
     try {
-      // Call API to verify password
+      // Call API to verify credentials (password or email)
       const response = await apiClient.verifyPassword({
         type,
         slug,
-        password
+        ...credentials
       })
 
       if (response.success && response.token) {
@@ -88,10 +111,10 @@ export function useProtectedContent(): UseProtectedContentState & UseProtectedCo
         // Fetch the content
         await fetchContent(type, slug)
       } else {
-        throw new Error(response.message || 'Password verification failed')
+        throw new Error(response.message || 'Verification failed')
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Password verification failed'
+      const errorMessage = err instanceof Error ? err.message : 'Verification failed'
       setError(errorMessage)
       throw err
     } finally {
@@ -133,10 +156,12 @@ export function useProtectedContent(): UseProtectedContentState & UseProtectedCo
     error,
     isModalOpen,
     content,
+    accessMode,
+    description,
     
     // Actions
     checkAccess,
-    verifyPassword,
+    verifyCredentials,
     fetchContent,
     openModal,
     closeModal,

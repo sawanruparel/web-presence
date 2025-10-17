@@ -1,0 +1,278 @@
+#!/usr/bin/env node
+
+/**
+ * Access Control System Examples
+ * 
+ * This file demonstrates how to use the new access control system with all three modes.
+ * Run with: node scripts/test-access-control.js
+ */
+
+const API_BASE = process.env.API_BASE || 'http://localhost:8787'
+
+// Simulate the accessControlService logic for verification
+const accessControlService = {
+  generateContentPassword(type, slug) {
+    const baseString = `${type}-${slug}`
+    const hash = this.simpleHash(baseString)
+    return `${type}-${slug}-${hash}`
+  },
+
+  simpleHash(str) {
+    let hash = 0
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash
+    }
+    return Math.abs(hash).toString(36).substring(0, 6)
+  }
+}
+
+// Test cases
+const testCases = [
+  {
+    name: 'Test 1: Open Access - No authentication required',
+    type: 'ideas',
+    slug: 'extending-carplay',
+    accessMode: 'open',
+    shouldWork: true,
+    payload: {}
+  },
+  {
+    name: 'Test 2: Password Protected - Valid password',
+    type: 'notes',
+    slug: 'sample-protected-idea',
+    accessMode: 'password',
+    shouldWork: true,
+    payload: {
+      password: accessControlService.generateContentPassword('notes', 'sample-protected-idea')
+    }
+  },
+  {
+    name: 'Test 3: Password Protected - Invalid password',
+    type: 'notes',
+    slug: 'sample-protected-idea',
+    accessMode: 'password',
+    shouldWork: false,
+    payload: {
+      password: 'wrong-password'
+    }
+  },
+  {
+    name: 'Test 4: Email List - Authorized email',
+    type: 'publications',
+    slug: 'decisionrecord-io',
+    accessMode: 'email-list',
+    shouldWork: true,
+    payload: {
+      email: 'admin@example.com'
+    }
+  },
+  {
+    name: 'Test 5: Email List - Unauthorized email',
+    type: 'publications',
+    slug: 'decisionrecord-io',
+    accessMode: 'email-list',
+    shouldWork: false,
+    payload: {
+      email: 'unauthorized@example.com'
+    }
+  },
+  {
+    name: 'Test 6: Email List - Case insensitive match',
+    type: 'publications',
+    slug: 'decisionrecord-io',
+    accessMode: 'email-list',
+    shouldWork: true,
+    payload: {
+      email: 'ADMIN@EXAMPLE.COM'
+    }
+  }
+]
+
+console.log('🧪 Access Control System Test Suite\n')
+console.log(`API Base: ${API_BASE}\n`)
+
+// Example: Check access requirements
+async function checkAccess(type, slug) {
+  console.log(`\n📋 Checking access requirements for ${type}/${slug}...`)
+  
+  try {
+    const response = await fetch(`${API_BASE}/auth/access/${type}/${slug}`)
+    const data = await response.json()
+    
+    console.log('Response:', JSON.stringify(data, null, 2))
+    return data
+  } catch (error) {
+    console.error('Error:', error.message)
+  }
+}
+
+// Example: Verify access (all modes)
+async function verifyAccess(type, slug, payload) {
+  console.log(`\n🔐 Verifying access for ${type}/${slug}...`)
+  console.log('Payload:', JSON.stringify(payload, null, 2))
+  
+  try {
+    const response = await fetch(`${API_BASE}/auth/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        type,
+        slug,
+        ...payload
+      })
+    })
+    
+    const data = await response.json()
+    console.log('Response:', {
+      status: response.status,
+      success: data.success,
+      accessMode: data.accessMode,
+      message: data.message,
+      token: data.token ? `${data.token.substring(0, 20)}...` : undefined
+    })
+    
+    return { response, data }
+  } catch (error) {
+    console.error('Error:', error.message)
+  }
+}
+
+// Example: Get protected content with token
+async function getProtectedContent(type, slug, token) {
+  console.log(`\n📄 Fetching protected content for ${type}/${slug}...`)
+  
+  try {
+    const response = await fetch(`${API_BASE}/auth/content/${type}/${slug}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    
+    const data = await response.json()
+    console.log('Response:', {
+      status: response.status,
+      title: data.title,
+      slug: data.slug,
+      type: data.type,
+      contentPreview: data.content ? `${data.content.substring(0, 50)}...` : undefined
+    })
+    
+    return data
+  } catch (error) {
+    console.error('Error:', error.message)
+  }
+}
+
+// Usage examples for documentation
+const usageExamples = {
+  frontend: `
+// Frontend Example: Using the AccessModal component
+import { AccessModal } from './components/access-modal'
+import { useEffect, useState } from 'react'
+
+function ProtectedContent({ type, slug }) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [accessMode, setAccessMode] = useState('open')
+  const [token, setToken] = useState(null)
+  const [error, setError] = useState(null)
+  
+  useEffect(() => {
+    // Check access requirements
+    fetch(\`/auth/access/\${type}/\${slug}\`)
+      .then(r => r.json())
+      .then(data => {
+        setAccessMode(data.accessMode)
+        if (data.accessMode !== 'open') {
+          setIsModalOpen(true)
+        } else {
+          loadContent()
+        }
+      })
+  }, [type, slug])
+  
+  const handleAccessSubmit = async (payload) => {
+    try {
+      const response = await fetch('/auth/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, slug, ...payload })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        setToken(data.token)
+        setIsModalOpen(false)
+        loadContent()
+      } else {
+        setError(data.message)
+      }
+    } catch (err) {
+      setError('Verification failed')
+    }
+  }
+  
+  const loadContent = async () => {
+    const headers = token ? { 'Authorization': \`Bearer \${token}\` } : {}
+    const response = await fetch(\`/auth/content/\${type}/\${slug}\`, { headers })
+    const content = await response.json()
+    // Render content...
+  }
+  
+  return (
+    <>
+      <AccessModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleAccessSubmit}
+        title="My Protected Content"
+        accessMode={accessMode}
+        error={error}
+      />
+      {/* Content rendering... */}
+    </>
+  )
+}
+`,
+  
+  curl: `
+# Example 1: Check access requirements
+curl http://localhost:8787/auth/access/notes/sample-protected-idea
+
+# Example 2: Verify password-protected content
+curl -X POST http://localhost:8787/auth/verify \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "type": "notes",
+    "slug": "sample-protected-idea",
+    "password": "notes-sample-protected-idea-a1b2c3"
+  }'
+
+# Example 3: Verify email-list protected content
+curl -X POST http://localhost:8787/auth/verify \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "type": "publications",
+    "slug": "decisionrecord-io",
+    "email": "admin@example.com"
+  }'
+
+# Example 4: Get protected content with token
+TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+curl http://localhost:8787/auth/content/notes/sample-protected-idea \\
+  -H "Authorization: Bearer \${TOKEN}"
+`
+}
+
+console.log('\n📚 Usage Examples:\n')
+console.log('Frontend (React):', usageExamples.frontend)
+console.log('\nCURL Commands:', usageExamples.curl)
+
+console.log('\n✅ Test suite defined. Run the tests manually with API calls.')
+console.log('Example:')
+console.log('  node scripts/test-access-control.js check notes sample-protected-idea')
+console.log('  node scripts/test-access-control.js verify notes sample-protected-idea password')
