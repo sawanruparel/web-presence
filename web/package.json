@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "npm run build:content && vite",
-    "build": "npm run build:content && tsc && vite build",
+    "build": "npm run clean && npm run build:content && tsc && vite build",
     "build:content": "node scripts/generate-static-content.js",
     "copy:content": "node scripts/copy-content-files.js",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
-    "sync:env": "node scripts/sync-env-to-pages.js"
+    "sync:env": "node scripts/sync-env-to-pages.js",
+    "clean": "rm -rf dist rivve/html-output"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.6",

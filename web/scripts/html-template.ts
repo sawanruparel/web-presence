@@ -99,7 +99,7 @@ export function generateHTMLTemplate(contentData: ContentData, assetPaths?: { js
     <meta name="robots" content="index, follow">
     <meta name="generator" content="Rivve + Vite">
     <meta name="theme-color" content="#007bff">
-    <link rel="canonical" href="${frontmatter?.canonical_url || `http://localhost:3000/${frontmatter?.slug || 'content'}.html`}">
+    <link rel="canonical" href="${frontmatter?.canonical_url || `https://sawanruparel.com/${frontmatter?.slug || 'content'}.html`}">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     

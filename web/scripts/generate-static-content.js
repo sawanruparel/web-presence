@@ -400,6 +400,9 @@ function generateRivveHTML(frontmatter, body, slug) {
   const categories = frontmatter?.categories || []
   const keywords = frontmatter?.keywords || []
   
+  // Use production URL instead of localhost
+  const baseUrl = process.env.VITE_BASE_URL || 'https://sawanruparel.com'
+  
   // Convert markdown to HTML
   const htmlContent = marked(body)
   
@@ -414,7 +417,7 @@ function generateRivveHTML(frontmatter, body, slug) {
     <meta name="author" content="${escapeHtml(author)}">
     <meta name="generator" content="Rivve">
     <meta name="theme-color" content="#007bff">
-    <link rel="canonical" href="${frontmatter?.canonical_url || `http://localhost:3000/${slug}.html`}">
+    <link rel="canonical" href="${frontmatter?.canonical_url || `${baseUrl}/${slug}.html`}">
     ${keywords.length > 0 ? `<meta name="keywords" content="${keywords.map(escapeHtml).join(', ')}">` : ''}
     <meta name="reading-time" content="${frontmatter?.reading_time || 0}">
     <meta name="article:published_time" content="${frontmatter?.date || new Date().toISOString().split('T')[0]}">
@@ -423,7 +426,7 @@ function generateRivveHTML(frontmatter, body, slug) {
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="${frontmatter?.og_type || 'article'}">
-    <meta property="og:url" content="${frontmatter?.og_url || frontmatter?.canonical_url || `http://localhost:3000/${slug}.html`}">
+    <meta property="og:url" content="${frontmatter?.og_url || frontmatter?.canonical_url || `${baseUrl}/${slug}.html`}">
     <meta property="og:title" content="${escapeHtml(frontmatter?.og_title || title)}">
     <meta property="og:description" content="${escapeHtml(frontmatter?.og_description || description)}">
     <meta property="og:site_name" content="Rivve">
@@ -436,7 +439,7 @@ function generateRivveHTML(frontmatter, body, slug) {
     
     <!-- X (Twitter) -->
     <meta name="twitter:card" content="${frontmatter?.x_card || 'summary'}">
-    <meta name="twitter:url" content="${frontmatter?.og_url || frontmatter?.canonical_url || `http://localhost:3000/${slug}.html`}">
+    <meta name="twitter:url" content="${frontmatter?.og_url || frontmatter?.canonical_url || `${baseUrl}/${slug}.html`}">
     <meta name="twitter:title" content="${escapeHtml(frontmatter?.x_title || frontmatter?.og_title || title)}">
     <meta name="twitter:description" content="${escapeHtml(frontmatter?.x_description || frontmatter?.og_description || description)}">
     ${frontmatter?.x_image || frontmatter?.image ? `<meta name="twitter:image" content="${escapeHtml(frontmatter?.x_image || frontmatter?.image || '')}">` : ''}

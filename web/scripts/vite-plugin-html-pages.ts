@@ -342,11 +342,16 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
     },
     closeBundle() {
       try {
-        // Generate content metadata during build
-        const metadata = generateContentMetadata(contentDir, rivveOutputDir)
+        // Generate rivve HTML files first
+        // Use absolute path to content directory
+        const absoluteContentDir = path.resolve(__dirname, '..', '..', 'content')
+        generateRivveHTMLFiles(absoluteContentDir, rivveOutputDir)
         
-        // Generate rivve HTML files
-        generateRivveHTMLFiles(contentDir, rivveOutputDir)
+        // Read from src/data which was populated by build:content step
+        const srcMetadataPath = path.join(__dirname, '..', 'src', 'data', 'content-metadata.json')
+        const metadata = fs.existsSync(srcMetadataPath) 
+          ? JSON.parse(fs.readFileSync(srcMetadataPath, 'utf-8'))
+          : generateContentMetadata(contentDir, rivveOutputDir)
         
         // Process each content type
         const contentTypes = ['notes', 'publications', 'ideas']
@@ -381,6 +386,7 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
             
             // Try to find rivve HTML file
             const rivveHtmlPath = path.join(rivveOutputDir, `${slug}.html`)
+            
             
             if (fs.existsSync(rivveHtmlPath)) {
               // Process rivve HTML and generate template
