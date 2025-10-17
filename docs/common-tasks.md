@@ -511,13 +511,10 @@ When you update config, document:
 
 Review these files to understand the system better:
 
-1. **Architecture**: `docs/access-control-system.md`
-2. **Examples**: `docs/ACCESS_CONTROL_EXAMPLES.md`
-3. **Quick Ref**: `docs/ACCESS_CONTROL_QUICK_REFERENCE.md`
-4. **Migration**: `docs/MIGRATION_GUIDE.md`
-5. **Service Code**: `api/src/services/access-control-service.ts`
-6. **Routes**: `api/src/routes/protected-content.ts`
-7. **Frontend**: `web/src/components/access-modal.tsx`
+1. **Architecture**: `docs/api/access-control.md`
+2. **Service Code**: `api/src/services/access-control-service.ts`
+3. **Routes**: `api/src/routes/protected-content.ts`
+4. **Frontend**: `web/src/components/access-modal.tsx`
 
 ---
 

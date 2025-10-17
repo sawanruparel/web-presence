@@ -1,4 +1,4 @@
-# Backend API Documentation
+# API Architecture
 
 This document describes the backend API implementation using Hono and Cloudflare Workers.
 
@@ -9,6 +9,7 @@ The backend API is built with:
 - **Cloudflare Workers** - Serverless runtime environment
 - **JWT** - Token-based authentication
 - **TypeScript** - Type safety and developer experience
+- **Cloudflare D1** - SQLite database for data persistence
 
 ## 📁 Project Structure
 
@@ -18,59 +19,22 @@ api/
 │   ├── index.ts              # Main Hono application
 │   ├── routes/
 │   │   ├── health.ts         # Health check endpoint
-│   │   └── protected-content.ts # Protected content routes
+│   │   ├── protected-content.ts # Protected content routes
+│   │   └── internal.ts       # Internal admin routes
 │   ├── middleware/
 │   │   ├── auth.ts           # JWT authentication middleware
-│   │   └── error-handler.ts  # Error handling middleware
+│   │   ├── error-handler.ts  # Error handling middleware
+│   │   └── rate-limiter.ts   # Rate limiting middleware
 │   ├── services/
-│   │   ├── auth-service.ts   # Authentication logic
+│   │   ├── access-control-service.ts # Access control logic
+│   │   ├── database-service.ts # Database operations
 │   │   └── content-service.ts # Content retrieval logic
 │   └── utils/                # Helper functions
+├── config/
+│   └── access-control.json   # Access control configuration
 ├── wrangler.toml             # Cloudflare Workers configuration
 ├── tsconfig.json             # TypeScript configuration
 └── package.json              # Dependencies
-```
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 18+ 
-- npm or yarn
-- Cloudflare account (for deployment)
-
-### Local Development
-
-1. **Install dependencies:**
-   ```bash
-   cd api
-   npm install
-   ```
-
-2. **Set up environment variables:**
-   ```bash
-   cp .dev.vars.example .dev.vars
-   # Edit .dev.vars with your values
-   ```
-
-3. **Start development server:**
-   ```bash
-   npm run dev
-   ```
-
-   The API will be available at `http://localhost:8787`
-
-### From Root Directory
-
-```bash
-# Install all dependencies
-npm run install:all
-
-# Start both frontend and backend
-npm run dev
-
-# Start only the API
-npm run dev:api
 ```
 
 ## 🔧 Configuration
@@ -83,8 +47,11 @@ Create a `.dev.vars` file in the `api/` directory:
 # JWT secret for token signing (use a strong secret in production)
 JWT_SECRET=your-super-secret-jwt-key-here
 
-# Password for accessing protected content
-CONTENT_PASSWORD=your-content-password-here
+# Database connection (Cloudflare D1)
+DB=database-name
+
+# Internal API key for admin endpoints
+INTERNAL_API_KEY=your-internal-api-key
 ```
 
 ### Wrangler Configuration
@@ -96,6 +63,11 @@ name = "web-presence-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
+[[d1_databases]]
+binding = "DB"
+database_name = "web-presence-db"
+database_id = "your-database-id"
+
 [env.development]
 name = "web-presence-api-dev"
 
@@ -103,107 +75,15 @@ name = "web-presence-api-dev"
 name = "web-presence-api"
 ```
 
-## 📡 API Endpoints
-
-### Health Check
-
-**GET** `/api/health`
-
-Returns the API status and version information.
-
-**Response:**
-```json
-{
-  "status": "ok",
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "version": "1.0.0"
-}
-```
-
-### Authentication
-
-**POST** `/api/auth/verify`
-
-Verifies content-specific password and returns JWT token for protected content access.
-
-**Request Body:**
-```json
-{
-  "type": "notes",
-  "slug": "my-protected-note",
-  "password": "notes-my-protected-note-abc123"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-**Password Format:**
-Each content item has a unique password generated using the format: `{type}-{slug}-{hash}`
-- `type`: Content type (notes, publications, ideas, pages)
-- `slug`: Content slug/identifier
-- `hash`: 6-character hash generated from type and slug
-
-### Password Discovery
-
-**GET** `/api/auth/password/:type/:slug`
-
-Get the password for a specific content item (useful for development and testing).
-
-**Example:**
-```bash
-curl http://localhost:8787/auth/password/notes/my-secret-note
-```
-
-**Response:**
-```json
-{
-  "type": "notes",
-  "slug": "my-secret-note",
-  "password": "notes-my-secret-note-xyz789",
-  "note": "Use this password to access the protected content"
-}
-```
-
-### Protected Content
-
-**GET** `/api/auth/content/:type/:slug`
-
-Retrieves protected content after authentication.
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Response:**
-```json
-{
-  "slug": "my-protected-note",
-  "title": "My Protected Note",
-  "date": "2024-01-01",
-  "readTime": "5 min",
-  "type": "notes",
-  "excerpt": "This is a protected note...",
-  "content": "# My Protected Note\n\nContent here...",
-  "html": "<h1>My Protected Note</h1><p>Content here...</p>"
-}
-```
-
 ## 🔒 Authentication Flow
 
 1. **Password Discovery:**
-   - Client requests password for specific content: `GET /api/auth/password/:type/:slug`
+   - Client requests password for specific content: `GET /auth/password/:type/:slug`
    - Server generates content-specific password using type and slug
    - Password format: `{type}-{slug}-{hash}` (e.g., `notes-my-secret-abc123`)
 
 2. **Password Verification:**
-   - Client sends content-specific password to `/api/auth/verify`
+   - Client sends content-specific password to `/auth/verify`
    - Server validates password against generated content password
    - If valid, server generates JWT token with content access info
 
@@ -270,7 +150,7 @@ export const customMiddleware = async (c: Context, next: Next) => {
 
 3. **Set environment variables in Cloudflare dashboard:**
    - Go to Workers & Pages > Your Worker > Settings > Variables
-   - Add `JWT_SECRET` and `CONTENT_PASSWORD`
+   - Add `JWT_SECRET`, `DB`, and `INTERNAL_API_KEY`
 
 ### Environment-Specific Deployments
 
@@ -302,15 +182,15 @@ Use curl or any HTTP client:
 
 ```bash
 # Health check
-curl http://localhost:8787/api/health
+curl http://localhost:8787/health
 
 # Verify password
-curl -X POST http://localhost:8787/api/auth/verify \
+curl -X POST http://localhost:8787/auth/verify \
   -H "Content-Type: application/json" \
   -d '{"type":"notes","slug":"test","password":"dev-password"}'
 
 # Get protected content (with token)
-curl http://localhost:8787/api/auth/content/notes/test \
+curl http://localhost:8787/auth/content/notes/test \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 

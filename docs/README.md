@@ -4,12 +4,48 @@ This directory contains comprehensive documentation for the Web Presence project
 
 ## 📁 Documentation Structure
 
+### Core Documentation
 - **[Architecture Overview](./architecture.md)** - System architecture, components, and data flow
-- **[Build System](./build-system.md)** - Vite configuration, build process, and deployment
-- **[Content Management](./content-management.md)** - Content processing, Rivve integration, and markdown handling
 - **[Development Guide](./development.md)** - Setup, development workflow, and debugging
+- **[Content Management](./content-management.md)** - Content processing, Rivve integration, and markdown handling
 - **[Extension Guide](./extension.md)** - How to extend and customize the system
-- **[API Reference](./api-reference.md)** - Component APIs, utilities, and interfaces
+- **[Common Tasks](./common-tasks.md)** - Frequently performed tasks and procedures
+- **[Environment Setup](./environment-setup.md)** - Environment configuration and setup
+- **[Build System](./build-system.md)** - Build process and configuration
+
+### API Documentation
+- **[API Overview](./api/README.md)** - Backend API documentation
+- **[API Architecture](./api/architecture.md)** - System architecture and design
+- **[API Endpoints](./api/endpoints.md)** - Complete API endpoint reference
+- **[Access Control](./api/access-control.md)** - Content access control system
+- **[API Deployment](./api/deployment.md)** - Deployment and configuration guide
+
+### Web Documentation
+- **[Web Overview](./web/README.md)** - Frontend application documentation
+- **[Web Architecture](./web/architecture.md)** - Frontend system architecture
+- **[Components](./web/components.md)** - React component reference
+- **[Build System](./web/build-system.md)** - Vite configuration and build process
+- **[Web Deployment](./web/deployment.md)** - Frontend deployment guide
+
+### Testing Documentation
+- **[Testing Overview](./tests/README.md)** - Test suite documentation
+- **[API Testing](./tests/api-testing.md)** - Backend API test suite and procedures
+- **[E2E Testing](./tests/e2e-testing.md)** - End-to-end testing with Playwright
+- **[Manual Testing](./tests/manual-testing.md)** - Manual testing guide and test cases
+
+### Technical Decision Records
+- **[TDR Overview](./tdr/README.md)** - Technical Decision Records index
+- **[001 - Access Control Architecture](./tdr/001-access-control-architecture.md)** - Access control system design
+- **[002 - Content Folder Structure](./tdr/002-content-folder-structure.md)** - Content organization decisions
+- **[003 - Database Implementation](./tdr/003-database-implementation.md)** - Database architecture decisions
+- **[004 - Frontend Architecture](./tdr/004-frontend-architecture.md)** - Frontend system design
+
+### AI Development Tools
+- **[Prompts Overview](./prompts/README.md)** - AI tool context and coding guidelines
+- **[System Context](./prompts/system-context.md)** - Comprehensive system context for AI tools
+- **[Component Patterns](./prompts/component-patterns.md)** - React component development patterns
+- **[Testing Patterns](./prompts/testing-patterns.md)** - Testing strategies and patterns
+
 
 ## 🚀 Quick Start
 

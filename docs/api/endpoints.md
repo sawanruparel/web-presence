@@ -1,4 +1,6 @@
-# API Endpoints Documentation
+# API Endpoints
+
+Complete reference for all API endpoints.
 
 ## Overview
 
@@ -6,12 +8,13 @@ The API provides two main endpoint groups:
 
 1. **Content Catalog** (`/api/content-catalog`) - For build script to fetch access rules
 2. **Internal Admin** (`/api/internal/*`) - For managing access rules and viewing logs
+3. **Auth** (`/auth/*`) - For content access control
 
-All endpoints require API key authentication via `X-API-Key` header.
+All endpoints require API key authentication via `X-API-Key` header except auth endpoints.
 
 ## Authentication
 
-All endpoints require API key in the request header:
+Most endpoints require API key in the request header:
 
 ```bash
 X-API-Key: <your-api-key>
@@ -20,6 +23,21 @@ X-API-Key: <your-api-key>
 The API key is configured in:
 - `/api/.dev.vars` (local): `INTERNAL_API_KEY`
 - `/web/.env.local` (build script): `BUILD_API_KEY`
+
+## Health Check
+
+### GET /health
+
+Returns the API status and version information.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "version": "1.0.0"
+}
+```
 
 ## Content Catalog Endpoints
 
@@ -77,6 +95,84 @@ Get access rules for specific content type (notes, ideas, publications, pages).
 }
 ```
 
+## Auth Endpoints
+
+These endpoints handle content access control and authentication.
+
+### GET /auth/access/:type/:slug
+
+Check what access is required for a content item.
+
+**Response:**
+```json
+{
+  "accessMode": "password",
+  "requiresPassword": true,
+  "requiresEmail": false,
+  "message": "Password-protected content"
+}
+```
+
+### POST /auth/verify
+
+Verify access credentials and get token.
+
+**Request Body:**
+```json
+{
+  "type": "notes",
+  "slug": "my-article",
+  "password": "user-password",    // for password mode
+  "email": "user@example.com"     // for email-list mode
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "accessMode": "password"
+}
+```
+
+### GET /auth/content/:type/:slug
+
+Get protected content after authentication.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "slug": "my-article",
+  "title": "My Article",
+  "date": "2024-01-01",
+  "readTime": "5 min",
+  "type": "notes",
+  "excerpt": "This is a protected article...",
+  "content": "# My Article\n\nContent here...",
+  "html": "<h1>My Article</h1><p>Content here...</p>"
+}
+```
+
+### GET /auth/password/:type/:slug
+
+Get password for a content item (development only).
+
+**Response:**
+```json
+{
+  "type": "notes",
+  "slug": "my-article",
+  "password": "notes-my-article-abc123",
+  "note": "Use this password to access the protected content"
+}
+```
+
 ## Internal Admin Endpoints
 
 These endpoints are for managing access rules, email allowlists, and viewing logs.
@@ -115,16 +211,6 @@ curl http://localhost:8787/api/internal/access-rules?type=notes \
 }
 ```
 
-#### GET /api/internal/access-rules/:type/:slug
-
-Get specific access rule.
-
-**Example:**
-```bash
-curl http://localhost:8787/api/internal/access-rules/notes/my-note \
-  -H "X-API-Key: YOUR_KEY"
-```
-
 #### POST /api/internal/access-rules
 
 Create new access rule.
@@ -141,49 +227,6 @@ Create new access rule.
 }
 ```
 
-**Examples:**
-
-Open access:
-```bash
-curl -X POST http://localhost:8787/api/internal/access-rules \
-  -H "X-API-Key: YOUR_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "notes",
-    "slug": "public-note",
-    "accessMode": "open",
-    "description": "Public note"
-  }'
-```
-
-Password protected:
-```bash
-curl -X POST http://localhost:8787/api/internal/access-rules \
-  -H "X-API-Key: YOUR_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "ideas",
-    "slug": "secret-idea",
-    "accessMode": "password",
-    "password": "mysecret123",
-    "description": "Secret idea"
-  }'
-```
-
-Email-list protected:
-```bash
-curl -X POST http://localhost:8787/api/internal/access-rules \
-  -H "X-API-Key: YOUR_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "publications",
-    "slug": "private-pub",
-    "accessMode": "email-list",
-    "description": "Private publication",
-    "allowedEmails": ["user1@example.com", "user2@example.com"]
-  }'
-```
-
 #### PUT /api/internal/access-rules/:type/:slug
 
 Update existing access rule.
@@ -198,27 +241,9 @@ Update existing access rule.
 }
 ```
 
-**Example:**
-```bash
-curl -X PUT http://localhost:8787/api/internal/access-rules/notes/my-note \
-  -H "X-API-Key: YOUR_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "accessMode": "password",
-    "password": "newpassword123",
-    "description": "Now password protected"
-  }'
-```
-
 #### DELETE /api/internal/access-rules/:type/:slug
 
 Delete access rule (also removes associated email allowlist entries).
-
-**Example:**
-```bash
-curl -X DELETE http://localhost:8787/api/internal/access-rules/notes/my-note \
-  -H "X-API-Key: YOUR_KEY"
-```
 
 ### Email Allowlist Management
 
@@ -233,32 +258,9 @@ Add email to allowlist.
 }
 ```
 
-**Example:**
-```bash
-curl -X POST http://localhost:8787/api/internal/access-rules/publications/my-pub/emails \
-  -H "X-API-Key: YOUR_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"email": "newuser@example.com"}'
-```
-
-**Response:**
-```json
-{
-  "message": "Email added to allowlist",
-  "email": "newuser@example.com",
-  "allowedEmails": ["user1@example.com", "user2@example.com", "newuser@example.com"]
-}
-```
-
 #### DELETE /api/internal/access-rules/:type/:slug/emails/:email
 
 Remove email from allowlist.
-
-**Example:**
-```bash
-curl -X DELETE http://localhost:8787/api/internal/access-rules/publications/my-pub/emails/user1@example.com \
-  -H "X-API-Key: YOUR_KEY"
-```
 
 ### Analytics & Logs
 
@@ -270,21 +272,6 @@ Get access logs. Supports query parameters:
 - `type` - Filter by content type
 - `slug` - Filter by content slug
 
-**Example:**
-```bash
-# Get recent logs
-curl http://localhost:8787/api/internal/logs?limit=50 \
-  -H "X-API-Key: YOUR_KEY"
-
-# Get failed attempts
-curl http://localhost:8787/api/internal/logs?failed=true&limit=20 \
-  -H "X-API-Key: YOUR_KEY"
-
-# Get logs for specific content
-curl http://localhost:8787/api/internal/logs?type=notes&slug=my-note \
-  -H "X-API-Key: YOUR_KEY"
-```
-
 #### GET /api/internal/stats
 
 Get access statistics.
@@ -292,12 +279,6 @@ Get access statistics.
 **Query Parameters:**
 - `start` - Start date (ISO 8601)
 - `end` - End date (ISO 8601)
-
-**Example:**
-```bash
-curl http://localhost:8787/api/internal/stats \
-  -H "X-API-Key: YOUR_KEY"
-```
 
 ## Error Responses
 
@@ -389,11 +370,3 @@ async function fetchAccessRules() {
   return data.rules
 }
 ```
-
-## Next Steps
-
-1. ✅ API endpoints created and tested
-2. ⏳ Update access-control-service.ts to use database
-3. ⏳ Update build script to call API
-4. ⏳ Create migration script for existing config
-5. ⏳ End-to-end testing

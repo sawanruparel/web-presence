@@ -149,7 +149,7 @@ tests/api/
 └── .env.*                  # Environment configurations
 ```
 
-For detailed testing documentation, see [tests/api/README.md](tests/api/README.md).
+For detailed testing documentation, see [docs/tests/README.md](docs/tests/README.md).
 
 ## Deployment
 
@@ -174,10 +174,30 @@ The backend API deploys to Cloudflare Workers:
    - `JWT_SECRET` - Secret for JWT token signing
    - `CONTENT_PASSWORD` - Password for protected content access
 
-## API Documentation
+## Documentation
 
-See [docs/api-backend.md](docs/api-backend.md) for detailed API documentation.
+### Quick Links
+- **[API Documentation](docs/api/README.md)** - Backend API reference
+- **[Web Documentation](docs/web/README.md)** - Frontend application guide
+- **[Testing](docs/tests/README.md)** - Test suite documentation
+- **[Architecture](docs/architecture.md)** - System architecture overview
 
-## Architecture
+### Documentation Structure
+```
+docs/
+├── api/                    # Backend API documentation
+├── web/                    # Frontend documentation
+├── tests/                  # Testing documentation
+├── tdr/                    # Technical Decision Records
+└── README.md              # Documentation index
+```
 
-See [docs/architecture.md](docs/architecture.md) for detailed system architecture.
+### Key Documentation
+- **[Access Control System](docs/api/access-control.md)** - Content protection system
+- **[Build System](docs/web/build-system.md)** - Vite configuration and build process
+- **[Component Reference](docs/web/components.md)** - React component documentation
+- **[API Endpoints](docs/api/endpoints.md)** - Complete API reference
+- **[Deployment Guide](docs/web/deployment.md)** - Frontend deployment instructions
+- **[Manual Testing](docs/tests/manual-testing.md)** - Manual testing procedures
+
+For a complete overview, see [docs/README.md](docs/README.md).
