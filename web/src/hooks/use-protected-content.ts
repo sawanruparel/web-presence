@@ -50,19 +50,24 @@ export function useProtectedContent(): UseProtectedContentState & UseProtectedCo
     type: 'notes' | 'publications' | 'ideas' | 'pages', 
     slug: string
   ): Promise<boolean> => {
+    console.log('🔍 Checking access for:', type, slug)
     try {
       // Check if content is already verified
       if (isContentVerified(type, slug)) {
+        console.log('✅ Content already verified')
         return true
       }
 
+      console.log('📡 Calling API to check access requirements')
       // Call backend to check access requirements
       const accessInfo = await apiClient.checkAccess(type, slug)
+      console.log('📋 Access info received:', accessInfo)
       setAccessMode(accessInfo.accessMode)
       setDescription(accessInfo.message)
 
       // If open access, proceed without modal
       if (accessInfo.accessMode === 'open') {
+        console.log('🔓 Content is open, generating token')
         // For open content, generate a token anyway
         const response = await apiClient.verifyPassword({
           type,
@@ -76,11 +81,17 @@ export function useProtectedContent(): UseProtectedContentState & UseProtectedCo
       }
 
       // Otherwise, open modal for password/email input
+      console.log('🔐 Content is protected, opening modal')
       openModal()
       return false
     } catch (err) {
-      console.error('Failed to check access:', err)
-      setError('Failed to check content access')
+      console.error('❌ Failed to check access:', err)
+      // If API call fails, assume content is protected and show modal
+      // Don't set error state as this prevents modal from showing
+      console.log('🔐 API call failed, assuming protected and opening modal')
+      setAccessMode('password') // Default to password mode when API fails
+      setDescription('This content is password protected. Please enter the password to continue.')
+      openModal()
       return false
     }
   }, [openModal])

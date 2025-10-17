@@ -1,0 +1,217 @@
+import { useState, useEffect } from 'react'
+import type { ContentItem } from '../utils/content-processor'
+import { useProtectedContent } from '../hooks/use-protected-content'
+import { AccessModal } from './access-modal'
+
+interface ContentRendererProps {
+  content: ContentItem | null
+  contentType: 'notes' | 'publications' | 'ideas'
+  slug: string
+  showHeader?: boolean
+  showNavigation?: boolean
+}
+
+export function ContentRenderer({ 
+  content, 
+  contentType, 
+  slug, 
+  showHeader = true, 
+  showNavigation: _showNavigation = true 
+}: ContentRendererProps) {
+  const [protectedContent, setProtectedContent] = useState<ContentItem | null>(null)
+  const [isProtected, setIsProtected] = useState(false)
+  
+  const { 
+    checkAccess, 
+    verifyCredentials, 
+    fetchContent, 
+    isModalOpen, 
+    closeModal,
+    accessMode,
+    isLoading: hookLoading,
+    error: hookError
+  } = useProtectedContent()
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'notes': return 'Note'
+      case 'publications': return 'Publication'
+      case 'ideas': return 'Idea'
+      default: return 'Article'
+    }
+  }
+
+  const getTypeDescription = (type: string) => {
+    switch (type) {
+      case 'notes': return 'Quick thoughts and observations.'
+      case 'publications': return 'Books, papers, talks, and other external publications.'
+      case 'ideas': return 'Concepts and explorations in technology and design.'
+      default: return ''
+    }
+  }
+
+  // Check if this content exists and if it's protected
+  useEffect(() => {
+    const checkContent = async () => {
+      console.log('🔍 ContentRenderer: Checking content for', contentType, slug, 'content:', !!content)
+      if (!content) {
+        console.log('📄 Content not found in public metadata, checking if protected')
+        // Content not found in public metadata, check if it's protected
+        try {
+          const hasAccess = await checkAccess(contentType, slug)
+          console.log('🔐 ContentRenderer: hasAccess =', hasAccess)
+          if (hasAccess) {
+            // User has access to protected content, fetch it
+            const fetchedContent = await fetchContent(contentType, slug)
+            const contentItem: ContentItem = {
+              ...fetchedContent,
+              type: fetchedContent.type as 'note' | 'publication' | 'idea' | 'page',
+              isProtected: true
+            }
+            setProtectedContent(contentItem)
+            setIsProtected(true)
+          } else {
+            // Content is protected but user doesn't have access, modal should be open
+            console.log('🔐 ContentRenderer: Content is protected, setting isProtected = true')
+            setIsProtected(true)
+          }
+        } catch (err) {
+          console.error('❌ ContentRenderer: Error checking access:', err)
+          // Content might be protected, show modal for password
+          console.log('🔐 ContentRenderer: Error occurred, setting isProtected = true')
+          setIsProtected(true)
+        }
+      } else if (content.isProtected) {
+        console.log('🔐 ContentRenderer: Content exists but is protected')
+        // Content exists but is protected
+        setIsProtected(true)
+        try {
+          const hasAccess = await checkAccess(contentType, slug)
+          if (hasAccess) {
+            const fetchedContent = await fetchContent(contentType, slug)
+            const contentItem: ContentItem = {
+              ...fetchedContent,
+              type: fetchedContent.type as 'note' | 'publication' | 'idea' | 'page',
+              isProtected: true
+            }
+            setProtectedContent(contentItem)
+          }
+        } catch (err) {
+          console.error('Error checking access for existing protected content:', err)
+          // Show modal for password
+        }
+      }
+    }
+    
+    checkContent()
+  }, [content, contentType, slug, checkAccess, fetchContent])
+
+  const handleCredentialsSubmit = async (credentials: { password?: string; email?: string }) => {
+    try {
+      await verifyCredentials(contentType, slug, credentials)
+      // Content will be fetched automatically by the hook
+    } catch (err) {
+      // Error is handled by the hook
+    }
+  }
+
+  // Debug logging
+  console.log('🔍 ContentRenderer render state:', {
+    content: !!content,
+    protectedContent: !!protectedContent,
+    isProtected,
+    isModalOpen,
+    accessMode,
+    hookError,
+    hookLoading
+  })
+
+  // Show loading state
+  if (hookLoading) {
+    return (
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p style={{ color: 'var(--color-text-muted)' }}>Loading content...</p>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (hookError) {
+    return (
+      <div className="text-center">
+        <h1 className="text-2xl font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
+          Access Denied
+        </h1>
+        <p style={{ color: 'var(--color-text-muted)' }}>
+          {hookError || 'You do not have access to this content.'}
+        </p>
+      </div>
+    )
+  }
+
+  // Use protected content if available, otherwise use regular content
+  const displayContent = protectedContent || content
+
+  // If no content found and not protected, show 404
+  if (!displayContent && !isProtected) {
+    return (
+      <div className="text-center">
+        <h1 className="text-2xl font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
+          Content Not Found
+        </h1>
+        <p style={{ color: 'var(--color-text-muted)' }}>
+          The content you're looking for doesn't exist.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      {showHeader && (
+        <header>
+          <h1 className="text-3xl font-semibold" style={{ color: 'var(--color-text)' }}>
+            {getTypeLabel(contentType)}s
+          </h1>
+          <p className="mt-2" style={{ color: 'var(--color-text-muted)' }}>
+            {getTypeDescription(contentType)}
+          </p>
+        </header>
+      )}
+
+      <section className="mt-10">
+        <h2 className="text-3xl font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
+          {displayContent?.title}
+          {isProtected && (
+            <span className="ml-2 text-xs bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
+              🔒 Protected
+            </span>
+          )}
+        </h2>
+        
+        <div className="text-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>
+          {displayContent?.date} · {displayContent?.readTime}
+        </div>
+      </section>
+
+      <article className="prose prose-lg max-w-none" style={{ color: 'var(--color-text)' }}>
+        {displayContent?.html ? (
+          <div dangerouslySetInnerHTML={{ __html: displayContent.html }} />
+        ) : (
+          <div className="whitespace-pre-wrap">{displayContent?.content}</div>
+        )}
+      </article>
+
+      <AccessModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onSubmit={handleCredentialsSubmit}
+        title={displayContent?.title || 'Protected Content'}
+        accessMode={accessMode || 'password'}
+        isLoading={hookLoading}
+        error={hookError || undefined}
+      />
+    </>
+  )
+}

@@ -27,9 +27,6 @@ VITE_API_BASE_URL=http://localhost:8787
 
 # Development flag
 VITE_DEV_MODE=true
-
-# Mock API mode (optional - defaults to true in dev if no API_BASE_URL)
-VITE_USE_MOCK_API=true
 ```
 
 ### 3. Start Development Server
@@ -47,7 +44,7 @@ The application will be available at `http://localhost:5173`
 curl http://localhost:5173
 
 # Test API integration
-curl http://localhost:5173/api/health
+curl http://localhost:8787/health
 ```
 
 ## Production Build
@@ -261,8 +258,6 @@ VITE_API_BASE_URL=http://localhost:8787
 # Development flag
 VITE_DEV_MODE=true
 
-# Mock API mode
-VITE_USE_MOCK_API=true
 ```
 
 ### Staging Environment
@@ -275,8 +270,6 @@ VITE_API_BASE_URL=https://staging-api.example.com
 # Development flag
 VITE_DEV_MODE=false
 
-# Mock API mode
-VITE_USE_MOCK_API=false
 ```
 
 ### Production Environment
@@ -289,8 +282,6 @@ VITE_API_BASE_URL=https://api.example.com
 # Development flag
 VITE_DEV_MODE=false
 
-# Mock API mode
-VITE_USE_MOCK_API=false
 ```
 
 ## Build Configuration

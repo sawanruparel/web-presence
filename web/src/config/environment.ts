@@ -8,13 +8,10 @@
 
 export const config = {
   // API Configuration
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'https://web-presence-api.quoppo.workers.dev',
+  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8787',
   
   // Development mode flag
   isDev: import.meta.env.VITE_DEV_MODE === 'true' || import.meta.env.DEV,
-  
-  // Mock API mode (only in development)
-  useMockApi: import.meta.env.VITE_USE_MOCK_API === 'true' || (import.meta.env.VITE_DEV_MODE === 'true' && !import.meta.env.VITE_API_BASE_URL),
   
   // Environment
   environment: import.meta.env.MODE || 'development',

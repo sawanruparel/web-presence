@@ -96,8 +96,7 @@ async function fetchAccessRules() {
   const apiKey = process.env.BUILD_API_KEY
   
   if (!apiKey) {
-    console.warn('⚠️  Warning: BUILD_API_KEY not set. All content will be treated as public.')
-    return {}
+    throw new Error('BUILD_API_KEY environment variable is required for build. Cannot proceed without access rules.')
   }
   
   try {
@@ -115,6 +114,19 @@ async function fetchAccessRules() {
     const data = await response.json()
     console.log(`✅ Fetched ${data.rules.length} access rules from API`)
     
+    // Log detailed access rules
+    console.log('\n📋 Access Rules from Database:')
+    data.rules.forEach(rule => {
+      console.log(`   ${rule.type}/${rule.slug}: ${rule.accessMode}`)
+      if (rule.description) {
+        console.log(`     Description: ${rule.description}`)
+      }
+      if (rule.allowedEmails && rule.allowedEmails.length > 0) {
+        console.log(`     Allowed Emails: ${rule.allowedEmails.join(', ')}`)
+      }
+    })
+    console.log('')
+    
     // Convert to lookup object for easy access
     const accessRulesMap = {}
     data.rules.forEach(rule => {
@@ -125,8 +137,7 @@ async function fetchAccessRules() {
     return accessRulesMap
   } catch (error) {
     console.error('❌ Failed to fetch access rules from API:', error.message)
-    console.warn('⚠️  Falling back: All content will be treated as public.')
-    return {}
+    throw new Error(`Build failed: Cannot fetch access rules. ${error.message}`)
   }
 }
 
@@ -192,6 +203,23 @@ async function processMarkdownFiles() {
       const accessRule = accessRules[accessKey]
       const isProtected = accessRule && accessRule.accessMode !== 'open'
       const accessMode = accessRule?.accessMode || 'open'
+      
+      // Explicit logging for protected vs open content
+      console.log(`🔍 Content: ${type}/${slug}`)
+      console.log(`   Access Key: ${accessKey}`)
+      console.log(`   Access Rule Found: ${accessRule ? 'YES' : 'NO'}`)
+      if (accessRule) {
+        console.log(`   Access Mode: ${accessRule.accessMode}`)
+        console.log(`   Description: ${accessRule.description || 'N/A'}`)
+        if (accessRule.allowedEmails) {
+          console.log(`   Allowed Emails: ${accessRule.allowedEmails.join(', ')}`)
+        }
+      } else {
+        console.log(`   Access Mode: open (default)`)
+      }
+      console.log(`   Is Protected: ${isProtected}`)
+      console.log(`   Final Access Mode: ${accessMode}`)
+      console.log('')
       
       const contentItem = {
         slug,

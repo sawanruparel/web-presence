@@ -1,6 +1,6 @@
 import type { ContentItem } from '../utils/content-processor'
-import { Footer } from '../components/footer'
-import { PageNavigation } from '../components/page-navigation'
+import { ContentPageWrapper } from '../components/ContentPageWrapper'
+import { ContentListRenderer } from '../components/ContentListRenderer'
 
 interface IdeasPageProps {
   ideas: ContentItem[]
@@ -8,36 +8,15 @@ interface IdeasPageProps {
 
 export function IdeasPage({ ideas }: IdeasPageProps) {
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 leading-relaxed" style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }}>
-      <header>
-        <h1 className="text-3xl font-semibold" style={{ color: 'var(--color-text)' }}>Ideas</h1>
-        <p className="mt-2" style={{ color: 'var(--color-text-muted)' }}>
-          Concepts and explorations in technology and design.
-        </p>
-        <PageNavigation currentPage="ideas" />
-      </header>
-
-      <section className="mt-10">
-        <ul className="space-y-6">
-          {ideas.map((idea) => (
-            <li key={idea.slug} className="border-b pb-6" style={{ borderColor: 'var(--color-divider)' }}>
-              <a href={`/ideas/${idea.slug}`} className="block hover:underline">
-                <h2 className="text-xl font-medium mb-2" style={{ color: 'var(--color-text)' }}>
-                  {idea.title}
-                </h2>
-                <p className="text-sm mb-2" style={{ color: 'var(--color-text-muted)' }}>
-                  {idea.date} · {idea.readTime}
-                </p>
-                <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                  {idea.excerpt}
-                </p>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <Footer />
-    </main>
+    <ContentPageWrapper
+      currentPage="ideas"
+      title="Ideas"
+      description="Concepts and explorations in technology and design."
+    >
+      <ContentListRenderer
+        items={ideas}
+        contentType="ideas"
+      />
+    </ContentPageWrapper>
   )
 }
