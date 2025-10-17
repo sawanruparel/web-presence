@@ -22,8 +22,6 @@ JWT_SECRET=dev-jwt-secret-key-change-in-production-12345
 # Internal API Key for admin operations
 INTERNAL_API_KEY=d458ab3fede5cfefb6f33b8aa21cc93988052c020e59075b8bdc6d95b9847246
 
-# Legacy content password (will be removed)
-CONTENT_PASSWORD=dev-password
 
 # Database ID for local D1 database
 DATABASE_ID=22aaa0c4-8060-4417-9649-9cc8cafa7e06
@@ -39,7 +37,6 @@ These values are set as secrets in Cloudflare Workers, not as environment files.
 # Set these via Cloudflare Workers secrets:
 npx wrangler secret put JWT_SECRET
 npx wrangler secret put INTERNAL_API_KEY
-npx wrangler secret put CONTENT_PASSWORD
 ```
 
 ## Frontend Environment Files
@@ -115,7 +112,6 @@ VITE_DEBUG=false
    # Set secrets in Cloudflare Workers
    npx wrangler secret put JWT_SECRET
    npx wrangler secret put INTERNAL_API_KEY
-   npx wrangler secret put CONTENT_PASSWORD
    
    # Deploy
    npm run deploy
@@ -137,7 +133,6 @@ VITE_DEBUG=false
 |----------|-------|------------|---------|
 | `JWT_SECRET` | `.dev.vars` | Cloudflare Secret | JWT token signing |
 | `INTERNAL_API_KEY` | `.dev.vars` | Cloudflare Secret | Admin API authentication |
-| `CONTENT_PASSWORD` | `.dev.vars` | Cloudflare Secret | Legacy content access |
 | `DATABASE_ID` | `.dev.vars` | `wrangler.toml` | D1 database identifier |
 
 ### Frontend Variables

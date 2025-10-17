@@ -7,7 +7,6 @@ export interface Env {
   // Environment variables
   INTERNAL_API_KEY: string
   JWT_SECRET: string
-  CONTENT_PASSWORD?: string // Legacy, will be removed
 }
 
 // Re-export D1 types for convenience

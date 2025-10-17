@@ -84,7 +84,7 @@ name = "web-presence-api"
 
 2. **Password Verification:**
    - Client sends content-specific password to `/auth/verify`
-   - Server validates password against generated content password
+   - Server validates password against stored hash in database
    - If valid, server generates JWT token with content access info
 
 3. **Content Access:**

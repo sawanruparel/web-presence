@@ -29,7 +29,6 @@ database_id = "22aaa0c4-8060-4417-9649-9cc8cafa7e06"
 
 # Environment variables (set via .dev.vars for local development)
 # JWT_SECRET - Secret key for JWT signing
-# CONTENT_PASSWORD - Password for protected content access (legacy, will be removed)
 # INTERNAL_API_KEY - API key for internal endpoints (build script, admin operations)
 
 # Secrets (set via wrangler secret put)

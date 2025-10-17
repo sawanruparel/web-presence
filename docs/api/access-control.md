@@ -232,7 +232,7 @@ accessControlService.generateToken(payload)
 
 ✅ **Implemented:**
 - Access control rules centrally defined in config
-- Per-content password generation with hash function
+- Per-content password hashing and secure storage
 - Email whitelist support with case-insensitive matching
 - Token-based access to protected content
 - 24-hour token expiration
