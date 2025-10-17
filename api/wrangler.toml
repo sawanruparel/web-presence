@@ -5,15 +5,23 @@ compatibility_date = "2024-01-01"
 # D1 Database Configuration
 [[d1_databases]]
 binding = "DB"
-database_name = "web-presence-db"
-database_id = "22aaa0c4-8060-4417-9649-9cc8cafa7e06"
+database_name = "web-presence-db-local"
+database_id = "a298a621-daa5-4001-b2b7-863ff2523a0e"
 
 # Environment-specific configurations
 [env.development]
 name = "web-presence-api-dev"
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "web-presence-db-local"
+database_id = "a298a621-daa5-4001-b2b7-863ff2523a0e"
 
 [env.production]
 name = "web-presence-api"
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "web-presence-db"
+database_id = "22aaa0c4-8060-4417-9649-9cc8cafa7e06"
 
 # Build configuration
 [build]
