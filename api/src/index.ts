@@ -5,9 +5,12 @@ import { prettyJSON } from 'hono/pretty-json'
 
 import { healthRouter } from './routes/health'
 import { protectedContentRouter } from './routes/protected-content'
+import { contentCatalogRouter } from './routes/content-catalog'
+import { internalRouter } from './routes/internal'
 import { errorHandler } from './middleware/error-handler'
+import type { Env } from './types/env'
 
-const app = new Hono()
+const app = new Hono<{ Bindings: Env }>()
 
 // Middleware
 app.use('*', logger())
@@ -21,6 +24,8 @@ app.use('*', cors({
 // Routes
 app.route('/health', healthRouter)
 app.route('/auth', protectedContentRouter)
+app.route('/api', contentCatalogRouter)
+app.route('/api/internal', internalRouter)
 
 // Error handling
 app.onError(errorHandler)

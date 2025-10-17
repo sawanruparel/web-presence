@@ -4,12 +4,15 @@ import { fileURLToPath } from 'url'
 import { marked } from 'marked'
 import { parse } from 'yaml'
 
+// Load environment variables from .env.local
+import { config } from 'dotenv'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+config({ path: path.join(__dirname, '..', '.env.local') })
 
 // From /web/scripts/ directory, go up two levels to web-presence, then into content
 const contentDir = path.join(__dirname, '..', '..', 'content')
-const protectedContentDir = path.join(__dirname, '..', '..', 'content-protected')
+// Note: All content now in single content/ folder. Access control via database.
 const distDir = path.join(__dirname, '..', 'dist')
 const tempContentDir = path.join(__dirname, '..', 'temp-content')
 const rivveOutputDir = path.join(__dirname, '..', '..', 'rivve', 'html-output')
@@ -85,15 +88,61 @@ function extractBodyContent(htmlContent) {
   return htmlContent
 }
 
-function processMarkdownFiles() {
+/**
+ * Fetch access rules from API
+ */
+async function fetchAccessRules() {
+  const apiUrl = process.env.BUILD_API_URL || 'http://localhost:8787'
+  const apiKey = process.env.BUILD_API_KEY
+  
+  if (!apiKey) {
+    console.warn('⚠️  Warning: BUILD_API_KEY not set. All content will be treated as public.')
+    return {}
+  }
+  
+  try {
+    console.log('📡 Fetching access rules from API:', `${apiUrl}/api/content-catalog`)
+    const response = await fetch(`${apiUrl}/api/content-catalog`, {
+      headers: {
+        'X-API-Key': apiKey
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}: ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    console.log(`✅ Fetched ${data.rules.length} access rules from API`)
+    
+    // Convert to lookup object for easy access
+    const accessRulesMap = {}
+    data.rules.forEach(rule => {
+      const key = `${rule.type}/${rule.slug}`
+      accessRulesMap[key] = rule
+    })
+    
+    return accessRulesMap
+  } catch (error) {
+    console.error('❌ Failed to fetch access rules from API:', error.message)
+    console.warn('⚠️  Falling back: All content will be treated as public.')
+    return {}
+  }
+}
+
+async function processMarkdownFiles() {
   const allContent = {}
   const contentMetadata = {}
   const protectedContent = {}
 
   console.log('Processing content from:', contentDir)
   console.log('Content directory exists:', fs.existsSync(contentDir))
+  console.log('Note: All content in single folder. Access control determined by database.')
+  
+  // Fetch access rules from API
+  const accessRules = await fetchAccessRules()
 
-  // Process public content
+  // Process all content from content/ folder
   contentTypes.forEach(type => {
     const typeDir = path.join(contentDir, type)
     const distTypeDir = path.join(tempContentDir, type)
@@ -138,6 +187,12 @@ function processMarkdownFiles() {
         }
       }
 
+      // Check access control from API
+      const accessKey = `${type}/${slug}`
+      const accessRule = accessRules[accessKey]
+      const isProtected = accessRule && accessRule.accessMode !== 'open'
+      const accessMode = accessRule?.accessMode || 'open'
+      
       const contentItem = {
         slug,
         title: cleanTitle,
@@ -147,21 +202,53 @@ function processMarkdownFiles() {
         content: body,
         html: htmlWithoutTitle,
         excerpt,
-        isProtected: false
+        isProtected,
+        accessMode,
+        requiresPassword: accessMode === 'password',
+        requiresEmail: accessMode === 'email-list'
       }
 
       typeContent.push(contentItem)
-      typeMetadata.push({
-        slug,
-        title: contentItem.title,
-        date: contentItem.date,
-        readTime: contentItem.readTime,
-        type: contentItem.type,
-        excerpt: contentItem.excerpt,
-        content: contentItem.content,
-        html: contentItem.html,
-        isProtected: false
-      })
+      
+      // For public content, include full metadata
+      if (!isProtected) {
+        typeMetadata.push({
+          slug,
+          title: contentItem.title,
+          date: contentItem.date,
+          readTime: contentItem.readTime,
+          type: contentItem.type,
+          excerpt: contentItem.excerpt,
+          content: contentItem.content,
+          html: contentItem.html,
+          isProtected: false,
+          accessMode: 'open'
+        })
+      } else {
+        // For protected content, only include minimal metadata (no content/html)
+        typeMetadata.push({
+          slug,
+          title: contentItem.title,
+          date: contentItem.date,
+          readTime: contentItem.readTime,
+          type: contentItem.type,
+          excerpt: contentItem.excerpt,
+          isProtected: true,
+          accessMode: contentItem.accessMode,
+          requiresPassword: contentItem.requiresPassword,
+          requiresEmail: contentItem.requiresEmail
+        })
+        
+        // Add to protected content list
+        if (!protectedContent[type]) {
+          protectedContent[type] = []
+        }
+        protectedContent[type].push({
+          slug,
+          title: contentItem.title,
+          accessMode: contentItem.accessMode
+        })
+      }
 
       // Generate individual HTML file using rivve's approach for the Vite plugin
       const rivveHtml = generateRivveHTML(frontmatter, body, slug)
@@ -177,68 +264,14 @@ function processMarkdownFiles() {
     contentMetadata[type] = typeMetadata.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   })
 
-  // Process protected content
+  console.log('\n📊 Access Control Summary:')
   contentTypes.forEach(type => {
-    const protectedTypeDir = path.join(protectedContentDir, type)
-    
-    if (!fs.existsSync(protectedTypeDir)) {
-      protectedContent[type] = []
-      return
-    }
-
-    const files = fs.readdirSync(protectedTypeDir).filter(file => file.endsWith('.md'))
-    const typeProtectedContent = []
-
-    files.forEach(file => {
-      const slug = file.replace('.md', '')
-      const filePath = path.join(protectedTypeDir, file)
-      const fileContents = fs.readFileSync(filePath, 'utf8')
-      const { frontmatter, body } = parseFrontmatter(fileContents)
-      
-      // Only process if marked as protected
-      if (!frontmatter?.protected) {
-        return
-      }
-      
-      // Generate excerpt
-      const excerpt = body.split('\n\n')[0]?.replace(/[#*]/g, '').trim().substring(0, 150) + '...'
-      
-      // Convert markdown to HTML
-      const html = marked(body)
-      
-      // Remove the first h1 tag from HTML since we'll display the title separately
-      const htmlWithoutTitle = html.replace(/<h1[^>]*>.*?<\/h1>\s*/i, '')
-      
-      // Clean up title by removing type prefixes
-      let cleanTitle = frontmatter?.title || slug
-      const typePrefixes = ['Idea: ', 'Publication: ', 'Note: ']
-      for (const prefix of typePrefixes) {
-        if (cleanTitle.startsWith(prefix)) {
-          cleanTitle = cleanTitle.substring(prefix.length)
-          break
-        }
-      }
-
-      const protectedItem = {
-        slug,
-        title: cleanTitle,
-        date: frontmatter?.date || new Date().toISOString().split('T')[0],
-        readTime: frontmatter?.readTime || '1 min',
-        type: frontmatter?.type || type.slice(0, -1),
-        content: body,
-        html: htmlWithoutTitle,
-        excerpt,
-        isProtected: true
-      }
-
-      typeProtectedContent.push(protectedItem)
-
-      // Do NOT add protected content to public metadata
-      // Protected content is only available through the backend API
-    })
-
-    protectedContent[type] = typeProtectedContent.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    const total = allContent[type]?.length || 0
+    const protectedCount = protectedContent[type]?.length || 0
+    const openCount = total - protectedCount
+    console.log(`   ${type}: ${total} total (${openCount} open, ${protectedCount} protected)`)
   })
+  console.log('')
 
   // Write content index for React app
   const contentIndex = {
@@ -476,4 +509,7 @@ function escapeHtml(text) {
 }
 
 // Run the script
-processMarkdownFiles()
+processMarkdownFiles().catch(error => {
+  console.error('❌ Error processing markdown files:', error)
+  process.exit(1)
+})

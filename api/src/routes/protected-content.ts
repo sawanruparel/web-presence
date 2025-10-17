@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
 import { authMiddleware } from '../middleware/auth'
-import { accessControlService } from '../services/access-control-service'
+import { createAccessControlService } from '../services/access-control-service'
 import { contentService } from '../services/content-service'
+import type { Env } from '../types/env'
 import type { 
   VerifyPasswordRequest, 
   VerifyPasswordResponse, 
@@ -9,55 +10,41 @@ import type {
   AccessCheckResponse
 } from '../../../types/api'
 
-export const protectedContentRouter = new Hono()
+const app = new Hono<{ Bindings: Env }>()
 
 // Helper endpoint to check access requirements for a content item
-protectedContentRouter.get('/access/:type/:slug', (c) => {
-  const type = c.req.param('type')
-  const slug = c.req.param('slug')
-  
-  const accessMode = accessControlService.getAccessMode(type, slug)
-  const rule = accessControlService.getAccessRule(type, slug)
-  
-  if (!rule) {
-    return c.json({
-      message: 'Content not found'
-    }, 404)
-  }
+app.get('/access/:type/:slug', async (c) => {
+  try {
+    const type = c.req.param('type')
+    const slug = c.req.param('slug')
+    
+    const accessControlService = createAccessControlService(c.env.DB)
+    const accessMode = await accessControlService.getAccessMode(type, slug)
+    const rule = await accessControlService.getAccessRule(type, slug)
+    
+    if (!rule) {
+      return c.json({
+        message: 'Content not found'
+      }, 404)
+    }
 
-  return c.json({
-    accessMode,
-    requiresPassword: accessMode === 'password',
-    requiresEmail: accessMode === 'email-list',
-    message: rule.description
-  } as AccessCheckResponse)
-})
-
-// Helper endpoint to get password for a specific content item (for development)
-protectedContentRouter.get('/password/:type/:slug', (c) => {
-  const type = c.req.param('type')
-  const slug = c.req.param('slug')
-  const rule = accessControlService.getAccessRule(type, slug)
-  
-  if (!rule || rule.mode !== 'password') {
     return c.json({
-      error: 'Not Found',
-      message: 'Content is not password protected'
-    }, 404)
+      accessMode,
+      requiresPassword: accessMode === 'password',
+      requiresEmail: accessMode === 'email-list',
+      message: rule.description
+    } as AccessCheckResponse)
+  } catch (error) {
+    console.error('Error checking access:', error)
+    return c.json({
+      error: 'Internal Server Error',
+      message: 'Failed to check access'
+    }, 500)
   }
-  
-  const password = accessControlService.generateContentPassword(type, slug)
-  
-  return c.json({
-    type,
-    slug,
-    password,
-    note: 'Use this password to access the protected content'
-  })
 })
 
 // Verification endpoint - handles all three access modes
-protectedContentRouter.post('/verify', async (c) => {
+app.post('/verify', async (c) => {
   try {
     const body = await c.req.json() as VerifyPasswordRequest
     
@@ -69,10 +56,18 @@ protectedContentRouter.post('/verify', async (c) => {
       } as VerifyPasswordResponse, 400)
     }
 
-    const accessMode = accessControlService.getAccessMode(body.type, body.slug)
+    // Get client info for logging
+    const ipAddress = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for')
+    const userAgent = c.req.header('user-agent')
+
+    const accessControlService = createAccessControlService(c.env.DB)
+    const accessMode = await accessControlService.getAccessMode(body.type, body.slug)
 
     // Handle open access
     if (accessMode === 'open') {
+      // Log the access
+      await accessControlService.logOpenAccess(body.type, body.slug, ipAddress, userAgent)
+
       const token = await accessControlService.generateToken({
         type: body.type,
         slug: body.slug,
@@ -95,7 +90,13 @@ protectedContentRouter.post('/verify', async (c) => {
         } as VerifyPasswordResponse, 400)
       }
 
-      const isValid = await accessControlService.verifyPassword(body.password, body.type, body.slug)
+      const isValid = await accessControlService.verifyPassword(
+        body.password, 
+        body.type, 
+        body.slug,
+        ipAddress,
+        userAgent
+      )
       
       if (!isValid) {
         return c.json({ 
@@ -126,7 +127,13 @@ protectedContentRouter.post('/verify', async (c) => {
         } as VerifyPasswordResponse, 400)
       }
 
-      const isEmailAllowed = accessControlService.verifyEmail(body.email, body.type, body.slug)
+      const isEmailAllowed = await accessControlService.verifyEmail(
+        body.email, 
+        body.type, 
+        body.slug,
+        ipAddress,
+        userAgent
+      )
       
       if (!isEmailAllowed) {
         return c.json({ 
@@ -163,7 +170,7 @@ protectedContentRouter.post('/verify', async (c) => {
 })
 
 // Protected content retrieval endpoint
-protectedContentRouter.get('/content/:type/:slug', authMiddleware, async (c) => {
+app.get('/content/:type/:slug', authMiddleware, async (c) => {
   try {
     const type = c.req.param('type') as 'notes' | 'publications' | 'ideas' | 'pages'
     const slug = c.req.param('slug')
@@ -187,3 +194,5 @@ protectedContentRouter.get('/content/:type/:slug', authMiddleware, async (c) => 
     }, 500)
   }
 })
+
+export { app as protectedContentRouter }
