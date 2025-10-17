@@ -8,12 +8,12 @@
 const API_KEY = 'd458ab3fede5cfefb6f33b8aa21cc93988052c020e59075b8bdc6d95b9847246'
 const BASE_URL = 'http://localhost:8787'
 
-async function testEndpoint(name, method, path, body = null) {
+async function testEndpoint(name: string, method: string, path: string, body: any = null): Promise<{ success: boolean; data?: any; status?: number; error?: string }> {
   console.log(`\n🧪 Testing: ${name}`)
   console.log(`   ${method} ${path}`)
   
   try {
-    const options = {
+    const options: RequestInit = {
       method,
       headers: {
         'X-API-Key': API_KEY,
@@ -34,8 +34,9 @@ async function testEndpoint(name, method, path, body = null) {
     
     return { success: response.ok, data, status: response.status }
   } catch (error) {
-    console.log(`   ❌ Error:`, error.message)
-    return { success: false, error: error.message }
+    const err = error as Error
+    console.log(`   ❌ Error:`, err.message)
+    return { success: false, error: err.message }
   }
 }
 
@@ -176,7 +177,8 @@ async function runTests() {
     console.log(`   ✅ Status: ${response.status} (Expected 401)`)
     console.log(`   Response:`, JSON.stringify(data, null, 2))
   } catch (error) {
-    console.log(`   ❌ Error:`, error.message)
+    const err = error as Error
+    console.log(`   ❌ Error:`, err.message)
   }
   
   console.log('\n' + '='.repeat(60))

@@ -10,8 +10,8 @@
  * a clean API for the rest of the application.
  */
 
-import type { D1Database } from './types/env'
-import type { AccessMode } from '../../types/api'
+import type { D1Database } from '../types/env'
+import type { AccessMode } from '../../../types/api'
 
 // ============================================================
 // Types
@@ -238,7 +238,7 @@ export class DatabaseService {
       .bind(accessRuleId)
       .all<{ email: string }>()
     
-    return (result.results || []).map(row => row.email)
+    return (result.results || []).map((row: { email: string }) => row.email)
   }
 
   /**
@@ -444,7 +444,7 @@ export class DatabaseService {
       byMode: {} as Record<string, number>
     }
     
-    result.results?.forEach(row => {
+    result.results?.forEach((row: { count: number; access_granted: number }) => {
       stats.total += row.count
       if (row.access_granted) {
         stats.granted += row.count
