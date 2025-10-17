@@ -106,6 +106,51 @@ npm run build:web
 npm run build:api
 ```
 
+## Testing
+
+The project includes a comprehensive, config-driven API test suite with environment-aware testing capabilities.
+
+### Test Suite Features
+
+- **Environment-Specific Testing**: Separate configurations for dev, staging, and production
+- **Test Separation**: Functional tests (safe for production) vs data validation tests (dev/staging only)
+- **YAML-Driven Configuration**: Test data and scenarios defined in YAML files
+- **Safety Guards**: Production-safe testing with qualified test data and cleanup criteria
+- **Multiple Execution Methods**: Python and shell runners with various options
+
+### Running Tests
+
+```bash
+# Navigate to test directory
+cd tests/api
+
+# Quick start (development)
+./scripts/run.sh dev
+
+# Environment-specific testing
+./scripts/run.sh staging
+./scripts/run.sh prod  # Only functional tests
+
+# Test selection
+python scripts/run_tests.py --env dev --readonly-only  # Functional only
+python scripts/run_tests.py --env dev --mutating-only  # Data validation only
+```
+
+### Test Structure
+
+```
+tests/api/
+├── data/                    # YAML test data configurations
+├── framework/               # Generic test framework
+├── tests/
+│   ├── functional/         # Read-only tests (production-safe)
+│   └── data_validation/    # Mutating tests (dev/staging only)
+├── scripts/                # Test runners
+└── .env.*                  # Environment configurations
+```
+
+For detailed testing documentation, see [tests/api/README.md](tests/api/README.md).
+
 ## Deployment
 
 ### Frontend (Cloudflare Pages)
