@@ -19,10 +19,11 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
-    "test:e2e:api": "node scripts/test-e2e.js --suite api",
+    "test:e2e:api": "node scripts/test-e2e.js --suite api --api-only",
     "test:e2e:frontend": "node scripts/test-e2e.js --suite frontend",
     "test:e2e:integration": "node scripts/test-e2e.js --suite integration",
-    "test:all": "node scripts/test-e2e.js --suite all"
+    "test:all": "node scripts/test-e2e.js --suite all",
+    "test:quick": "node scripts/test-quick.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

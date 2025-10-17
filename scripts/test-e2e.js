@@ -39,6 +39,7 @@ Usage: node scripts/test-e2e.js [options]
 Options:
   --suite <name>     Run specific test suite (api, frontend, integration, error, all)
   --browser <name>   Run tests on specific browser (chromium, firefox, webkit, "Mobile Chrome", "Mobile Safari")
+  --api-only         Use API-only configuration (safer, no frontend dependencies)
   --ui              Run tests with UI mode
   --headed          Run tests in headed mode (see browser)
   --debug           Run tests in debug mode
@@ -47,7 +48,7 @@ Options:
   --help            Show this help message
 
 Examples:
-  node scripts/test-e2e.js --suite api
+  node scripts/test-e2e.js --suite api --api-only
   node scripts/test-e2e.js --suite all --browser chromium
   node scripts/test-e2e.js --ui
   node scripts/test-e2e.js --debug --browser firefox
@@ -70,6 +71,7 @@ function main() {
   }
 
   let command = 'npx playwright test';
+  let configFile = null;
   let suite = 'all';
   let browser = null;
   let ui = false;
@@ -102,6 +104,9 @@ function main() {
       case '--list':
         list = true;
         break;
+      case '--api-only':
+        configFile = 'playwright.api.config.ts';
+        break;
     }
   }
 
@@ -133,6 +138,10 @@ function main() {
   // Build command
   if (testSuites[suite] !== 'tests/e2e/') {
     command += ` ${testSuites[suite]}`;
+  }
+
+  if (configFile) {
+    command += ` --config=${configFile}`;
   }
 
   if (browser) {

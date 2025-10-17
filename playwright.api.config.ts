@@ -1,7 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * @see https://playwright.dev/docs/test-configuration
+ * API-only Playwright configuration
+ * This configuration is optimized for testing only the API endpoints
+ * without any frontend dependencies or web server requirements.
  */
 export default defineConfig({
   testDir: './tests/e2e',
@@ -12,17 +14,18 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
   /* Limit workers to prevent system overload */
-  workers: process.env.CI ? 1 : 2,
+  workers: 1, // Single worker for API tests to prevent rate limiting
   /* Global timeout for each test */
-  timeout: 30000,
+  timeout: 15000, // 15 seconds per test
   /* Global timeout for the entire test run */
-  globalTimeout: 600000, // 10 minutes
+  globalTimeout: 300000, // 5 minutes total
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: 'line',
+  
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.FRONTEND_URL || 'https://web-presence-api.quoppo.workers.dev',
+    /* No baseURL needed for API tests */
+    baseURL: undefined,
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
     /* Take screenshot on failure */
@@ -30,9 +33,9 @@ export default defineConfig({
     /* Record video on failure */
     video: 'retain-on-failure',
     /* Timeout for navigation */
-    navigationTimeout: 30000,
+    navigationTimeout: 10000,
     /* Timeout for actions */
-    actionTimeout: 10000,
+    actionTimeout: 5000,
   },
 
   /* Configure projects for major browsers */
@@ -41,33 +44,16 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
     },
-
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
     },
-
-    /* Test against mobile viewports. */
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    },
   ],
 
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run dev:web',
-  //   url: 'http://localhost:5173',
-  //   reuseExistingServer: !process.env.CI,
-  //   timeout: 120 * 1000,
-  // },
+  /* No web server needed for API tests */
+  // webServer: undefined,
 });
