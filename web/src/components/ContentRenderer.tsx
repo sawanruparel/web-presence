@@ -18,7 +18,6 @@ export function ContentRenderer({
   showHeader = true, 
   showNavigation: _showNavigation = true 
 }: ContentRendererProps) {
-  const [protectedContent, setProtectedContent] = useState<ContentItem | null>(null)
   const [isProtected, setIsProtected] = useState(false)
   
   const { 
@@ -29,7 +28,8 @@ export function ContentRenderer({
     closeModal,
     accessMode,
     isLoading: hookLoading,
-    error: hookError
+    error: hookError,
+    content: hookContent
   } = useProtectedContent()
 
   const getTypeLabel = (type: string) => {
@@ -62,13 +62,7 @@ export function ContentRenderer({
           console.log('🔐 ContentRenderer: hasAccess =', hasAccess)
           if (hasAccess) {
             // User has access to protected content, fetch it
-            const fetchedContent = await fetchContent(contentType, slug)
-            const contentItem: ContentItem = {
-              ...fetchedContent,
-              type: fetchedContent.type as 'note' | 'publication' | 'idea' | 'page',
-              isProtected: true
-            }
-            setProtectedContent(contentItem)
+            await fetchContent(contentType, slug)
             setIsProtected(true)
           } else {
             // Content is protected but user doesn't have access, modal should be open
@@ -77,8 +71,14 @@ export function ContentRenderer({
           }
         } catch (err) {
           console.error('❌ ContentRenderer: Error checking access:', err)
-          // Content might be protected, show modal for password
-          console.log('🔐 ContentRenderer: Error occurred, setting isProtected = true')
+          // Check if it's a 404 error (content doesn't exist)
+          if (err instanceof Error && err.message.includes('404')) {
+            console.log('📄 ContentRenderer: Content not found (404)')
+            setIsProtected(false) // Don't show modal for non-existent content
+            return
+          }
+          // Other errors might indicate protected content, show modal
+          console.log('🔐 ContentRenderer: Error occurred, assuming protected and setting isProtected = true')
           setIsProtected(true)
         }
       } else if (content.isProtected) {
@@ -88,13 +88,8 @@ export function ContentRenderer({
         try {
           const hasAccess = await checkAccess(contentType, slug)
           if (hasAccess) {
-            const fetchedContent = await fetchContent(contentType, slug)
-            const contentItem: ContentItem = {
-              ...fetchedContent,
-              type: fetchedContent.type as 'note' | 'publication' | 'idea' | 'page',
-              isProtected: true
-            }
-            setProtectedContent(contentItem)
+            await fetchContent(contentType, slug)
+            // Content fetched successfully, hook will handle state
           }
         } catch (err) {
           console.error('Error checking access for existing protected content:', err)
@@ -118,7 +113,7 @@ export function ContentRenderer({
   // Debug logging
   console.log('🔍 ContentRenderer render state:', {
     content: !!content,
-    protectedContent: !!protectedContent,
+    protectedContent: !!hookContent,
     isProtected,
     isModalOpen,
     accessMode,
@@ -138,20 +133,24 @@ export function ContentRenderer({
 
   // Show error state
   if (hookError) {
+    const isNotFound = hookError.includes('not found') || hookError.includes('404')
     return (
       <div className="text-center">
         <h1 className="text-2xl font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
-          Access Denied
+          {isNotFound ? 'Content Not Found' : 'Access Denied'}
         </h1>
         <p style={{ color: 'var(--color-text-muted)' }}>
-          {hookError || 'You do not have access to this content.'}
+          {isNotFound 
+            ? 'The content you\'re looking for doesn\'t exist.'
+            : hookError || 'You do not have access to this content.'
+          }
         </p>
       </div>
     )
   }
 
   // Use protected content if available, otherwise use regular content
-  const displayContent = protectedContent || content
+  const displayContent = hookContent || content
 
   // If no content found and not protected, show 404
   if (!displayContent && !isProtected) {
@@ -212,6 +211,13 @@ export function ContentRenderer({
         isLoading={hookLoading}
         error={hookError || undefined}
       />
+      
+      {/* Debug info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{ position: 'fixed', top: 0, right: 0, background: 'black', color: 'white', padding: '10px', fontSize: '12px', zIndex: 9999 }}>
+          Debug: accessMode={accessMode}, isModalOpen={isModalOpen}, hookError={hookError}
+        </div>
+      )}
     </>
   )
 }

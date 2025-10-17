@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2025-10-17T19:34:28.285Z",
+  "contentFiles": 7,
+  "rules": [
+    {
+      "type": "notes",
+      "slug": "physical-interfaces",
+      "accessMode": "open",
+      "description": "A note on physical interfaces",
+      "password": null
+    },
+    {
+      "type": "publications",
+      "slug": "decisionrecord-io",
+      "accessMode": "email-list",
+      "description": "DecisionRecord.io",
+      "password": null,
+      "allowedEmails": [
+        "admin@example.com",
+        "subscriber@example.com"
+      ]
+    },
+    {
+      "type": "ideas",
+      "slug": "extending-carplay",
+      "accessMode": "open",
+      "description": "Idea: Extending CarPlay",
+      "password": "fresh-ice-1129"
+    },
+    {
+      "type": "ideas",
+      "slug": "local-first-ai",
+      "accessMode": "open",
+      "description": "Idea: local-first AI systems",
+      "password": "mild-field-1224"
+    },
+    {
+      "type": "ideas",
+      "slug": "sample-protected-idea",
+      "accessMode": "password",
+      "description": "Sample Protected Idea",
+      "password": "bright-forest-1009"
+    },
+    {
+      "type": "pages",
+      "slug": "about",
+      "accessMode": "open",
+      "description": "Sawan Ruparel",
+      "password": null
+    },
+    {
+      "type": "pages",
+      "slug": "contact",
+      "accessMode": "open",
+      "description": "Contact",
+      "password": null
+    }
+  ]
+}

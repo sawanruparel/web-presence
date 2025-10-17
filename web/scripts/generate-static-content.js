@@ -3,6 +3,8 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { marked } from 'marked'
 import { parse } from 'yaml'
+import { execSync } from 'child_process'
+import os from 'os'
 
 // Load environment variables from .env.local
 import { config } from 'dotenv'
@@ -141,6 +143,38 @@ async function fetchAccessRules() {
   }
 }
 
+/**
+ * Upload protected content to R2 using wrangler CLI
+ */
+async function uploadProtectedContentToR2(type, slug, contentData) {
+  const key = `${type}/${slug}.json`
+  const tempFile = path.join(os.tmpdir(), `${type}-${slug}.json`)
+  
+  try {
+    // Write content to temp file
+    fs.writeFileSync(tempFile, JSON.stringify(contentData, null, 2))
+    
+    // Upload using wrangler (run from api directory to use wrangler.toml)
+    const apiDir = path.join(__dirname, '..', '..', 'api')
+    execSync(
+      `wrangler r2 object put protected-content/${key} --file="${tempFile}"`,
+      { 
+        cwd: apiDir, 
+        stdio: 'inherit' 
+      }
+    )
+    console.log(`✅ Uploaded ${key} to R2`)
+  } catch (error) {
+    console.error(`❌ Failed to upload ${key} to R2:`, error)
+    throw error
+  } finally {
+    // Cleanup temp file
+    if (fs.existsSync(tempFile)) {
+      fs.unlinkSync(tempFile)
+    }
+  }
+}
+
 async function processMarkdownFiles() {
   const allContent = {}
   const contentMetadata = {}
@@ -154,7 +188,7 @@ async function processMarkdownFiles() {
   const accessRules = await fetchAccessRules()
 
   // Process all content from content/ folder
-  contentTypes.forEach(type => {
+  for (const type of contentTypes) {
     const typeDir = path.join(contentDir, type)
     const distTypeDir = path.join(tempContentDir, type)
     
@@ -173,7 +207,7 @@ async function processMarkdownFiles() {
     const typeContent = []
     const typeMetadata = []
 
-    files.forEach(file => {
+    for (const file of files) {
       const slug = file.replace('.md', '')
       const filePath = path.join(typeDir, file)
       const fileContents = fs.readFileSync(filePath, 'utf8')
@@ -203,6 +237,11 @@ async function processMarkdownFiles() {
       const accessRule = accessRules[accessKey]
       const isProtected = accessRule && accessRule.accessMode !== 'open'
       const accessMode = accessRule?.accessMode || 'open'
+      
+      // Add warning for missing access rules
+      if (!accessRule) {
+        console.warn(`⚠️  No access rule for ${type}/${slug} - defaulting to PUBLIC`)
+      }
       
       // Explicit logging for protected vs open content
       console.log(`🔍 Content: ${type}/${slug}`)
@@ -238,8 +277,8 @@ async function processMarkdownFiles() {
 
       typeContent.push(contentItem)
       
-      // For public content, include full metadata
       if (!isProtected) {
+        // For public content, include full metadata in public metadata
         typeMetadata.push({
           slug,
           title: contentItem.title,
@@ -248,26 +287,10 @@ async function processMarkdownFiles() {
           type: contentItem.type,
           excerpt: contentItem.excerpt,
           content: contentItem.content,
-          html: contentItem.html,
-          isProtected: false,
-          accessMode: 'open'
+          html: contentItem.html
         })
       } else {
-        // For protected content, only include minimal metadata (no content/html)
-        typeMetadata.push({
-          slug,
-          title: contentItem.title,
-          date: contentItem.date,
-          readTime: contentItem.readTime,
-          type: contentItem.type,
-          excerpt: contentItem.excerpt,
-          isProtected: true,
-          accessMode: contentItem.accessMode,
-          requiresPassword: contentItem.requiresPassword,
-          requiresEmail: contentItem.requiresEmail
-        })
-        
-        // Add to protected content list
+        // For protected content, add to protected content list and upload to R2
         if (!protectedContent[type]) {
           protectedContent[type] = []
         }
@@ -276,6 +299,9 @@ async function processMarkdownFiles() {
           title: contentItem.title,
           accessMode: contentItem.accessMode
         })
+        
+        // Upload protected content to R2
+        await uploadProtectedContentToR2(type, slug, contentItem)
       }
 
       // Generate individual HTML file using rivve's approach for the Vite plugin
@@ -286,11 +312,11 @@ async function processMarkdownFiles() {
       }
       const htmlFile = path.join(rivveOutputDir, `${slug}.html`)
       fs.writeFileSync(htmlFile, rivveHtml, 'utf8')
-    })
+    }
 
     allContent[type] = typeContent.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     contentMetadata[type] = typeMetadata.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  })
+  }
 
   console.log('\n📊 Access Control Summary:')
   contentTypes.forEach(type => {

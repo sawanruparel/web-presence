@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Web Presence - Frontend and Backend API",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
     "dev:web": "cd web && npm run dev",

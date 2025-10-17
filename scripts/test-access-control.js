@@ -7,26 +7,38 @@
  * Run with: node scripts/test-access-control.js
  */
 
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 const API_BASE = process.env.API_BASE || 'http://localhost:8787'
+const CONFIG_FILE = path.join(__dirname, '..', 'api', 'scripts', 'content-config.json')
 
-// Simulate the accessControlService logic for verification
-const accessControlService = {
-  generateContentPassword(type, slug) {
-    const baseString = `${type}-${slug}`
-    const hash = this.simpleHash(baseString)
-    return `${type}-${slug}-${hash}`
-  },
-
-  simpleHash(str) {
-    let hash = 0
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
-      hash = hash & hash
-    }
-    return Math.abs(hash).toString(36).substring(0, 6)
+// Load passwords from content-config.json
+function loadPasswords() {
+  if (!fs.existsSync(CONFIG_FILE)) {
+    console.log('❌ content-config.json not found')
+    console.log('   Run "node api/scripts/generate-seed-config.js" first to generate the configuration.')
+    process.exit(1)
   }
+  
+  const configContent = fs.readFileSync(CONFIG_FILE, 'utf8')
+  const config = JSON.parse(configContent)
+  
+  const passwords = {}
+  config.rules.forEach(rule => {
+    if (rule.password) {
+      passwords[`${rule.type}/${rule.slug}`] = rule.password
+    }
+  })
+  
+  return passwords
 }
+
+const passwords = loadPasswords()
 
 // Test cases
 const testCases = [
@@ -40,17 +52,17 @@ const testCases = [
   },
   {
     name: 'Test 2: Password Protected - Valid password',
-    type: 'notes',
+    type: 'ideas',
     slug: 'sample-protected-idea',
     accessMode: 'password',
     shouldWork: true,
     payload: {
-      password: accessControlService.generateContentPassword('notes', 'sample-protected-idea')
+      password: passwords['ideas/sample-protected-idea'] || 'calm-ocean-1567'
     }
   },
   {
     name: 'Test 3: Password Protected - Invalid password',
-    type: 'notes',
+    type: 'ideas',
     slug: 'sample-protected-idea',
     accessMode: 'password',
     shouldWork: false,
@@ -247,9 +259,9 @@ curl http://localhost:8787/auth/access/notes/sample-protected-idea
 curl -X POST http://localhost:8787/auth/verify \\
   -H "Content-Type: application/json" \\
   -d '{
-    "type": "notes",
+    "type": "ideas",
     "slug": "sample-protected-idea",
-    "password": "notes-sample-protected-idea-a1b2c3"
+    "password": "calm-ocean-1567"
   }'
 
 # Example 3: Verify email-list protected content
@@ -263,7 +275,7 @@ curl -X POST http://localhost:8787/auth/verify \\
 
 # Example 4: Get protected content with token
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-curl http://localhost:8787/auth/content/notes/sample-protected-idea \\
+curl http://localhost:8787/auth/content/ideas/sample-protected-idea \\
   -H "Authorization: Bearer \${TOKEN}"
 `
 }
@@ -274,5 +286,9 @@ console.log('\nCURL Commands:', usageExamples.curl)
 
 console.log('\n✅ Test suite defined. Run the tests manually with API calls.')
 console.log('Example:')
-console.log('  node scripts/test-access-control.js check notes sample-protected-idea')
-console.log('  node scripts/test-access-control.js verify notes sample-protected-idea password')
+console.log('  node scripts/test-access-control.js check ideas sample-protected-idea')
+console.log('  node scripts/test-access-control.js verify ideas sample-protected-idea password')
+console.log('\n🔐 Available passwords from content-config.json:')
+Object.entries(passwords).forEach(([key, password]) => {
+  console.log(`  ${key}: ${password}`)
+})

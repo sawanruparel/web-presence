@@ -4,9 +4,16 @@ export interface Env {
   // D1 Database binding
   DB: D1Database
   
+  // R2 Bucket binding
+  PROTECTED_CONTENT_BUCKET: R2Bucket
+  
   // Environment variables
   INTERNAL_API_KEY: string
   JWT_SECRET: string
+  
+  // CORS and Frontend Configuration
+  FRONTEND_URL: string
+  CORS_ORIGINS: string
 }
 
 // Re-export D1 types for convenience

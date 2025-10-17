@@ -23,22 +23,13 @@ Quick recipes for common access control tasks.
 
 ### Add Password-Protected Content
 
-```json
-{
-  "notes": {
-    "secret-article": {
-      "mode": "password",
-      "description": "Password protected article"
-    }
-  }
-}
-```
-
 **Steps**:
-1. Get password: `curl http://localhost:8787/auth/password/notes/secret-article`
-2. Share password with users
-3. Password is: `notes-secret-article-<hash>`
-4. Auto-generated from type and slug
+1. Add content file to `content/` directory
+2. Run: `node api/scripts/generate-seed-config.js` to update `content-config.json`
+3. Run: `./api/seed-database-dynamic.sh` to sync database
+4. Get password: `node scripts/generate-passwords.js ideas local-first-ai`
+5. Share password with users
+6. Password format: `{adjective}-{noun}-{4-digit-number}` (e.g., `swift-tiger-7392`)
 
 ---
 
@@ -144,15 +135,15 @@ curl http://localhost:8787/auth/access/notes/my-article
 ### Test Password-Protected Content
 
 ```bash
-# Get the password
-PASSWORD=$(curl -s http://localhost:8787/auth/password/notes/secret-article | jq -r '.password')
+# Get the password from content-config.json
+PASSWORD=$(node scripts/generate-passwords.js ideas local-first-ai)
 
 echo "Password: $PASSWORD"
 
 # Verify with password
 curl -X POST http://localhost:8787/auth/verify \
   -H "Content-Type: application/json" \
-  -d "{\"type\":\"notes\",\"slug\":\"secret-article\",\"password\":\"$PASSWORD\"}"
+  -d "{\"type\":\"ideas\",\"slug\":\"local-first-ai\",\"password\":\"$PASSWORD\"}"
 
 # Expected response
 {
@@ -442,11 +433,11 @@ curl http://localhost:8787/auth/access/notes/my-article
 ### Debug: Password Not Accepted
 
 ```bash
-# Get the correct password
-curl http://localhost:8787/auth/password/notes/my-article
+# Get the correct password from content-config.json
+node scripts/generate-passwords.js ideas local-first-ai
 
-# Format is: {type}-{slug}-{hash}
-# Example: notes-my-article-a1b2c3
+# Format is: {adjective}-{noun}-{4-digit-number}
+# Example: swift-tiger-7392
 
 # Common issues:
 # - Wrong type

@@ -16,7 +16,17 @@ const app = new Hono<{ Bindings: Env }>()
 app.use('*', logger())
 app.use('*', prettyJSON())
 app.use('*', cors({
-  origin: ['http://localhost:5173', 'https://your-frontend-domain.com'], // Update with your frontend domain
+  origin: (origin, c) => {
+    // Get allowed origins from environment variable
+    const allowedOrigins = c.env.CORS_ORIGINS?.split(',').map((o: string) => o.trim()) || [
+      'http://localhost:5173'
+    ]
+    
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return '*'
+    
+    return allowedOrigins.includes(origin) ? origin : false
+  },
   allowHeaders: ['Content-Type', 'Authorization'],
   allowMethods: ['GET', 'POST', 'OPTIONS'],
 }))

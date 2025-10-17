@@ -1,6 +1,9 @@
 #!/bin/bash
 #
 # Seed database with access rules for existing content
+# 
+# Note: This script uses hardcoded passwords for quick setup.
+# For production, use content-config.json as the source of truth.
 #
 
 API_KEY="d458ab3fede5cfefb6f33b8aa21cc93988052c020e59075b8bdc6d95b9847246"
@@ -40,7 +43,7 @@ curl -s -X POST "$BASE_URL/api/internal/access-rules" \
     "type": "ideas",
     "slug": "local-first-ai",
     "accessMode": "password",
-    "password": "ai-secret-2024",
+    "password": "bright-eagle-4821",
     "description": "Password-protected AI idea"
   }' | jq -r '.slug + " - " + .access_mode'
 
@@ -51,7 +54,7 @@ curl -s -X POST "$BASE_URL/api/internal/access-rules" \
     "type": "ideas",
     "slug": "sample-protected-idea",
     "accessMode": "password",
-    "password": "ideas-sample-protected-idea-test123",
+    "password": "calm-ocean-1567",
     "description": "Sample protected idea"
   }' | jq -r '.slug + " - " + .access_mode'
 

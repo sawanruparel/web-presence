@@ -8,6 +8,11 @@ binding = "DB"
 database_name = "web-presence-db-local"
 database_id = "a298a621-daa5-4001-b2b7-863ff2523a0e"
 
+# R2 Bucket Configuration
+[[r2_buckets]]
+binding = "PROTECTED_CONTENT_BUCKET"
+bucket_name = "protected-content"
+
 # Environment-specific configurations
 [env.development]
 name = "web-presence-api-dev"
@@ -27,12 +32,20 @@ database_id = "22aaa0c4-8060-4417-9649-9cc8cafa7e06"
 # Note: Wrangler handles TypeScript compilation automatically
 # No custom build command needed to avoid circular dependencies
 
-# Environment variables (set via .dev.vars for local development)
-# JWT_SECRET - Secret key for JWT signing
-# INTERNAL_API_KEY - API key for internal endpoints (build script, admin operations)
-
-# Secrets (set via wrangler secret put)
-# These are automatically available in production
-# To set secrets:
-# npx wrangler secret put JWT_SECRET
-# npx wrangler secret put INTERNAL_API_KEY
+# Environment Variables Configuration
+# 
+# Local Development:
+# - Uses .dev.vars file for environment variables
+# - Variables: JWT_SECRET, INTERNAL_API_KEY
+# 
+# Production:
+# - Uses Cloudflare Workers secrets
+# - Set via: npx wrangler secret put <SECRET_NAME>
+# 
+# Required Variables:
+# - JWT_SECRET: Secret key for JWT token signing
+# - INTERNAL_API_KEY: API key for internal endpoints (build script, admin operations)
+# 
+# Database Configuration:
+# - Local: web-presence-db-local (ID: a298a621-daa5-4001-b2b7-863ff2523a0e)
+# - Production: web-presence-db (ID: 22aaa0c4-8060-4417-9649-9cc8cafa7e06)

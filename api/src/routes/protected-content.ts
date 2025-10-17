@@ -175,8 +175,8 @@ app.get('/content/:type/:slug', authMiddleware, async (c) => {
     const type = c.req.param('type') as 'notes' | 'publications' | 'ideas' | 'pages'
     const slug = c.req.param('slug')
     
-    // Get content from service
-    const content = await contentService.getProtectedContent(type, slug)
+    // Get content from service (pass env for R2 access)
+    const content = await contentService.getProtectedContent(type, slug, c.env)
     
     if (!content) {
       return c.json({ 

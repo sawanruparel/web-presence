@@ -37,8 +37,8 @@ export async function navigateToContentSection(page: Page, section: string) {
 }
 
 export const TEST_PASSWORDS = {
-  'local-first-ai': 'ideas-local-first-ai-n1wvs8',
-  'sample-protected-idea': 'ideas-sample-protected-idea-xyz123'
+  'local-first-ai': 'bright-eagle-4821',
+  'sample-protected-idea': 'calm-ocean-1567'
 } as const;
 
 export const TEST_EMAILS = {

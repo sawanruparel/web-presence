@@ -157,11 +157,12 @@ curl http://localhost:8787/auth/access/notes/my-article
 
 ### Password Access
 ```bash
-PASSWORD=$(curl -s http://localhost:8787/auth/password/notes/my-article | jq -r '.password')
+# Get password from content-config.json
+PASSWORD=$(node scripts/generate-passwords.js ideas local-first-ai)
 
 curl -X POST http://localhost:8787/auth/verify \
   -H "Content-Type: application/json" \
-  -d "{\"type\":\"notes\",\"slug\":\"my-article\",\"password\":\"$PASSWORD\"}"
+  -d "{\"type\":\"ideas\",\"slug\":\"local-first-ai\",\"password\":\"$PASSWORD\"}"
 ```
 
 ### Email Access

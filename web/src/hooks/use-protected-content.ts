@@ -37,9 +37,10 @@ export function useProtectedContent(): UseProtectedContentState & UseProtectedCo
   }, [])
 
   const openModal = useCallback(() => {
+    console.log('🔓 Opening modal with current accessMode:', accessMode)
     setIsModalOpen(true)
     clearError()
-  }, [clearError])
+  }, [clearError, accessMode])
 
   const closeModal = useCallback(() => {
     setIsModalOpen(false)
@@ -81,13 +82,20 @@ export function useProtectedContent(): UseProtectedContentState & UseProtectedCo
       }
 
       // Otherwise, open modal for password/email input
-      console.log('🔐 Content is protected, opening modal')
+      console.log('🔐 Content is protected, opening modal with access mode:', accessInfo.accessMode)
       openModal()
       return false
     } catch (err) {
       console.error('❌ Failed to check access:', err)
-      // If API call fails, assume content is protected and show modal
-      // Don't set error state as this prevents modal from showing
+      
+      // Check if it's a 404 error (content doesn't exist)
+      if (err instanceof Error && err.message.includes('404')) {
+        console.log('📄 Content not found (404)')
+        setError('Content not found')
+        return false // Don't show modal for non-existent content
+      }
+      
+      // For other errors, assume content is protected and show modal
       console.log('🔐 API call failed, assuming protected and opening modal')
       setAccessMode('password') // Default to password mode when API fails
       setDescription('This content is password protected. Please enter the password to continue.')

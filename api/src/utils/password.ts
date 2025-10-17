@@ -33,18 +33,51 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 
 /**
  * Generate a password hash for a content item
- * Format: {type}-{slug}-{hash}
- * This allows for deterministic password generation during migration
+ * Uses human-readable format: {adjective}-{noun}-{4-digit-number}
+ * This allows for easy sharing while maintaining security
  */
 export async function generateContentPassword(type: string, slug: string, basePassword?: string): Promise<{
   password: string
   hash: string
 }> {
   // Generate password if not provided
-  const password = basePassword || `${type}-${slug}-${generateRandomString(8)}`
+  const password = basePassword || generateHumanReadablePassword()
   const hash = await hashPassword(password)
   
   return { password, hash }
+}
+
+/**
+ * Generate a human-readable password
+ * Format: {adjective}-{noun}-{4-digit-number}
+ * Example: "swift-tiger-7392"
+ */
+function generateHumanReadablePassword(): string {
+  const adjectives = [
+    'swift', 'bright', 'calm', 'bold', 'wise', 'keen', 'pure', 'wild', 'free', 'true',
+    'deep', 'high', 'wide', 'long', 'short', 'fast', 'slow', 'warm', 'cool', 'dark',
+    'light', 'soft', 'hard', 'smooth', 'rough', 'sharp', 'round', 'square', 'clear', 'foggy',
+    'happy', 'sad', 'brave', 'shy', 'proud', 'humble', 'strong', 'gentle', 'fierce', 'mild',
+    'ancient', 'modern', 'young', 'old', 'fresh', 'stale', 'new', 'used', 'clean', 'dirty'
+  ]
+  
+  const nouns = [
+    'tiger', 'eagle', 'ocean', 'mountain', 'forest', 'river', 'valley', 'desert', 'island', 'cave',
+    'castle', 'tower', 'bridge', 'path', 'road', 'field', 'garden', 'flower', 'tree', 'leaf',
+    'stone', 'crystal', 'diamond', 'pearl', 'gold', 'silver', 'copper', 'iron', 'steel', 'wood',
+    'fire', 'water', 'earth', 'wind', 'storm', 'rain', 'snow', 'ice', 'cloud', 'star',
+    'moon', 'sun', 'planet', 'galaxy', 'comet', 'meteor', 'lightning', 'thunder', 'rainbow', 'dawn'
+  ]
+  
+  // Get random adjective and noun
+  const randomValues = new Uint8Array(3)
+  crypto.getRandomValues(randomValues)
+  
+  const adjective = adjectives[randomValues[0] % adjectives.length]
+  const noun = nouns[randomValues[1] % nouns.length]
+  const number = Math.floor(1000 + (randomValues[2] % 9000)) // 4-digit number 1000-9999
+  
+  return `${adjective}-${noun}-${number}`
 }
 
 /**
@@ -63,11 +96,3 @@ function generateRandomString(length: number): string {
   return result
 }
 
-/**
- * Generate password from legacy format
- * Matches the format used in generate-passwords.js script
- */
-export async function generateLegacyPassword(type: string, slug: string): Promise<string> {
-  const baseString = `${type}-${slug}`
-  return await hashPassword(baseString)
-}

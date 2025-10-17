@@ -1,7 +1,4 @@
-import { useState } from 'react'
 import type { ContentItem } from '../utils/content-processor'
-import { useProtectedContentNavigation } from '../hooks/use-protected-content'
-import { AccessModal } from './access-modal'
 
 interface ContentListRendererProps {
   items: ContentItem[]
@@ -10,55 +7,14 @@ interface ContentListRendererProps {
 }
 
 export function ContentListRenderer({ items, contentType, onItemClick }: ContentListRendererProps) {
-  const [selectedContent, setSelectedContent] = useState<{ type: string, slug: string, title: string } | null>(null)
-  const { 
-    navigateToProtectedContent, 
-    verifyCredentials, 
-    isLoading, 
-    error, 
-    isModalOpen, 
-    closeModal,
-    accessMode,
-    handlePasswordVerified
-  } = useProtectedContentNavigation()
-
-  const handleContentClick = async (e: React.MouseEvent, item: ContentItem) => {
+  const handleContentClick = (e: React.MouseEvent, item: ContentItem) => {
     e.preventDefault()
     
-    if (item.isProtected) {
-      setSelectedContent({ type: contentType, slug: item.slug, title: item.title })
-      await navigateToProtectedContent(contentType, item.slug)
+    // Navigate to content (all items in lists are public now)
+    if (onItemClick) {
+      onItemClick(item)
     } else {
-      // Navigate to regular content
-      if (onItemClick) {
-        onItemClick(item)
-      } else {
-        window.location.href = `/${contentType}/${item.slug}`
-      }
-    }
-  }
-
-  const handleCredentialsSubmit = async (credentials: { password?: string; email?: string }) => {
-    if (!selectedContent) return
-    
-    try {
-      await verifyCredentials(selectedContent.type as any, selectedContent.slug, credentials)
-      // After successful verification, handle navigation
-      const navigationSuccess = await handlePasswordVerified()
-      if (navigationSuccess) {
-        // Add a small delay to ensure session storage is updated
-        setTimeout(() => {
-          // Navigate to the content page
-          if (onItemClick) {
-            const item = items.find(i => i.slug === selectedContent.slug)
-            if (item) onItemClick(item)
-          } else {
-            window.location.href = `/${selectedContent.type}/${selectedContent.slug}`
-          }
-        }, 100)
-      }
-    } catch (error) {
-      // Error is handled by the hook
+      window.location.href = `/${contentType}/${item.slug}`
     }
   }
 
@@ -75,11 +31,6 @@ export function ContentListRenderer({ items, contentType, onItemClick }: Content
               >
                 <h2 className="text-xl font-medium mb-2" style={{ color: 'var(--color-text)' }}>
                   {item.title}
-                  {item.isProtected && (
-                    <span className="ml-2 text-xs bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
-                      🔒 Protected
-                    </span>
-                  )}
                 </h2>
                 <p className="text-sm mb-2" style={{ color: 'var(--color-text-muted)' }}>
                   {item.date} · {item.readTime}
@@ -92,16 +43,6 @@ export function ContentListRenderer({ items, contentType, onItemClick }: Content
           ))}
         </ul>
       </section>
-
-      <AccessModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        onSubmit={handleCredentialsSubmit}
-        title={selectedContent?.title || 'Protected Content'}
-        accessMode={accessMode || 'password'}
-        isLoading={isLoading}
-        error={error || undefined}
-      />
     </>
   )
 }

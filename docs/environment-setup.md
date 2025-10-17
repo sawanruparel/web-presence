@@ -21,33 +21,122 @@ The frontend build process requires `BUILD_API_KEY` and `BUILD_API_URL` environm
 - `VITE_API_BASE_URL`: Used by the frontend application at runtime
 - `BUILD_API_URL`: Used by the build process to fetch content metadata
 
-## API Environment Files
+## R2 Storage Setup
 
-### Local Development (`api/.env.local`)
-Used when running the API locally with `npm run dev` in the `api/` directory.
+The project uses Cloudflare R2 for storing protected content. This requires:
+
+### 1. Create R2 Bucket
+
+Create the R2 bucket using the Cloudflare dashboard or CLI:
 
 ```bash
-# JWT Secret for signing tokens
-JWT_SECRET=dev-jwt-secret-key-change-in-production-12345
+# Using wrangler CLI (recommended)
+wrangler r2 bucket create protected-content
 
-# Internal API Key for admin operations
-INTERNAL_API_KEY=d458ab3fede5cfefb6f33b8aa21cc93988052c020e59075b8bdc6d95b9847246
-
-
-# Database ID for local D1 database
-DATABASE_ID=22aaa0c4-8060-4417-9649-9cc8cafa7e06
-
-# Environment indicator
-NODE_ENV=development
+# Or create via Cloudflare Dashboard:
+# 1. Go to R2 Object Storage in your Cloudflare dashboard
+# 2. Click "Create bucket"
+# 3. Name it "protected-content"
+# 4. Choose your preferred location
 ```
 
-### Production (`api/.env.production`)
+### 2. Configure Wrangler
+
+The R2 bucket is configured in `api/wrangler.toml`:
+
+```toml
+[[r2_buckets]]
+binding = "PROTECTED_CONTENT_BUCKET"
+bucket_name = "protected-content"
+```
+
+### 3. Authentication Requirements
+
+**For Build Process:**
+- Must be logged in to wrangler: `wrangler login`
+- Uses account ID from `api/wrangler.toml`
+- No additional environment variables needed
+
+**For API Runtime:**
+- R2 bucket binding provides direct access
+- No additional configuration needed
+
+### 4. Environment Consistency
+
+The same R2 bucket is used across all environments (development, production) to ensure:
+- Protected content is consistent across environments
+- No environment-specific content management needed
+- Simplified deployment process
+
+### 5. Security
+
+- R2 bucket is private (not publicly accessible)
+- Content only accessible via API with proper authentication
+- Protected content existence is not leaked through metadata
+
+## CORS Configuration
+
+The API uses environment variables for CORS configuration to support different frontend URLs in different environments:
+
+- **`FRONTEND_URL`**: Primary frontend URL for references and redirects
+- **`CORS_ORIGINS`**: Comma-separated list of allowed origins for CORS requests
+
+**⚠️ Security Warning**: The `CORS_ORIGINS` environment variable is **required** in production. If not set, the API will only allow `http://localhost:5173` by default, which is secure for local development but will block all production frontend requests.
+
+**Local Development Example:**
+```bash
+FRONTEND_URL=http://localhost:5173
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173
+```
+
+**Production Example:**
+```bash
+FRONTEND_URL=https://your-actual-frontend-domain.com
+CORS_ORIGINS=https://your-actual-frontend-domain.com,https://www.your-actual-frontend-domain.com
+```
+
+**Security Best Practices:**
+- Never use placeholder domains like `your-frontend-domain.com` in production
+- Always set `CORS_ORIGINS` explicitly in production environments
+- Use HTTPS URLs in production
+- Regularly audit and update allowed origins
+
+## API Environment Files
+
+### Local Development (`.dev.vars`)
+Used by Wrangler for local development with `npm run dev` in the `api/` directory.
+
+```bash
+# JWT Secret for signing tokens (local development)
+JWT_SECRET=dev-jwt-secret-key-change-in-production-12345
+
+# Internal API Key for admin operations (local development)
+INTERNAL_API_KEY=API_KEY_tu1ylu2nm7wnebxz05vfe
+
+# Frontend URL for CORS and references (local development)
+FRONTEND_URL=http://localhost:5173
+
+# CORS Origins (comma-separated list of allowed origins)
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173
+```
+
+**Note**: Cloudflare Workers automatically handles:
+- `DATABASE_ID`: Configured in `wrangler.toml`
+- `NODE_ENV`: Set automatically by Wrangler
+- Other system variables: Handled by the Cloudflare Workers runtime
+
+### Production (Cloudflare Workers Secrets)
 These values are set as secrets in Cloudflare Workers, not as environment files.
 
 ```bash
 # Set these via Cloudflare Workers secrets:
 npx wrangler secret put JWT_SECRET
 npx wrangler secret put INTERNAL_API_KEY
+npx wrangler secret put FRONTEND_URL
+npx wrangler secret put CORS_ORIGINS
+
+# Database configuration is in wrangler.toml
+# Environment is automatically set by Cloudflare Workers
 ```
 
 ## Frontend Environment Files
@@ -98,7 +187,8 @@ BUILD_API_URL=https://web-presence-api.quoppo.workers.dev
 
 ### API (Cloudflare Workers)
 1. **Local Development**: Uses `api/.dev.vars` (Wrangler's local env file)
-2. **Production**: Uses Cloudflare Workers secrets
+2. **Production**: Uses Cloudflare Workers secrets (set via `npx wrangler secret put`)
+3. **Database**: Configured in `wrangler.toml` (no env file needed)
 
 ### Frontend (Vite)
 1. **Local Development**: Uses `web/.env.local`
@@ -112,7 +202,9 @@ BUILD_API_URL=https://web-presence-api.quoppo.workers.dev
 1. **API Setup**:
    ```bash
    cd api
-   # The .dev.vars file is already configured
+   # Copy .dev.vars.example to .dev.vars and update values
+   cp .dev.vars.example .dev.vars
+   # Edit .dev.vars with your values
    npm run dev
    ```
 
@@ -152,7 +244,10 @@ BUILD_API_URL=https://web-presence-api.quoppo.workers.dev
 |----------|-------|------------|---------|
 | `JWT_SECRET` | `.dev.vars` | Cloudflare Secret | JWT token signing |
 | `INTERNAL_API_KEY` | `.dev.vars` | Cloudflare Secret | Admin API authentication |
-| `DATABASE_ID` | `.dev.vars` | `wrangler.toml` | D1 database identifier |
+| `FRONTEND_URL` | `.dev.vars` | Cloudflare Secret | Frontend URL for CORS and references |
+| `CORS_ORIGINS` | `.dev.vars` | Cloudflare Secret | Comma-separated allowed origins |
+| `DATABASE_ID` | `wrangler.toml` | `wrangler.toml` | D1 database identifier |
+| `NODE_ENV` | Auto (Wrangler) | Auto (Cloudflare) | Environment indicator |
 
 ### Frontend Variables
 
@@ -179,6 +274,8 @@ BUILD_API_URL=https://web-presence-api.quoppo.workers.dev
 1. **API not accessible**: Check `VITE_API_BASE_URL` in frontend env files
 2. **Authentication fails**: Check `JWT_SECRET` and `INTERNAL_API_KEY` in API
 3. **Database errors**: Check `DATABASE_ID` matches in both env and wrangler.toml
+4. **CORS errors in production**: Check `CORS_ORIGINS` is set correctly in Cloudflare Workers secrets
+5. **Frontend blocked by CORS**: Verify the frontend domain is included in `CORS_ORIGINS`
 
 ## Security Notes
 
@@ -186,3 +283,6 @@ BUILD_API_URL=https://web-presence-api.quoppo.workers.dev
 - **Use strong secrets** in production
 - **Rotate secrets** regularly
 - **Local secrets** are for development only
+- **CORS Origins**: Always set `CORS_ORIGINS` explicitly in production - never rely on defaults
+- **No Placeholder Domains**: Never use placeholder domains like `your-frontend-domain.com` in production
+- **HTTPS in Production**: Always use HTTPS URLs for production CORS origins

@@ -48,7 +48,7 @@ class ApiClient {
 
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error('Content not found')
+          throw new Error('404: Content not found')
         }
         throw new Error(`HTTP ${response.status}`)
       }

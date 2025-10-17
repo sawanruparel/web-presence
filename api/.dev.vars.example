@@ -1,6 +1,17 @@
 # Cloudflare Workers environment variables for local development
 # Copy this file to .dev.vars and update the values
 
-# JWT secret for token signing (use a strong secret in production)
+# JWT Secret for signing tokens (use a strong secret in production)
 JWT_SECRET=your-super-secret-jwt-key-here
 
+# Internal API Key for admin operations (build script, admin operations)
+INTERNAL_API_KEY=your-internal-api-key-here
+
+# Frontend URL for CORS and references (local development)
+FRONTEND_URL=http://localhost:5173
+
+# CORS Origins (comma-separated list of allowed origins)
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173
+
+# Note: DATABASE_ID is configured in wrangler.toml
+# Note: NODE_ENV is handled by Cloudflare Workers automatically
