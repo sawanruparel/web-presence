@@ -99,12 +99,20 @@ export class DatabaseService {
    * Get access rule by type and slug
    */
   async getAccessRule(type: string, slug: string): Promise<AccessRule | null> {
-    const result = await this.db
-      .prepare('SELECT * FROM content_access_rules WHERE type = ? AND slug = ?')
-      .bind(type, slug)
-      .first<AccessRule>()
+    console.log(`🔍 DatabaseService.getAccessRule called with: ${type}/${slug}`)
     
-    return result
+    try {
+      const result = await this.db
+        .prepare('SELECT * FROM content_access_rules WHERE type = ? AND slug = ?')
+        .bind(type, slug)
+        .first<AccessRule>()
+      
+      console.log(`🔍 DatabaseService.getAccessRule result:`, result)
+      return result
+    } catch (error) {
+      console.error(`🔍 DatabaseService.getAccessRule error:`, error)
+      return null
+    }
   }
 
   /**

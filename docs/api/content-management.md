@@ -103,6 +103,11 @@ Body: {
 ### 1. Create R2 Buckets
 ```bash
 # Create buckets
+# Development buckets
+wrangler r2 bucket create web-presence-dev-protected
+wrangler r2 bucket create web-presence-dev-public
+
+# Production buckets
 wrangler r2 bucket create protected-content
 wrangler r2 bucket create public-content
 

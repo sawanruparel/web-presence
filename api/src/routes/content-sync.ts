@@ -50,12 +50,12 @@ contentSyncRouter.post('/webhook', async (c: Context) => {
     console.log(`🔄 Processing ${changedFiles.length} changed files`)
 
     // Process the changes
-    const result = await processContentChanges(env, changedFiles)
+    const contentResult = await processContentChanges(env, changedFiles)
 
     return c.json({
       message: 'Content sync completed',
       filesProcessed: changedFiles.length,
-      result
+      result: contentResult
     }, 200)
 
   } catch (error) {
@@ -98,12 +98,12 @@ contentSyncRouter.post('/manual', async (c: Context) => {
     console.log(`🔄 Manual sync: processing ${filesToProcess.length} files`)
 
     // Process the files
-    const result = await processContentChanges(env, filesToProcess)
+    const contentResult = await processContentChanges(env, filesToProcess)
 
     return c.json({
       message: 'Manual sync completed',
       filesProcessed: filesToProcess.length,
-      result
+      result: contentResult
     }, 200)
 
   } catch (error) {
@@ -164,6 +164,7 @@ contentSyncRouter.get('/status', async (c: Context) => {
     }, 500)
   }
 })
+
 
 /**
  * Process content changes (shared logic for webhook and manual sync)

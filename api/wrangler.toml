@@ -1,6 +1,7 @@
 name = "web-presence-api"
 main = "src/index.ts"
-compatibility_date = "2024-01-01"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
 account_id = "61d3245b7e3224d49a9553bdb4d1a70e"
 
 # D1 Database Configuration
@@ -9,14 +10,16 @@ binding = "DB"
 database_name = "web-presence-db-local"
 database_id = "a298a621-daa5-4001-b2b7-863ff2523a0e"
 
-# R2 Bucket Configuration
+# R2 Bucket Configuration (Development)
 [[r2_buckets]]
 binding = "PROTECTED_CONTENT_BUCKET"
-bucket_name = "protected-content"
+bucket_name = "web-presence-dev-protected"
+preview_bucket_name = "web-presence-dev-protected"
 
 [[r2_buckets]]
 binding = "PUBLIC_CONTENT_BUCKET"
-bucket_name = "public-content"
+bucket_name = "web-presence-dev-public"
+preview_bucket_name = "web-presence-dev-public"
 
 # Environment-specific configurations
 [env.development]
@@ -27,10 +30,10 @@ database_name = "web-presence-db-local"
 database_id = "a298a621-daa5-4001-b2b7-863ff2523a0e"
 [[env.development.r2_buckets]]
 binding = "PROTECTED_CONTENT_BUCKET"
-bucket_name = "protected-content"
+bucket_name = "web-presence-dev-protected"
 [[env.development.r2_buckets]]
 binding = "PUBLIC_CONTENT_BUCKET"
-bucket_name = "public-content"
+bucket_name = "web-presence-dev-public"
 
 [env.production]
 name = "web-presence-api"
@@ -65,3 +68,7 @@ bucket_name = "public-content"
 # Database Configuration:
 # - Local: web-presence-db-local (ID: a298a621-daa5-4001-b2b7-863ff2523a0e)
 # - Production: web-presence-db (ID: 22aaa0c4-8060-4417-9649-9cc8cafa7e06)
+#
+# R2 Bucket Configuration:
+# - Development: web-presence-dev-protected, web-presence-dev-public
+# - Production: protected-content, public-content

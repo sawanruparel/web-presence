@@ -8,6 +8,7 @@ Deployment and configuration guide for the backend API.
 - npm or yarn
 - Cloudflare account
 - Cloudflare D1 database (for production)
+- Cloudflare R2 buckets (for content storage)
 
 ## Local Development
 
@@ -18,19 +19,39 @@ cd api
 npm install
 ```
 
-### 2. Set Up Environment Variables
+### 2. Set Up R2 Buckets
+
+Before starting development, ensure R2 buckets are created:
+
+```bash
+# Option A: Automated setup (recommended)
+./api/scripts/setup-r2-buckets.sh
+
+# Option B: Manual setup
+npx wrangler r2 bucket create web-presence-dev-protected
+npx wrangler r2 bucket create web-presence-dev-public
+```
+
+### 3. Set Up Environment Variables
 
 Create a `.dev.vars` file in the `api/` directory:
 
 ```bash
-# Database connection (Cloudflare D1)
-DB=database-name
-
 # Internal API key for admin endpoints
 INTERNAL_API_KEY=your-internal-api-key
+
+# CORS configuration
+FRONTEND_URL=http://localhost:5173
+CORS_ORIGINS=http://localhost:5173,http://localhost:5174
+
+# GitHub integration (optional for local dev)
+GITHUB_TOKEN=your-github-token
+GITHUB_WEBHOOK_SECRET=your-webhook-secret
+GITHUB_REPO=your-username/web-presence
+GITHUB_BRANCH=main
 ```
 
-### 3. Start Development Server
+### 4. Start Development Server
 
 ```bash
 npm run dev
@@ -38,7 +59,7 @@ npm run dev
 
 The API will be available at `http://localhost:8787`
 
-### 4. Test the API
+### 5. Test the API
 
 ```bash
 # Health check
@@ -67,7 +88,18 @@ npx wrangler d1 create web-presence-db
 npx wrangler d1 execute web-presence-db --file=./migrations/0001_initial_schema.sql
 ```
 
-### 3. Update wrangler.toml
+### 3. Create R2 Buckets
+
+```bash
+# Create production buckets
+npx wrangler r2 bucket create protected-content
+npx wrangler r2 bucket create public-content
+
+# Or use the automated setup script
+./api/scripts/setup-r2-buckets.sh
+```
+
+### 4. Update wrangler.toml
 
 Update the database ID in `wrangler.toml`:
 
@@ -78,13 +110,13 @@ database_name = "web-presence-db"
 database_id = "your-database-id-here"
 ```
 
-### 4. Deploy
+### 5. Deploy
 
 ```bash
 npm run deploy
 ```
 
-### 5. Set Environment Variables
+### 6. Set Environment Variables
 
 In the Cloudflare dashboard:
 1. Go to Workers & Pages > Your Worker > Settings > Variables

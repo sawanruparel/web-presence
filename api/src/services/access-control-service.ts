@@ -26,24 +26,24 @@ export class AccessControlService {
     try {
       const query = `
         SELECT 
-          car.id,
-          car.type,
-          car.slug,
-          car.access_mode as accessMode,
-          car.description,
-          car.password_hash as passwordHash,
-          car.created_at as createdAt,
-          car.updated_at as updatedAt,
-          GROUP_CONCAT(ea.email) as allowedEmails
-        FROM content_access_rules car
-        LEFT JOIN email_allowlist ea ON car.id = ea.access_rule_id
-        WHERE car.type = ? AND car.slug = ?
-        GROUP BY car.id, car.type, car.slug, car.access_mode, car.description, car.password_hash, car.created_at, car.updated_at
+          id,
+          type,
+          slug,
+          access_mode as accessMode,
+          description,
+          password_hash as passwordHash,
+          created_at as createdAt,
+          updated_at as updatedAt
+        FROM content_access_rules
+        WHERE type = ? AND slug = ?
       `
 
       const result = await this.db.prepare(query).bind(type, slug).first() as any
 
+      console.log(`🔍 AccessControlService query result for ${type}/${slug}:`, result)
+
       if (!result) {
+        console.log(`🔍 AccessControlService: No result found for ${type}/${slug}`)
         return null
       }
 
@@ -54,7 +54,7 @@ export class AccessControlService {
         accessMode: result.accessMode as 'open' | 'password' | 'email-list',
         description: result.description as string | undefined,
         passwordHash: result.passwordHash as string | undefined,
-        allowedEmails: result.allowedEmails ? (result.allowedEmails as string).split(',') : [],
+        allowedEmails: [], // Will be populated separately if needed
         createdAt: result.createdAt as string,
         updatedAt: result.updatedAt as string
       }
@@ -286,4 +286,11 @@ export class AccessControlService {
       return null
     }
   }
+}
+
+/**
+ * Factory function to create AccessControlService instance
+ */
+export function createAccessControlService(db: Env['DB']): AccessControlService {
+  return new AccessControlService({ DB: db } as Env)
 }

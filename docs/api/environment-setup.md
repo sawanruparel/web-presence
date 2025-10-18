@@ -74,24 +74,48 @@ GITHUB_BRANCH=main
 
 ### 1. Create R2 Buckets
 
-```bash
-# Create protected content bucket
-npx wrangler r2 bucket create protected-content
+The project uses separate R2 buckets for development and production environments to ensure local testing cannot affect production content.
 
-# Create public content bucket
+**Option A: Automated Setup (Recommended)**
+```bash
+# Run the setup script to create all required buckets
+./api/scripts/setup-r2-buckets.sh
+```
+
+**Option B: Manual Setup**
+```bash
+# Development buckets
+npx wrangler r2 bucket create web-presence-dev-protected
+npx wrangler r2 bucket create web-presence-dev-public
+
+# Production buckets
+npx wrangler r2 bucket create protected-content
 npx wrangler r2 bucket create public-content
 ```
 
 ### 2. Verify Bucket Configuration
 
-The `wrangler.toml` file should already have the correct bindings:
+The `wrangler.toml` file is configured with environment-specific bucket bindings:
 
+**Development Environment (default):**
 ```toml
 [[r2_buckets]]
 binding = "PROTECTED_CONTENT_BUCKET"
-bucket_name = "protected-content"
+bucket_name = "web-presence-dev-protected"
 
 [[r2_buckets]]
+binding = "PUBLIC_CONTENT_BUCKET"
+bucket_name = "web-presence-dev-public"
+```
+
+**Production Environment:**
+```toml
+[env.production]
+[[env.production.r2_buckets]]
+binding = "PROTECTED_CONTENT_BUCKET"
+bucket_name = "protected-content"
+
+[[env.production.r2_buckets]]
 binding = "PUBLIC_CONTENT_BUCKET"
 bucket_name = "public-content"
 ```
@@ -99,13 +123,30 @@ bucket_name = "public-content"
 ### 3. Test Bucket Access
 
 ```bash
-# List buckets
+# List all buckets
 npx wrangler r2 bucket list
 
-# Test bucket access
+# Test development bucket access
+npx wrangler r2 object list --bucket web-presence-dev-protected
+npx wrangler r2 object list --bucket web-presence-dev-public
+
+# Test production bucket access
 npx wrangler r2 object list --bucket protected-content
 npx wrangler r2 object list --bucket public-content
 ```
+
+### 4. Environment Separation
+
+**Development Environment:**
+- Uses `web-presence-dev-*` buckets
+- Safe for testing content sync and access rules
+- Cannot affect production content
+- Accessed via `npm run dev` or `wrangler dev`
+
+**Production Environment:**
+- Uses `protected-content` and `public-content` buckets
+- Contains live production content
+- Accessed via `npm run deploy` or `wrangler deploy --env production`
 
 ## D1 Database Setup
 

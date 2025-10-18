@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-# Test Access Control Service via API
+# Access Control API Test Suite
 #
+# Comprehensive bash test suite for access control functionality
 
 API_KEY="d458ab3fede5cfefb6f33b8aa21cc93988052c020e59075b8bdc6d95b9847246"
 BASE_URL="http://localhost:8787"

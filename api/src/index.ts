@@ -6,6 +6,7 @@ import { prettyJSON } from 'hono/pretty-json'
 import { healthRouter } from './routes/health'
 import { protectedContentRouter } from './routes/protected-content'
 import { contentCatalogRouter } from './routes/content-catalog'
+import { contentRouter } from './routes/content'
 import { internalRouter } from './routes/internal'
 import { contentSyncRouter } from './routes/content-sync'
 import { contentManagementRouter } from './routes/content-management'
@@ -38,6 +39,7 @@ app.use('*', cors({
 app.route('/health', healthRouter)
 app.route('/auth', protectedContentRouter)
 app.route('/api', contentCatalogRouter)
+app.route('/api/content', contentRouter)
 app.route('/api/internal', internalRouter)
 app.route('/api/internal/content-sync', contentSyncRouter)
 app.route('/api/content-management', contentManagementRouter)

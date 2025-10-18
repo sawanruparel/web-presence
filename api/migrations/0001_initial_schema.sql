@@ -94,5 +94,5 @@ CREATE INDEX IF NOT EXISTS idx_access_logs_credential ON access_logs(credential_
 -- ============================================================
 -- INITIAL DATA (Optional seed data)
 -- ============================================================
--- Note: Actual data will be migrated from access-control.json
+-- Note: Access control rules are managed via API endpoints
 -- This is kept empty for now, migration script will populate it

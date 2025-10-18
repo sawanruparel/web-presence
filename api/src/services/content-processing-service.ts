@@ -1,6 +1,7 @@
 import { marked } from 'marked'
 import matter from 'gray-matter'
 import { AccessControlService } from './access-control-service'
+import { createDatabaseService } from './database-service'
 import type { Env } from '../types/env'
 
 export interface ProcessedContent {
@@ -39,10 +40,17 @@ export interface ProtectedContentMetadata {
 export class ContentProcessingService {
   private baseUrl: string
   private accessControlService?: AccessControlService
+  private databaseService?: any
 
   constructor(baseUrl: string = 'https://sawanruparel.com', env?: Env) {
     this.baseUrl = baseUrl
     this.accessControlService = env ? new AccessControlService(env) : undefined
+    this.databaseService = env ? createDatabaseService(env.DB) : undefined
+    
+    console.log('🔍 ContentProcessingService constructor:')
+    console.log('🔍 env provided:', !!env)
+    console.log('🔍 env.DB provided:', !!env?.DB)
+    console.log('🔍 databaseService created:', !!this.databaseService)
   }
 
   /**
@@ -50,8 +58,7 @@ export class ContentProcessingService {
    */
   async processContentFile(
     filePath: string,
-    content: string,
-    accessRules?: Record<string, any>
+    content: string
   ): Promise<ProcessedContent> {
     // Parse frontmatter
     const { data: frontmatter, content: body } = matter(content)
@@ -72,8 +79,7 @@ export class ContentProcessingService {
     // Determine access mode
     const { isProtected, accessMode } = await this.determineAccessMode(
       filePath,
-      frontmatter,
-      accessRules
+      frontmatter
     )
 
     return {
@@ -164,11 +170,10 @@ export class ContentProcessingService {
     // Configure marked with proper URL handling
     marked.setOptions({
       breaks: true,
-      gfm: true,
-      baseUrl: this.baseUrl
+      gfm: true
     })
 
-    return marked(markdown)
+    return marked.parse(markdown) as string
   }
 
   /**
@@ -186,7 +191,7 @@ export class ContentProcessingService {
     const parts = filePath.split('/')
     const typeIndex = parts.indexOf('content')
     if (typeIndex >= 0 && typeIndex + 1 < parts.length) {
-      return parts[typeIndex + 1].replace(/s$/, '') // Remove 's' from 'notes' -> 'note'
+      return parts[typeIndex + 1] // Return directory name as-is (ideas, notes, pages, publications)
     }
     return 'page'
   }
@@ -245,54 +250,53 @@ export class ContentProcessingService {
    */
   private async determineAccessMode(
     filePath: string,
-    frontmatter: Record<string, any>,
-    accessRules?: Record<string, any>
+    frontmatter: Record<string, any>
   ): Promise<{ isProtected: boolean; accessMode: 'open' | 'password' | 'email-list' }> {
-    // Check if file is in protected directory or has protected frontmatter
-    const isInProtectedFolder = filePath.includes('content-protected/')
-    const hasProtectedFrontmatter = frontmatter?.protected === true
-
-    if (!isInProtectedFolder && !hasProtectedFrontmatter) {
-      return { isProtected: false, accessMode: 'open' }
-    }
-
+    console.log(`🚨 DETERMINE ACCESS MODE CALLED FOR: ${filePath}`)
+    
+    // ONLY check database - single source of truth
     const type = this.extractType(filePath)
     const slug = this.extractSlug(filePath)
-
-    // Try database access control first
-    if (this.accessControlService) {
-      const dbRule = await this.accessControlService.getAccessRule(type, slug)
+    
+    console.log(`🔍 Checking access mode for ${type}/${slug}`)
+    console.log(`🔍 DatabaseService available: ${!!this.databaseService}`)
+    
+    if (this.databaseService) {
+      console.log(`🔍 Calling databaseService.getAccessRule with: ${type}/${slug}`)
+      console.log(`🔍 databaseService type:`, typeof this.databaseService)
+      console.log(`🔍 databaseService.getAccessRule type:`, typeof this.databaseService.getAccessRule)
+      
+      const dbRule = await this.databaseService.getAccessRule(type, slug)
+      console.log(`🔍 DatabaseService result:`, dbRule)
+      
       if (dbRule) {
-        return {
-          isProtected: true,
-          accessMode: dbRule.accessMode
+        const result = {
+          isProtected: dbRule.access_mode !== 'open',
+          accessMode: dbRule.access_mode
         }
+        console.log(`🔍 Access mode result:`, result)
+        return result
       }
+    } else {
+      console.log(`🔍 No databaseService available`)
     }
-
-    // Fallback to provided access rules
-    if (accessRules?.[type]?.[slug]) {
-      const rule = accessRules[type][slug]
-      return {
-        isProtected: true,
-        accessMode: rule.mode || 'password'
-      }
-    }
-
-    // Default to password protection
-    return {
-      isProtected: true,
-      accessMode: frontmatter?.accessMode || 'password'
-    }
+    
+    // Default to open if not in database
+    console.log(`🔍 No database rule found, defaulting to open`)
+    return { isProtected: false, accessMode: 'open' }
   }
+
 
   /**
    * Escape HTML characters
    */
   private escapeHtml(text: string): string {
-    const div = document.createElement('div')
-    div.textContent = text
-    return div.innerHTML
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
   }
 
   /**

@@ -6,11 +6,11 @@ export const contentService = {
     type: 'notes' | 'publications' | 'ideas' | 'pages',
     slug: string,
     env: Env
-  ): Promise<ProtectedContentResponse | null> {
+  ): Promise<string | null> {
     try {
-      const key = `${type}/${slug}.json`
+      const key = `${type}/${slug}.html`
       
-      // Fetch content from R2 bucket
+      // Fetch HTML content from R2 bucket
       const object = await env.PROTECTED_CONTENT_BUCKET.get(key)
       
       if (!object) {
@@ -18,11 +18,11 @@ export const contentService = {
         return null
       }
       
-      // Parse the JSON content
-      const contentData = await object.json() as ProtectedContentResponse
+      // Get the HTML content as text
+      const htmlContent = await object.text()
       
       console.log(`Successfully fetched protected content from R2: ${key}`)
-      return contentData
+      return htmlContent
       
     } catch (error) {
       console.error(`Error fetching protected content from R2 (${type}/${slug}):`, error)

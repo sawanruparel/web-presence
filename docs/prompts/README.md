@@ -12,6 +12,7 @@ This directory contains structured prompts and context for AI tools to make effe
 - **[Error Handling](./error-handling.md)** - Error handling patterns and best practices
 - **[Testing Patterns](./testing-patterns.md)** - Testing strategies and patterns
 - **[Performance](./performance.md)** - Performance optimization patterns
+- **[Debugging Workflow](./debugging-workflow.md)** - Guidelines for creating and managing debugging scripts
 
 ## 🎯 How to Use These Prompts
 

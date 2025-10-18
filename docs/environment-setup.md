@@ -100,12 +100,13 @@ bucket_name = "protected-content"
 - R2 bucket binding provides direct access
 - No additional configuration needed
 
-### 4. Environment Consistency
+### 4. Environment Separation
 
-The same R2 bucket is used across all environments (development, production) to ensure:
-- Protected content is consistent across environments
-- No environment-specific content management needed
-- Simplified deployment process
+The project uses separate R2 buckets for each environment to ensure:
+- **Development Safety**: Local testing cannot corrupt production content
+- **Isolation**: Each environment has its own content storage
+- **Testing**: Can safely test full content sync pipeline locally
+- **Consistency**: Matches the database separation pattern (local vs production DB)
 
 ### 5. Security
 

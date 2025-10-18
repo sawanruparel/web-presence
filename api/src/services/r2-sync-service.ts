@@ -28,27 +28,13 @@ export class R2SyncService {
   /**
    * Upload protected content to R2
    */
-  async uploadProtectedContent(content: ProcessedContent): Promise<boolean> {
+  async uploadProtectedContent(content: ProcessedContent, htmlTemplate: string): Promise<boolean> {
     try {
-      const key = `${content.type}/${content.slug}.json`
-      const contentData = {
-        slug: content.slug,
-        title: content.title,
-        date: content.date,
-        readTime: content.readTime,
-        type: content.type,
-        content: content.content,
-        html: content.html,
-        excerpt: content.excerpt,
-        isProtected: content.isProtected,
-        accessMode: content.accessMode,
-        requiresPassword: content.requiresPassword,
-        requiresEmail: content.requiresEmail
-      }
-
-      await this.protectedBucket.put(key, JSON.stringify(contentData, null, 2), {
+      const key = `${content.type}/${content.slug}.html`
+      
+      await this.protectedBucket.put(key, htmlTemplate, {
         httpMetadata: {
-          contentType: 'application/json'
+          contentType: 'text/html'
         }
       })
 
@@ -222,16 +208,17 @@ export class R2SyncService {
 
       // Upload all content
       for (const content of processedContent) {
+        const htmlTemplateContent = htmlTemplate(content)
+        
         if (content.isProtected) {
-          const success = await this.uploadProtectedContent(content)
+          const success = await this.uploadProtectedContent(content, htmlTemplateContent)
           if (success) {
-            report.uploaded.push(`protected:${content.type}/${content.slug}.json`)
+            report.uploaded.push(`protected:${content.type}/${content.slug}.html`)
           } else {
             report.errors.push(`Failed to upload protected content: ${content.slug}`)
             report.success = false
           }
         } else {
-          const htmlTemplateContent = htmlTemplate(content)
           const success = await this.uploadPublicContent(content, htmlTemplateContent)
           if (success) {
             report.uploaded.push(`public:${content.type}/${content.slug}.html`)
@@ -303,6 +290,48 @@ export class R2SyncService {
     } catch (error) {
       console.error(`❌ Failed to get public HTML ${type}/${slug}:`, error)
       return null
+    }
+  }
+
+  /**
+   * Clean up stale objects that are no longer in the current content set
+   */
+  async cleanupStaleObjects(
+    currentContent: ProcessedContent[],
+    bucket: 'protected' | 'public'
+  ): Promise<string[]> {
+    try {
+      const r2Bucket = bucket === 'protected' ? this.protectedBucket : this.publicBucket
+      
+      // Get all objects in the bucket
+      const allObjects = await r2Bucket.list()
+      const currentKeys = new Set(
+        currentContent.map(content => `${content.type}/${content.slug}.html`)
+      )
+      
+      // Find objects that are not in the current content set
+      const staleObjects = allObjects.objects.filter(obj => 
+        !currentKeys.has(obj.key) && 
+        obj.key !== 'content-metadata.json' // Don't delete metadata
+      )
+      
+      // Delete stale objects
+      const deletedKeys: string[] = []
+      for (const obj of staleObjects) {
+        try {
+          await r2Bucket.delete(obj.key)
+          deletedKeys.push(obj.key)
+          console.log(`✅ Deleted ${bucket} object: ${obj.key}`)
+        } catch (error) {
+          console.error(`❌ Failed to delete ${bucket} object ${obj.key}:`, error)
+        }
+      }
+      
+      console.log(`🧹 Cleaned up ${deletedKeys.length} stale objects from ${bucket} bucket`)
+      return deletedKeys
+    } catch (error) {
+      console.error(`❌ Failed to cleanup stale objects in ${bucket} bucket:`, error)
+      return []
     }
   }
 }
