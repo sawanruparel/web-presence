@@ -73,10 +73,11 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
     console.log(`📊 Found content metadata with ${Object.keys(catalogData.metadata || {}).length} content types`)
 
     // Transform metadata to match ContentList interface
-    const notes = transformContentItems(catalogData.metadata?.notes || [], 'note')
+    // Note: API returns singular forms (note, idea, page) but we need plural forms
+    const notes = transformContentItems(catalogData.metadata?.note || [], 'note')
     const publications = transformContentItems(catalogData.metadata?.publications || [], 'publication')
-    const ideas = transformContentItems(catalogData.metadata?.ideas || [], 'idea')
-    const pages = transformContentItems(catalogData.metadata?.pages || [], 'page')
+    const ideas = transformContentItems(catalogData.metadata?.idea || [], 'idea')
+    const pages = transformContentItems(catalogData.metadata?.page || [], 'page')
     
     // Create latest array by combining all content and sorting by date
     const allContent = [...notes, ...publications, ...ideas, ...pages]
