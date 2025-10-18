@@ -142,50 +142,6 @@ export class R2SyncService {
     }
   }
 
-  /**
-   * Clean up stale objects from R2
-   */
-  async cleanupStaleObjects(
-    currentContent: ProcessedContent[],
-    bucket: 'protected' | 'public'
-  ): Promise<string[]> {
-    const deletedKeys: string[] = []
-    
-    try {
-      // Get current objects in bucket
-      const existingObjects = await this.listObjects(bucket)
-      
-      // Create set of current content keys
-      const currentKeys = new Set(
-        currentContent.map(content => 
-          bucket === 'protected' 
-            ? `${content.type}/${content.slug}.json`
-            : `${content.type}/${content.slug}.html`
-        )
-      )
-
-      // Add metadata key for public bucket
-      if (bucket === 'public') {
-        currentKeys.add('content-metadata.json')
-      }
-
-      // Find and delete stale objects
-      for (const obj of existingObjects) {
-        if (!currentKeys.has(obj.key)) {
-          const success = await this.deleteObject(bucket, obj.key)
-          if (success) {
-            deletedKeys.push(obj.key)
-          }
-        }
-      }
-
-      console.log(`🧹 Cleaned up ${deletedKeys.length} stale objects from ${bucket} bucket`)
-      return deletedKeys
-    } catch (error) {
-      console.error(`❌ Failed to cleanup stale objects from ${bucket} bucket:`, error)
-      return deletedKeys
-    }
-  }
 
   /**
    * Sync all content to R2 with cleanup

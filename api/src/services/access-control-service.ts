@@ -5,6 +5,7 @@ export interface AccessRule {
   type: string
   slug: string
   accessMode: 'open' | 'password' | 'email-list'
+  mode: 'open' | 'password' | 'email-list' // Alias for backward compatibility
   description?: string
   passwordHash?: string
   allowedEmails: string[]
@@ -52,6 +53,7 @@ export class AccessControlService {
         type: result.type as string,
         slug: result.slug as string,
         accessMode: result.accessMode as 'open' | 'password' | 'email-list',
+        mode: result.accessMode as 'open' | 'password' | 'email-list', // Alias for backward compatibility
         description: result.description as string | undefined,
         passwordHash: result.passwordHash as string | undefined,
         allowedEmails: [], // Will be populated separately if needed
@@ -93,6 +95,7 @@ export class AccessControlService {
         type: rule.type as string,
         slug: rule.slug as string,
         accessMode: rule.accessMode as 'open' | 'password' | 'email-list',
+        mode: rule.accessMode as 'open' | 'password' | 'email-list', // Alias for backward compatibility
         description: rule.description as string | undefined,
         passwordHash: rule.passwordHash as string | undefined,
         allowedEmails: rule.allowedEmails ? (rule.allowedEmails as string).split(',') : [],
@@ -214,17 +217,30 @@ export class AccessControlService {
   /**
    * Verify password for content
    */
-  async verifyPassword(type: string, slug: string, password: string): Promise<boolean> {
+  async verifyPassword(
+    password: string, 
+    type: string, 
+    slug: string, 
+    ipAddress?: string, 
+    userAgent?: string
+  ): Promise<boolean> {
     try {
       const rule = await this.getAccessRule(type, slug)
       
       if (!rule || rule.accessMode !== 'password' || !rule.passwordHash) {
+        // Log failed attempt
+        await this.logAccessAttempt(type, slug, false, 'password', undefined, ipAddress, userAgent)
         return false
       }
 
       // Simple password verification (in production, use bcrypt)
       const providedHash = await this.hashPassword(password)
-      return providedHash === rule.passwordHash
+      const isValid = providedHash === rule.passwordHash
+      
+      // Log the attempt
+      await this.logAccessAttempt(type, slug, isValid, 'password', undefined, ipAddress, userAgent)
+      
+      return isValid
     } catch (error) {
       console.error(`Error verifying password for ${type}/${slug}:`, error)
       return false
@@ -258,6 +274,94 @@ export class AccessControlService {
     const hashBuffer = await crypto.subtle.digest('SHA-256', data)
     const hashArray = Array.from(new Uint8Array(hashBuffer))
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  }
+
+  /**
+   * Get access mode for specific content
+   */
+  async getAccessMode(type: string, slug: string): Promise<'open' | 'password' | 'email-list' | null> {
+    try {
+      const rule = await this.getAccessRule(type, slug)
+      return rule?.accessMode || null
+    } catch (error) {
+      console.error(`Error getting access mode for ${type}/${slug}:`, error)
+      return null
+    }
+  }
+
+  /**
+   * Check if content is publicly accessible
+   */
+  async isPubliclyAccessible(type: string, slug: string): Promise<boolean> {
+    try {
+      const accessMode = await this.getAccessMode(type, slug)
+      return accessMode === 'open'
+    } catch (error) {
+      console.error(`Error checking if ${type}/${slug} is publicly accessible:`, error)
+      return false
+    }
+  }
+
+  /**
+   * Log open access (for tracking purposes)
+   */
+  async logOpenAccess(type: string, slug: string, ipAddress?: string, userAgent?: string): Promise<void> {
+    try {
+      await this.logAccessAttempt(type, slug, true, 'open', undefined, ipAddress, userAgent)
+    } catch (error) {
+      console.error(`Error logging open access for ${type}/${slug}:`, error)
+    }
+  }
+
+  /**
+   * Generate access token (placeholder implementation)
+   */
+  async generateToken(options: {
+    type: string
+    slug: string
+    credentialType?: string
+    credentialValue?: string
+    verifiedAt?: string
+    email?: string
+  }): Promise<string> {
+    // Simple token generation - in production, use JWT or similar
+    const tokenData = {
+      type: options.type,
+      slug: options.slug,
+      credentialType: options.credentialType,
+      verifiedAt: options.verifiedAt,
+      email: options.email,
+      timestamp: Date.now()
+    }
+    
+    const encoder = new TextEncoder()
+    const data = encoder.encode(JSON.stringify(tokenData))
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  }
+
+  /**
+   * Verify email access
+   */
+  async verifyEmail(
+    email: string, 
+    type: string, 
+    slug: string, 
+    ipAddress?: string, 
+    userAgent?: string
+  ): Promise<boolean> {
+    try {
+      const isAllowed = await this.isEmailAllowed(type, slug, email)
+      
+      // Log the attempt
+      await this.logAccessAttempt(type, slug, isAllowed, 'email', email, ipAddress, userAgent)
+      
+      return isAllowed
+    } catch (error) {
+      console.error(`Error verifying email for ${type}/${slug}:`, error)
+      return false
+    }
   }
 
   /**
