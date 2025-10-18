@@ -116,10 +116,59 @@ class ApiClient {
         throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`)
       }
 
-      return await response.json()
+      // Get HTML content from response
+      const htmlContent = await response.text()
+      
+      // Parse metadata from HTML and return structured response
+      return this.parseHtmlMetadata(htmlContent, type, slug)
     } catch (error) {
       console.error('Failed to fetch protected content:', error)
       throw error
+    }
+  }
+
+  /**
+   * Parse metadata from HTML content
+   */
+  private parseHtmlMetadata(html: string, type: string, slug: string): ProtectedContentResponse {
+    // Create a temporary DOM element to parse the HTML
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(html, 'text/html')
+    
+    // Extract title from <title> or <h1>
+    const title = doc.querySelector('title')?.textContent?.trim() || 
+                  doc.querySelector('h1')?.textContent?.trim() || 
+                  slug
+    
+    // Extract date from meta tag or time element
+    const publishedTime = doc.querySelector('meta[name="article:published_time"]')?.getAttribute('content') ||
+                         doc.querySelector('time[datetime]')?.getAttribute('datetime') ||
+                         new Date().toISOString().split('T')[0]
+    
+    // Extract read time from meta tag or span element
+    const readTimeMeta = doc.querySelector('meta[name="reading-time"]')?.getAttribute('content')
+    const readTimeSpan = doc.querySelector('.read-time')?.textContent?.trim()
+    const readTime = readTimeSpan || (readTimeMeta ? `${readTimeMeta} min` : '5 min')
+    
+    // Extract excerpt from meta description
+    const excerpt = doc.querySelector('meta[name="description"]')?.getAttribute('content') || 
+                   'Protected content'
+    
+    // Extract content from the article body (without the full HTML wrapper)
+    const articleContent = doc.querySelector('article .content')?.innerHTML ||
+                          doc.querySelector('main article')?.innerHTML ||
+                          doc.querySelector('body')?.innerHTML ||
+                          html
+    
+    return {
+      slug,
+      title,
+      date: publishedTime.split('T')[0], // Just the date part
+      readTime,
+      type,
+      excerpt,
+      content: articleContent, // The article content without full HTML wrapper
+      html: html // The full HTML content
     }
   }
 
