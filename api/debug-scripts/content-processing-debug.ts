@@ -6,7 +6,7 @@
  */
 
 const API_KEY = 'API_KEY_tu1ylu2nm7wnebxz05vfe'
-const BASE_URL = 'http://localhost:8787'
+const BASE_URL = 'https://web-presence-api.quoppo.workers.dev'
 
 interface ContentSyncResult {
   filesProcessed: number

@@ -1,6 +1,6 @@
 # Technology Stack Clarification
 
-This document provides a clear breakdown of the technologies used in the Web Presence project and clarifies the role of Node.js in the system.
+This document provides a clear breakdown of the technologies used in the Web Presence project.
 
 ## 🏗️ Architecture Overview
 
