@@ -258,7 +258,18 @@ export class AccessControlService {
         return false
       }
 
-      return rule.allowedEmails.includes(email.toLowerCase().trim())
+      // Get the allowed emails from the database
+      const emailsQuery = `
+        SELECT email FROM email_allowlist 
+        WHERE access_rule_id = ?
+      `
+      const result = await this.db.prepare(emailsQuery).bind(rule.id).all() as any
+      const allowedEmails = result.results.map((row: any) => row.email.toLowerCase().trim())
+      
+      console.log(`🔍 Allowed emails for ${type}/${slug}:`, allowedEmails)
+      console.log(`🔍 Checking email: ${email.toLowerCase().trim()}`)
+
+      return allowedEmails.includes(email.toLowerCase().trim())
     } catch (error) {
       console.error(`Error checking email access for ${type}/${slug}:`, error)
       return false
@@ -331,14 +342,12 @@ export class AccessControlService {
       credentialType: options.credentialType,
       verifiedAt: options.verifiedAt,
       email: options.email,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours from now
     }
     
-    const encoder = new TextEncoder()
-    const data = encoder.encode(JSON.stringify(tokenData))
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    // Encode as base64 JSON string (what the auth middleware expects)
+    return btoa(JSON.stringify(tokenData))
   }
 
   /**
