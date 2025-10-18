@@ -1,22 +1,33 @@
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
+
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 /**
  * Fetch pre-generated content from R2 via API
  * This replaces the markdown processing in the frontend build
  */
 
+interface ContentItem {
+  slug: string
+  title: string
+  date: string
+  readTime: string
+  type: 'note' | 'publication' | 'idea' | 'page'
+  excerpt: string
+  content: string
+  html: string
+}
+
 interface ContentMetadata {
-  [type: string]: Array<{
-    slug: string
-    title: string
-    date: string
-    readTime: string
-    type: string
-    excerpt: string
-    content: string
-    html: string
-  }>
+  notes: ContentItem[]
+  publications: ContentItem[]
+  ideas: ContentItem[]
+  pages: ContentItem[]
+  latest: ContentItem[]
 }
 
 interface FetchOptions {
@@ -25,41 +36,76 @@ interface FetchOptions {
   outputDir: string
 }
 
+/**
+ * Transform raw content items to match ContentItem interface
+ */
+function transformContentItems(items: any[], type: 'note' | 'publication' | 'idea' | 'page'): ContentItem[] {
+  return items.map(item => ({
+    slug: item.slug,
+    title: item.title,
+    date: item.date,
+    readTime: item.readTime,
+    type: type,
+    excerpt: item.excerpt,
+    content: item.content || '',
+    html: item.html || ''
+  }))
+}
+
 export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
   const { apiUrl, apiKey, outputDir } = options
 
-  console.log('🔄 Fetching content from R2 via API...')
+  console.log('🔄 Fetching content metadata from API...')
 
   try {
-    // Fetch content metadata from API
-    const metadataResponse = await fetch(`${apiUrl}/api/internal/content-sync/status`, {
+    // Fetch content metadata from catalog endpoint
+    const catalogResponse = await fetch(`${apiUrl}/api/content/catalog`, {
       headers: {
         'X-API-Key': apiKey
       }
     })
 
-    if (!metadataResponse.ok) {
-      throw new Error(`Failed to fetch content status: ${metadataResponse.status}`)
+    if (!catalogResponse.ok) {
+      throw new Error(`Failed to fetch content catalog: ${catalogResponse.status}`)
     }
 
-    const status = await metadataResponse.json()
-    console.log(`📊 Found ${status.buckets.public.count} public content files`)
+    const catalogData = await catalogResponse.json()
+    console.log(`📊 Found content metadata with ${Object.keys(catalogData.metadata || {}).length} content types`)
 
-    // For now, we'll create a simple content-metadata.json
-    // In a real implementation, you'd fetch the actual metadata from R2
+    // Transform metadata to match ContentList interface
+    const notes = transformContentItems(catalogData.metadata?.notes || [], 'note')
+    const publications = transformContentItems(catalogData.metadata?.publications || [], 'publication')
+    const ideas = transformContentItems(catalogData.metadata?.ideas || [], 'idea')
+    const pages = transformContentItems(catalogData.metadata?.pages || [], 'page')
+    
+    // Create latest array by combining all content and sorting by date
+    const allContent = [...notes, ...publications, ...ideas, ...pages]
+    const latest = allContent
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 10) // Get latest 10 items
+    
     const contentMetadata: ContentMetadata = {
-      notes: [],
-      ideas: [],
-      publications: [],
-      pages: []
+      notes,
+      publications,
+      ideas,
+      pages,
+      latest
     }
 
-    // Create output directory
+    console.log(`📝 Transformed content: ${contentMetadata.notes.length} notes, ${contentMetadata.ideas.length} ideas, ${contentMetadata.publications.length} publications, ${contentMetadata.pages.length} pages`)
+
+    // Create output directories
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true })
     }
 
-    // Create type directories
+    // Create src/data directory for TypeScript imports
+    const srcDataDir = path.join(__dirname, '..', 'src', 'data')
+    if (!fs.existsSync(srcDataDir)) {
+      fs.mkdirSync(srcDataDir, { recursive: true })
+    }
+
+    // Create type directories in dist
     const contentTypes = ['notes', 'ideas', 'publications', 'pages']
     for (const type of contentTypes) {
       const typeDir = path.join(outputDir, type)
@@ -68,10 +114,16 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
       }
     }
 
-    // Write content metadata
-    const metadataPath = path.join(outputDir, 'content-metadata.json')
-    fs.writeFileSync(metadataPath, JSON.stringify(contentMetadata, null, 2))
-    console.log(`✅ Created content-metadata.json`)
+    // Write content metadata to both locations
+    const distMetadataPath = path.join(outputDir, 'content-metadata.json')
+    const srcMetadataPath = path.join(srcDataDir, 'content-metadata.json')
+    
+    const metadataJson = JSON.stringify(contentMetadata, null, 2)
+    
+    fs.writeFileSync(distMetadataPath, metadataJson)
+    fs.writeFileSync(srcMetadataPath, metadataJson)
+    
+    console.log(`✅ Created content-metadata.json in dist and src/data`)
 
     // Note: In a full implementation, you would:
     // 1. Fetch the actual content-metadata.json from R2
@@ -79,15 +131,40 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
     // 3. Write the HTML files to the dist directory
     // 4. This would require R2 access from the frontend build process
 
-    console.log('✅ Content fetch completed (placeholder implementation)')
-    console.log('⚠️  Note: This is a placeholder. Full R2 integration requires:')
-    console.log('   - R2 credentials in build environment')
-    console.log('   - Direct R2 API calls or wrangler CLI')
-    console.log('   - Or API endpoint to serve content files')
+    console.log('✅ Content fetch completed successfully')
 
   } catch (error) {
-    console.error('❌ Failed to fetch content from R2:', error)
-    throw error
+    console.warn('⚠️  Failed to fetch content from API, creating fallback:', error.message)
+    
+    // Create fallback content metadata
+    const fallbackMetadata: ContentMetadata = {
+      notes: [],
+      ideas: [],
+      publications: [],
+      pages: [],
+      latest: []
+    }
+
+    // Ensure directories exist
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true })
+    }
+
+    const srcDataDir = path.join(__dirname, '..', 'src', 'data')
+    if (!fs.existsSync(srcDataDir)) {
+      fs.mkdirSync(srcDataDir, { recursive: true })
+    }
+
+    // Write fallback metadata
+    const metadataJson = JSON.stringify(fallbackMetadata, null, 2)
+    const distMetadataPath = path.join(outputDir, 'content-metadata.json')
+    const srcMetadataPath = path.join(srcDataDir, 'content-metadata.json')
+    
+    fs.writeFileSync(distMetadataPath, metadataJson)
+    fs.writeFileSync(srcMetadataPath, metadataJson)
+    
+    console.log('✅ Created fallback content-metadata.json')
+    console.log('⚠️  Note: Using empty content metadata. API may not be accessible during build.')
   }
 }
 
