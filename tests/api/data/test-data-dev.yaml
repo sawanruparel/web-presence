@@ -22,3 +22,143 @@ access_rules:
     - type: notes
       slug_template: "test-note-{timestamp}"
       description: Test open access note
+
+# Content Management Test Data
+content_management:
+  test_files:
+    - type: notes
+      slug_template: "test-note-{timestamp}"
+      title: "Test Note"
+      markdown: "# Test Note\n\nThis is a test note content."
+      frontmatter:
+        title: "Test Note"
+        date: "2024-01-15"
+        description: "A test note for API testing"
+    
+    - type: ideas
+      slug_template: "test-idea-{timestamp}"
+      title: "Test Idea"
+      markdown: "# Test Idea\n\nThis is a test idea content."
+      frontmatter:
+        title: "Test Idea"
+        date: "2024-01-15"
+        description: "A test idea for API testing"
+        protected: true
+        accessMode: "password"
+    
+    - type: publications
+      slug_template: "test-pub-{timestamp}"
+      title: "Test Publication"
+      markdown: "# Test Publication\n\nThis is a test publication content."
+      frontmatter:
+        title: "Test Publication"
+        date: "2024-01-15"
+        description: "A test publication for API testing"
+        protected: true
+        accessMode: "email-list"
+
+# Content Sync Test Data
+content_sync:
+  webhook_payloads:
+    - name: "main_branch_push"
+      ref: "refs/heads/main"
+      repository:
+        full_name: "test/repo"
+        default_branch: "main"
+      commits:
+        - id: "abc123"
+          message: "Update content"
+          added: ["content/notes/test-note.md"]
+          removed: []
+          modified: []
+    
+    - name: "feature_branch_push"
+      ref: "refs/heads/feature-branch"
+      repository:
+        full_name: "test/repo"
+        default_branch: "main"
+      commits:
+        - id: "def456"
+          message: "Add new content"
+          added: ["content/ideas/new-idea.md"]
+          removed: []
+          modified: []
+    
+    - name: "no_content_changes"
+      ref: "refs/heads/main"
+      repository:
+        full_name: "test/repo"
+        default_branch: "main"
+      commits:
+        - id: "ghi789"
+          message: "Update README"
+          added: ["README.md"]
+          removed: []
+          modified: []
+
+  manual_sync_requests:
+    - name: "full_sync"
+      full_sync: true
+      files: []
+    
+    - name: "specific_files"
+      full_sync: false
+      files: ["content/notes/test-note.md", "content/ideas/test-idea.md"]
+    
+    - name: "empty_files"
+      full_sync: false
+      files: []
+
+# Access Control Test Data (Updated for new API)
+access_control_api:
+  rules:
+    password_rule:
+      type: "notes"
+      slug_template: "test-password-{timestamp}"
+      accessMode: "password"
+      description: "Test password rule"
+      password: "testpass123"
+    
+    email_rule:
+      type: "ideas"
+      slug_template: "test-email-{timestamp}"
+      accessMode: "email-list"
+      description: "Test email rule"
+      allowedEmails: ["user1@example.com", "user2@example.com"]
+    
+    open_rule:
+      type: "publications"
+      slug_template: "test-open-{timestamp}"
+      accessMode: "open"
+      description: "Test open rule"
+
+  updates:
+    - name: "change_access_mode"
+      accessMode: "email-list"
+      allowedEmails: ["newuser@example.com"]
+    
+    - name: "update_description"
+      description: "Updated test rule"
+    
+    - name: "change_password"
+      password: "newpassword123"
+
+  invalid_data:
+    - name: "missing_required_fields"
+      data: {}
+      expected_error: "Missing required fields"
+    
+    - name: "invalid_access_mode"
+      data:
+        type: "notes"
+        slug: "test"
+        accessMode: "invalid-mode"
+      expected_error: "Invalid access mode"
+    
+    - name: "empty_email_list"
+      data:
+        type: "ideas"
+        slug: "test"
+        accessMode: "email-list"
+        allowedEmails: []
+      expected_error: "Email list cannot be empty"

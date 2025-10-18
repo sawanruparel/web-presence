@@ -63,3 +63,63 @@ scenarios:
     requires_cleanup: true
     expected_status: [200, 201, 204]
     description: "Test admin access rules CRUD operations"
+
+  # Content Sync Scenarios
+  content_sync_webhook:
+    type: functional
+    endpoint: /api/internal/content-sync/webhook
+    method: POST
+    expected_status: [200, 400, 401]
+    description: "Test content sync webhook processing"
+
+  content_sync_manual:
+    type: functional
+    endpoint: /api/internal/content-sync/manual
+    method: POST
+    requires_api_key: true
+    expected_status: [200, 400, 500]
+    description: "Test manual content sync"
+
+  content_sync_status:
+    type: functional
+    endpoint: /api/internal/content-sync/status
+    method: GET
+    requires_api_key: true
+    expected_status: 200
+    description: "Test content sync status endpoint"
+
+  # Content Management Scenarios
+  content_management_list:
+    type: functional
+    endpoint: /api/content-management/list
+    method: GET
+    requires_api_key: true
+    expected_status: 200
+    description: "Test content management list endpoint"
+
+  content_management_crud:
+    type: data_validation
+    endpoint: /api/content-management/file
+    method: [POST, GET, PUT, DELETE]
+    requires_api_key: true
+    requires_cleanup: true
+    expected_status: [200, 201, 404]
+    description: "Test content management CRUD operations"
+
+  # Access Control API Scenarios (New)
+  access_control_api_rules:
+    type: data_validation
+    endpoint: /api/access-control/rules
+    method: [POST, GET, PUT, DELETE]
+    requires_api_key: true
+    requires_cleanup: true
+    expected_status: [200, 201, 400, 404]
+    description: "Test access control API rules management"
+
+  access_control_api_logs:
+    type: functional
+    endpoint: /api/access-control/logs
+    method: GET
+    requires_api_key: true
+    expected_status: 200
+    description: "Test access control logs endpoint"

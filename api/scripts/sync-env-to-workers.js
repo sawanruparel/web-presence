@@ -34,7 +34,13 @@ const PROJECT_NAME = 'web-presence-api'
 const VARIABLES_TO_SYNC = [
   'INTERNAL_API_KEY',
   'FRONTEND_URL',
-  'CORS_ORIGINS'
+  'CORS_ORIGINS',
+  'GITHUB_TOKEN',
+  'GITHUB_WEBHOOK_SECRET',
+  'GITHUB_REPO',
+  'GITHUB_BRANCH',
+  'PROTECTED_CONTENT_BUCKET_NAME',
+  'PUBLIC_CONTENT_BUCKET_NAME'
 ]
 
 async function syncEnvironmentVariables() {
@@ -85,8 +91,8 @@ async function syncEnvironmentVariables() {
       console.log(`   📤 Setting ${varName}...`)
       
       try {
-        // Use wrangler secret put command
-        const command = `echo "${varValue}" | npx wrangler secret put ${varName}`
+        // Use wrangler secret put command with production environment
+        const command = `echo "${varValue}" | npx wrangler secret put ${varName} --env production`
         execSync(command, { 
           stdio: 'pipe',
           shell: true

@@ -31,7 +31,13 @@ function loadEnvironmentFiles() {
       file: API_DEV_VARS,
       INTERNAL_API_KEY: process.env.INTERNAL_API_KEY,
       FRONTEND_URL: process.env.FRONTEND_URL,
-      CORS_ORIGINS: process.env.CORS_ORIGINS
+      CORS_ORIGINS: process.env.CORS_ORIGINS,
+      GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+      GITHUB_WEBHOOK_SECRET: process.env.GITHUB_WEBHOOK_SECRET,
+      GITHUB_REPO: process.env.GITHUB_REPO,
+      GITHUB_BRANCH: process.env.GITHUB_BRANCH,
+      PROTECTED_CONTENT_BUCKET_NAME: process.env.PROTECTED_CONTENT_BUCKET_NAME,
+      PUBLIC_CONTENT_BUCKET_NAME: process.env.PUBLIC_CONTENT_BUCKET_NAME
     }
   }
   
@@ -110,6 +116,12 @@ function displayEnvironmentStatus(envVars) {
     console.log(`   ${envVars.api.INTERNAL_API_KEY ? '✅' : '❌'} INTERNAL_API_KEY: ${envVars.api.INTERNAL_API_KEY ? 'Set' : 'Missing'}`)
     console.log(`   ${envVars.api.FRONTEND_URL ? '✅' : '❌'} FRONTEND_URL: ${envVars.api.FRONTEND_URL || 'Missing'}`)
     console.log(`   ${envVars.api.CORS_ORIGINS ? '✅' : '❌'} CORS_ORIGINS: ${envVars.api.CORS_ORIGINS || 'Missing'}`)
+    console.log(`   ${envVars.api.GITHUB_TOKEN ? '✅' : '❌'} GITHUB_TOKEN: ${envVars.api.GITHUB_TOKEN ? 'Set' : 'Missing'}`)
+    console.log(`   ${envVars.api.GITHUB_WEBHOOK_SECRET ? '✅' : '❌'} GITHUB_WEBHOOK_SECRET: ${envVars.api.GITHUB_WEBHOOK_SECRET ? 'Set' : 'Missing'}`)
+    console.log(`   ${envVars.api.GITHUB_REPO ? '✅' : '❌'} GITHUB_REPO: ${envVars.api.GITHUB_REPO || 'Missing'}`)
+    console.log(`   ${envVars.api.GITHUB_BRANCH ? '✅' : '❌'} GITHUB_BRANCH: ${envVars.api.GITHUB_BRANCH || 'Missing'}`)
+    console.log(`   ${envVars.api.PROTECTED_CONTENT_BUCKET_NAME ? '✅' : '❌'} PROTECTED_CONTENT_BUCKET_NAME: ${envVars.api.PROTECTED_CONTENT_BUCKET_NAME || 'Missing'}`)
+    console.log(`   ${envVars.api.PUBLIC_CONTENT_BUCKET_NAME ? '✅' : '❌'} PUBLIC_CONTENT_BUCKET_NAME: ${envVars.api.PUBLIC_CONTENT_BUCKET_NAME || 'Missing'}`)
   } else {
     console.log('   ❌ File not found')
   }

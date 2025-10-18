@@ -183,3 +183,69 @@ class APITestClient:
     def get_content_catalog_by_type(self, content_type: str) -> Tuple[Dict, int]:
         """GET /api/content-catalog/:type"""
         return self._make_request('GET', f'/api/content-catalog/{content_type}')
+    
+    # Content Sync endpoints
+    def content_sync_webhook(self, payload: Dict, signature: str = None) -> Tuple[Dict, int]:
+        """POST /api/internal/content-sync/webhook"""
+        headers = {}
+        if signature:
+            headers['X-Hub-Signature-256'] = signature
+        return self._make_request('POST', '/api/internal/content-sync/webhook', payload, headers)
+    
+    def content_sync_manual(self, data: Dict) -> Tuple[Dict, int]:
+        """POST /api/internal/content-sync/manual"""
+        return self._make_request('POST', '/api/internal/content-sync/manual', data)
+    
+    def content_sync_status(self) -> Tuple[Dict, int]:
+        """GET /api/internal/content-sync/status"""
+        return self._make_request('GET', '/api/internal/content-sync/status')
+    
+    # Content Management endpoints
+    def list_content_by_type(self, content_type: str) -> Tuple[Dict, int]:
+        """GET /api/content-management/list/:type"""
+        return self._make_request('GET', f'/api/content-management/list/{content_type}')
+    
+    def get_content_file(self, content_type: str, slug: str) -> Tuple[Dict, int]:
+        """GET /api/content-management/file/:type/:slug"""
+        return self._make_request('GET', f'/api/content-management/file/{content_type}/{slug}')
+    
+    def create_content_file(self, data: Dict) -> Tuple[Dict, int]:
+        """POST /api/content-management/file"""
+        return self._make_request('POST', '/api/content-management/file', data)
+    
+    def update_content_file(self, content_type: str, slug: str, data: Dict) -> Tuple[Dict, int]:
+        """PUT /api/content-management/file/:type/:slug"""
+        return self._make_request('PUT', f'/api/content-management/file/{content_type}/{slug}', data)
+    
+    def delete_content_file(self, content_type: str, slug: str, data: Dict) -> Tuple[Dict, int]:
+        """DELETE /api/content-management/file/:type/:slug"""
+        return self._make_request('DELETE', f'/api/content-management/file/{content_type}/{slug}', data)
+    
+    def get_content_types(self) -> Tuple[Dict, int]:
+        """GET /api/content-management/types"""
+        return self._make_request('GET', '/api/content-management/types')
+    
+    # Access Control API endpoints (New)
+    def get_access_control_rules(self) -> Tuple[Dict, int]:
+        """GET /api/access-control/rules"""
+        return self._make_request('GET', '/api/access-control/rules')
+    
+    def get_access_control_rule(self, content_type: str, slug: str) -> Tuple[Dict, int]:
+        """GET /api/access-control/rules/:type/:slug"""
+        return self._make_request('GET', f'/api/access-control/rules/{content_type}/{slug}')
+    
+    def create_access_control_rule(self, data: Dict) -> Tuple[Dict, int]:
+        """POST /api/access-control/rules"""
+        return self._make_request('POST', '/api/access-control/rules', data)
+    
+    def update_access_control_rule(self, content_type: str, slug: str, data: Dict) -> Tuple[Dict, int]:
+        """PUT /api/access-control/rules/:type/:slug"""
+        return self._make_request('PUT', f'/api/access-control/rules/{content_type}/{slug}', data)
+    
+    def delete_access_control_rule(self, content_type: str, slug: str, data: Dict) -> Tuple[Dict, int]:
+        """DELETE /api/access-control/rules/:type/:slug"""
+        return self._make_request('DELETE', f'/api/access-control/rules/{content_type}/{slug}', data)
+    
+    def get_access_control_logs(self, page: int = 1, limit: int = 50) -> Tuple[Dict, int]:
+        """GET /api/access-control/logs"""
+        return self._make_request('GET', f'/api/access-control/logs?page={page}&limit={limit}')

@@ -4,8 +4,9 @@ export interface Env {
   // D1 Database binding
   DB: D1Database
   
-  // R2 Bucket binding
+  // R2 Bucket bindings
   PROTECTED_CONTENT_BUCKET: R2Bucket
+  PUBLIC_CONTENT_BUCKET: R2Bucket
   
   // Environment variables
   INTERNAL_API_KEY: string
@@ -13,6 +14,16 @@ export interface Env {
   // CORS and Frontend Configuration
   FRONTEND_URL: string
   CORS_ORIGINS: string
+  
+  // GitHub Integration
+  GITHUB_TOKEN: string
+  GITHUB_WEBHOOK_SECRET: string
+  GITHUB_REPO: string
+  GITHUB_BRANCH: string
+  
+  // R2 Bucket Names (for reference)
+  PROTECTED_CONTENT_BUCKET_NAME: string
+  PUBLIC_CONTENT_BUCKET_NAME: string
 }
 
 // Re-export D1 types for convenience
@@ -33,6 +44,7 @@ export type D1Database = {
   dump(): Promise<ArrayBuffer>
   batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>
   exec(query: string): Promise<D1Result>
+  withSession(sessionId: string): D1Database
 }
 
 export type D1PreparedStatement = {

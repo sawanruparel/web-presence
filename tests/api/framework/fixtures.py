@@ -86,3 +86,96 @@ def test_open_rule_data(test_data, unique_slug):
         'accessMode': 'open',
         'description': rule_template['description']
     }
+
+
+# Content Management Fixtures
+@pytest.fixture
+def test_content_file_data(test_data, unique_slug):
+    """Generate test content file data with unique slug"""
+    file_template = test_data['content_management']['test_files'][0]
+    return {
+        'type': file_template['type'],
+        'slug': file_template['slug_template'].format(timestamp=int(time.time())),
+        'title': file_template['title'],
+        'markdown': file_template['markdown'],
+        'frontmatter': file_template['frontmatter'],
+        'commitMessage': f'Test commit for {file_template["type"]}/{file_template["slug_template"].format(timestamp=int(time.time()))}'
+    }
+
+
+@pytest.fixture
+def test_protected_content_file_data(test_data, unique_slug):
+    """Generate test protected content file data with unique slug"""
+    file_template = test_data['content_management']['test_files'][1]  # ideas with protected: true
+    return {
+        'type': file_template['type'],
+        'slug': file_template['slug_template'].format(timestamp=int(time.time())),
+        'title': file_template['title'],
+        'markdown': file_template['markdown'],
+        'frontmatter': file_template['frontmatter'],
+        'commitMessage': f'Test commit for protected {file_template["type"]}/{file_template["slug_template"].format(timestamp=int(time.time()))}'
+    }
+
+
+# Content Sync Fixtures
+@pytest.fixture
+def test_webhook_payloads(test_data):
+    """Get webhook payload test data"""
+    return test_data['content_sync']['webhook_payloads']
+
+
+@pytest.fixture
+def test_manual_sync_requests(test_data):
+    """Get manual sync request test data"""
+    return test_data['content_sync']['manual_sync_requests']
+
+
+# Access Control API Fixtures (New)
+@pytest.fixture
+def test_access_control_password_rule(test_data, unique_slug):
+    """Generate test access control password rule data"""
+    rule_template = test_data['access_control_api']['rules']['password_rule']
+    return {
+        'type': rule_template['type'],
+        'slug': rule_template['slug_template'].format(timestamp=int(time.time())),
+        'accessMode': rule_template['accessMode'],
+        'description': rule_template['description'],
+        'passwordHash': rule_template['password']  # In real tests, this would be hashed
+    }
+
+
+@pytest.fixture
+def test_access_control_email_rule(test_data, unique_slug):
+    """Generate test access control email rule data"""
+    rule_template = test_data['access_control_api']['rules']['email_rule']
+    return {
+        'type': rule_template['type'],
+        'slug': rule_template['slug_template'].format(timestamp=int(time.time())),
+        'accessMode': rule_template['accessMode'],
+        'description': rule_template['description'],
+        'allowedEmails': rule_template['allowedEmails']
+    }
+
+
+@pytest.fixture
+def test_access_control_open_rule(test_data, unique_slug):
+    """Generate test access control open rule data"""
+    rule_template = test_data['access_control_api']['rules']['open_rule']
+    return {
+        'type': rule_template['type'],
+        'slug': rule_template['slug_template'].format(timestamp=int(time.time())),
+        'accessMode': rule_template['accessMode'],
+        'description': rule_template['description']
+    }
+
+
+@pytest.fixture
+def test_access_control_updates(test_data):
+    """Get access control update test data"""
+    return test_data['access_control_api']['updates']
+
+
+@pytest.fixture
+def test_access_control_invalid_data(test_data):
+    """Get access control invalid data test cases"""
+    return test_data['access_control_api']['invalid_data']

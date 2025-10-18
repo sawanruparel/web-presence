@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "npm run build:content && vite",
     "build": "npm run clean && npm run build:content && tsc && vite build",
-    "build:content": "node scripts/generate-static-content.js",
+    "build:content": "tsx scripts/fetch-content-from-r2.ts",
+    "build:content:legacy": "node scripts/generate-static-content.js",
     "copy:content": "node scripts/copy-content-files.js",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
@@ -35,6 +36,7 @@
     "marked": "^16.4.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.13",
+    "tsx": "^4.7.0",
     "typescript": "~5.8.3",
     "vite": "^7.1.6",
     "wrangler": "^4.43.0"

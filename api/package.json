@@ -9,10 +9,14 @@
     "deploy": "wrangler deploy",
     "build": "tsc --noEmit",
     "type-check": "tsc --noEmit",
-    "sync:env": "node scripts/sync-env-to-workers.js"
+    "sync:env": "node scripts/sync-env-to-workers.js",
+    "migrate:access-control": "node scripts/migrate-access-control-to-db.js"
   },
   "dependencies": {
-    "hono": "^4.0.0"
+    "hono": "^4.0.0",
+    "marked": "^16.4.0",
+    "gray-matter": "^4.0.3",
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",

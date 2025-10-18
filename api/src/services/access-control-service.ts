@@ -1,241 +1,289 @@
-import type { AccessMode } from '../../../types/api'
-import type { D1Database } from '../types/env'
-import { createDatabaseService, type DatabaseService } from './database-service'
-import { verifyPassword as verifyPasswordHash } from '../utils/password'
+import type { Env } from '../types/env'
 
-/**
- * Access Control Service
- * 
- * Provides access control logic using database as source of truth.
- * This service wraps DatabaseService to provide domain-specific access control operations.
- */
-
-export interface TokenPayload {
+export interface AccessRule {
+  id: number
   type: string
   slug: string
-  email?: string
-  verifiedAt: string
-  [key: string]: any
+  accessMode: 'open' | 'password' | 'email-list'
+  description?: string
+  passwordHash?: string
+  allowedEmails: string[]
+  createdAt: string
+  updatedAt: string
 }
 
-/**
- * Create access control service instance with database connection
- */
-export function createAccessControlService(db: D1Database) {
-  const dbService = createDatabaseService(db)
-  
-  return {
-    /**
-     * Get access control rule for a specific content item
-     */
-    async getAccessRule(type: string, slug: string) {
-      const rule = await dbService.getAccessRule(type, slug)
-      
-      if (!rule) {
+export class AccessControlService {
+  private db: Env['DB']
+
+  constructor(env: Env) {
+    this.db = env.DB
+  }
+
+  /**
+   * Get access rule for specific content
+   */
+  async getAccessRule(type: string, slug: string): Promise<AccessRule | null> {
+    try {
+      const query = `
+        SELECT 
+          car.id,
+          car.type,
+          car.slug,
+          car.access_mode as accessMode,
+          car.description,
+          car.password_hash as passwordHash,
+          car.created_at as createdAt,
+          car.updated_at as updatedAt,
+          GROUP_CONCAT(ea.email) as allowedEmails
+        FROM content_access_rules car
+        LEFT JOIN email_allowlist ea ON car.id = ea.access_rule_id
+        WHERE car.type = ? AND car.slug = ?
+        GROUP BY car.id, car.type, car.slug, car.access_mode, car.description, car.password_hash, car.created_at, car.updated_at
+      `
+
+      const result = await this.db.prepare(query).bind(type, slug).first() as any
+
+      if (!result) {
         return null
       }
-      
-      // Return in legacy format for compatibility
+
       return {
-        mode: rule.access_mode,
-        description: rule.description || undefined,
-        allowedEmails: rule.access_mode === 'email-list' 
-          ? await dbService.getEmailsForRule(rule.id)
-          : undefined
+        id: result.id as number,
+        type: result.type as string,
+        slug: result.slug as string,
+        accessMode: result.accessMode as 'open' | 'password' | 'email-list',
+        description: result.description as string | undefined,
+        passwordHash: result.passwordHash as string | undefined,
+        allowedEmails: result.allowedEmails ? (result.allowedEmails as string).split(',') : [],
+        createdAt: result.createdAt as string,
+        updatedAt: result.updatedAt as string
       }
-    },
+    } catch (error) {
+      console.error(`Error getting access rule for ${type}/${slug}:`, error)
+      return null
+    }
+  }
 
-    /**
-     * Check if content is accessible (mode is 'open')
-     */
-    async isPubliclyAccessible(type: string, slug: string): Promise<boolean> {
-      const rule = await dbService.getAccessRule(type, slug)
-      
-      // If no rule exists, default to open access
-      if (!rule) {
-        return true
-      }
-      
-      return rule.access_mode === 'open'
-    },
+  /**
+   * Get all access rules
+   */
+  async getAllAccessRules(): Promise<AccessRule[]> {
+    try {
+      const query = `
+        SELECT 
+          car.id,
+          car.type,
+          car.slug,
+          car.access_mode as accessMode,
+          car.description,
+          car.password_hash as passwordHash,
+          car.created_at as createdAt,
+          car.updated_at as updatedAt,
+          GROUP_CONCAT(ea.email) as allowedEmails
+        FROM content_access_rules car
+        LEFT JOIN email_allowlist ea ON car.id = ea.access_rule_id
+        GROUP BY car.id, car.type, car.slug, car.access_mode, car.description, car.password_hash, car.created_at, car.updated_at
+        ORDER BY car.type, car.slug
+      `
 
-    /**
-     * Verify password for password-protected content
-     * Logs access attempts to database
-     */
-    async verifyPassword(
-      password: string, 
-      type: string, 
-      slug: string,
-      ipAddress?: string,
-      userAgent?: string
-    ): Promise<boolean> {
-      const rule = await dbService.getAccessRule(type, slug)
-      
-      if (!rule) {
-        // Log failed attempt - no rule found
-        await dbService.logAccess({
-          type,
-          slug,
-          access_granted: false,
-          credential_type: 'password',
-          ip_address: ipAddress,
-          user_agent: userAgent
-        })
-        return false
-      }
-      
-      if (rule.access_mode !== 'password') {
-        // Log failed attempt - wrong access mode
-        await dbService.logAccess({
-          access_rule_id: rule.id,
-          type,
-          slug,
-          access_granted: false,
-          credential_type: 'password',
-          ip_address: ipAddress,
-          user_agent: userAgent
-        })
-        return false
+      const result = await this.db.prepare(query).all() as any
+
+      return result.results.map((rule: any) => ({
+        id: rule.id as number,
+        type: rule.type as string,
+        slug: rule.slug as string,
+        accessMode: rule.accessMode as 'open' | 'password' | 'email-list',
+        description: rule.description as string | undefined,
+        passwordHash: rule.passwordHash as string | undefined,
+        allowedEmails: rule.allowedEmails ? (rule.allowedEmails as string).split(',') : [],
+        createdAt: rule.createdAt as string,
+        updatedAt: rule.updatedAt as string
+      }))
+    } catch (error) {
+      console.error('Error getting all access rules:', error)
+      return []
+    }
+  }
+
+  /**
+   * Create or update access rule
+   */
+  async setAccessRule(
+    type: string,
+    slug: string,
+    accessMode: 'open' | 'password' | 'email-list',
+    options: {
+      description?: string
+      passwordHash?: string
+      allowedEmails?: string[]
+    } = {}
+  ): Promise<boolean> {
+    try {
+      // Start transaction
+      const insertRuleQuery = `
+        INSERT OR REPLACE INTO content_access_rules 
+        (type, slug, access_mode, description, password_hash, updated_at)
+        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      `
+
+      const result = await this.db.prepare(insertRuleQuery)
+        .bind(type, slug, accessMode, options.description || null, options.passwordHash || null)
+        .run()
+
+      const ruleId = result.meta.last_row_id
+
+      // Update email allowlist if provided
+      if (options.allowedEmails !== undefined) {
+        // Clear existing allowlist
+        await this.db.prepare('DELETE FROM email_allowlist WHERE access_rule_id = ?')
+          .bind(ruleId)
+          .run()
+
+        // Insert new allowlist entries
+        for (const email of options.allowedEmails) {
+          await this.db.prepare(
+            'INSERT INTO email_allowlist (access_rule_id, email) VALUES (?, ?)'
+          ).bind(ruleId, email.toLowerCase().trim()).run()
+        }
       }
 
-      if (!rule.password_hash) {
-        // Log failed attempt - no password set
-        await dbService.logAccess({
-          access_rule_id: rule.id,
-          type,
-          slug,
-          access_granted: false,
-          credential_type: 'password',
-          ip_address: ipAddress,
-          user_agent: userAgent
-        })
-        return false
-      }
+      return true
+    } catch (error) {
+      console.error(`Error setting access rule for ${type}/${slug}:`, error)
+      return false
+    }
+  }
 
-      // Verify password hash
-      const isValid = await verifyPasswordHash(password, rule.password_hash)
-      
-      // Log access attempt
-      await dbService.logAccess({
-        access_rule_id: rule.id,
+  /**
+   * Delete access rule
+   */
+  async deleteAccessRule(type: string, slug: string): Promise<boolean> {
+    try {
+      const result = await this.db.prepare(
+        'DELETE FROM content_access_rules WHERE type = ? AND slug = ?'
+      ).bind(type, slug).run()
+
+      return result.meta.changes > 0
+    } catch (error) {
+      console.error(`Error deleting access rule for ${type}/${slug}:`, error)
+      return false
+    }
+  }
+
+  /**
+   * Log access attempt
+   */
+  async logAccessAttempt(
+    type: string,
+    slug: string,
+    accessGranted: boolean,
+    credentialType?: string,
+    credentialValue?: string,
+    ipAddress?: string,
+    userAgent?: string
+  ): Promise<void> {
+    try {
+      // Get access rule ID
+      const ruleResult = await this.db.prepare(
+        'SELECT id FROM content_access_rules WHERE type = ? AND slug = ?'
+      ).bind(type, slug).first() as any
+
+      const accessRuleId = ruleResult?.id || null
+
+      // Log the access attempt
+      await this.db.prepare(`
+        INSERT INTO access_logs 
+        (access_rule_id, type, slug, access_granted, credential_type, credential_value, ip_address, user_agent, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      `).bind(
+        accessRuleId,
         type,
         slug,
-        access_granted: isValid,
-        credential_type: 'password',
-        ip_address: ipAddress,
-        user_agent: userAgent
-      })
-      
-      return isValid
-    },
+        accessGranted,
+        credentialType || null,
+        credentialValue || null,
+        ipAddress || null,
+        userAgent || null
+      ).run()
+    } catch (error) {
+      console.error('Error logging access attempt:', error)
+      // Don't throw - logging failures shouldn't break the main flow
+    }
+  }
 
-    /**
-     * Verify email is in allowed list for email-list protected content
-     * Logs access attempts to database
-     */
-    async verifyEmail(
-      email: string, 
-      type: string, 
-      slug: string,
-      ipAddress?: string,
-      userAgent?: string
-    ): Promise<boolean> {
-      const rule = await dbService.getAccessRule(type, slug)
+  /**
+   * Verify password for content
+   */
+  async verifyPassword(type: string, slug: string, password: string): Promise<boolean> {
+    try {
+      const rule = await this.getAccessRule(type, slug)
       
-      if (!rule) {
-        // Log failed attempt - no rule found
-        await dbService.logAccess({
-          type,
-          slug,
-          access_granted: false,
-          credential_type: 'email',
-          credential_value: email,
-          ip_address: ipAddress,
-          user_agent: userAgent
-        })
-        return false
-      }
-      
-      if (rule.access_mode !== 'email-list') {
-        // Log failed attempt - wrong access mode
-        await dbService.logAccess({
-          access_rule_id: rule.id,
-          type,
-          slug,
-          access_granted: false,
-          credential_type: 'email',
-          credential_value: email,
-          ip_address: ipAddress,
-          user_agent: userAgent
-        })
+      if (!rule || rule.accessMode !== 'password' || !rule.passwordHash) {
         return false
       }
 
-      // Check if email is in allowlist
-      const isAllowed = await dbService.isEmailAllowed(rule.id, email)
-      
-      // Log access attempt
-      await dbService.logAccess({
-        access_rule_id: rule.id,
-        type,
-        slug,
-        access_granted: isAllowed,
-        credential_type: 'email',
-        credential_value: email,
-        ip_address: ipAddress,
-        user_agent: userAgent
-      })
-      
-      return isAllowed
-    },
+      // Simple password verification (in production, use bcrypt)
+      const providedHash = await this.hashPassword(password)
+      return providedHash === rule.passwordHash
+    } catch (error) {
+      console.error(`Error verifying password for ${type}/${slug}:`, error)
+      return false
+    }
+  }
 
-    /**
-     * Generate JWT token for verified access
-     */
-    async generateToken(payload: TokenPayload): Promise<string> {
-      const tokenData = {
-        ...payload,
-        iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+  /**
+   * Check if email is allowed for content
+   */
+  async isEmailAllowed(type: string, slug: string, email: string): Promise<boolean> {
+    try {
+      const rule = await this.getAccessRule(type, slug)
+      
+      if (!rule || rule.accessMode !== 'email-list') {
+        return false
       }
-      
-      // Simple base64 encoding using btoa (available in Cloudflare Workers)
-      const token = btoa(JSON.stringify(tokenData))
-      return token
-    },
 
-    /**
-     * Get access mode for content
-     */
-    async getAccessMode(type: string, slug: string): Promise<AccessMode> {
-      const rule = await dbService.getAccessRule(type, slug)
-      return rule?.access_mode || 'open'
-    },
+      return rule.allowedEmails.includes(email.toLowerCase().trim())
+    } catch (error) {
+      console.error(`Error checking email access for ${type}/${slug}:`, error)
+      return false
+    }
+  }
 
-    /**
-     * Log successful open access
-     */
-    async logOpenAccess(
-      type: string, 
-      slug: string, 
-      ipAddress?: string,
-      userAgent?: string
-    ) {
-      const rule = await dbService.getAccessRule(type, slug)
-      
-      await dbService.logAccess({
-        access_rule_id: rule?.id,
-        type,
-        slug,
-        access_granted: true,
-        credential_type: 'none',
-        ip_address: ipAddress,
-        user_agent: userAgent
-      })
+  /**
+   * Simple password hashing (in production, use bcrypt)
+   */
+  private async hashPassword(password: string): Promise<string> {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(password)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  }
+
+  /**
+   * Get access rules as a flat object for backward compatibility
+   */
+  async getAccessRulesAsObject(): Promise<Record<string, Record<string, any>> | null> {
+    try {
+      const rules = await this.getAllAccessRules()
+      const result: Record<string, Record<string, any>> = {}
+
+      for (const rule of rules) {
+        if (!result[rule.type]) {
+          result[rule.type] = {}
+        }
+
+        result[rule.type][rule.slug] = {
+          mode: rule.accessMode,
+          description: rule.description,
+          allowedEmails: rule.allowedEmails
+        }
+      }
+
+      return result
+    } catch (error) {
+      console.error('Error getting access rules as object:', error)
+      return null
     }
   }
 }
-
-// Export type for the service
-export type AccessControlService = ReturnType<typeof createAccessControlService>
