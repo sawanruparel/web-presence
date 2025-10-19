@@ -44,7 +44,7 @@ web/
 │   └── data/                # Generated content metadata
 │       └── content-metadata.json # Content index
 ├── scripts/                 # Build scripts
-│   ├── generate-static-content.js # Content processing
+│   ├── fetch-content-from-r2.ts  # Content fetching
 │   ├── html-template.ts     # HTML generation
 │   └── vite-plugin-html-pages.ts # Vite plugin
 ├── dist/                    # Build output

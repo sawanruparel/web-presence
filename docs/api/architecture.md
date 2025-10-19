@@ -31,7 +31,7 @@ api/
 │   │   └── content-service.ts # Content retrieval logic
 │   └── utils/                # Helper functions
 ├── config/
-│   └── access-control.json   # Access control configuration
+│   └── database/             # Access control rules in database
 ├── wrangler.toml             # Cloudflare Workers configuration
 ├── tsconfig.json             # TypeScript configuration
 └── package.json              # Dependencies

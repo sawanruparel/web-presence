@@ -96,7 +96,7 @@ export function customPlugin(options: CustomPluginOptions): Plugin {
 **Follow this pattern for content processing scripts:**
 
 ```typescript
-// scripts/generate-static-content.js
+// scripts/fetch-content-from-r2.ts
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'

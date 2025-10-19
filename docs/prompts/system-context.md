@@ -28,7 +28,7 @@ web-presence/
 │   ├── utils/            # Utility functions
 │   └── data/             # Generated content metadata
 ├── scripts/              # Build system
-│   ├── generate-static-content.js
+│   ├── fetch-content-from-r2.ts
 │   ├── vite-plugin-html-pages.ts
 │   └── html-template.ts
 ├── rivve/                # AI content processing
@@ -341,7 +341,7 @@ function processContent(content: string) {
 
 ### Build System
 - `vite.config.ts` - Vite configuration
-- `scripts/generate-static-content.js` - Content processing
+- `scripts/fetch-content-from-r2.ts` - Content fetching
 - `scripts/vite-plugin-html-pages.ts` - HTML generation plugin
 
 ### Content Management

@@ -231,7 +231,7 @@ CREATE TABLE access_logs (
 
 ## Migration from JSON Config
 
-To migrate from the existing `access-control.json` file to the database:
+To migrate from the existing configuration to the database:
 
 ```bash
 # Run the migration script
@@ -240,7 +240,7 @@ npm run migrate:access-control
 ```
 
 This will:
-1. Read the existing `config/access-control.json` file
+1. Read the existing database rules
 2. Clear existing database data
 3. Insert all access rules into the database
 4. Set up email allowlists

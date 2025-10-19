@@ -156,7 +156,7 @@ npx wrangler d1 execute web-presence-db --file=./migrations/0001_initial_schema.
 ### 3. Seed Database (Optional)
 
 ```bash
-npx wrangler d1 execute web-presence-db --file=./seed-database.sh
+npx wrangler d1 execute web-presence-db --file=./seed-database-dynamic.sh
 ```
 
 ## Configuration

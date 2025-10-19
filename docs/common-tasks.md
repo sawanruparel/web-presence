@@ -379,7 +379,7 @@ const attemptLog = {
 
 ### Update Config in Production
 
-1. Update `api/config/access-control.json`
+1. Update database access rules via API
 2. Deploy API: `cd api && npm run deploy`
 3. Changes take effect immediately
 
@@ -514,7 +514,7 @@ Review these files to understand the system better:
 When adding new content:
 
 - [ ] Create content file
-- [ ] Add to `api/config/access-control.json`
+- [ ] Add to database access rules via API
 - [ ] Choose access mode
 - [ ] Add description
 - [ ] For email-list: Add allowedEmails array

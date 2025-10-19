@@ -293,7 +293,7 @@ VITE_DEV_MODE=false
   "scripts": {
     "dev": "npm run build:content && vite",
     "build": "npm run build:content && tsc && vite build",
-    "build:content": "node scripts/generate-static-content.js",
+    "build:content": "tsx scripts/fetch-content-from-r2.ts",
     "preview": "vite preview",
     "type-check": "tsc --noEmit"
   }

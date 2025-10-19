@@ -11,15 +11,15 @@
 There is a **critical architectural inconsistency** between:
 
 1. **Frontend Build System** - Uses `content/` and `content-protected/` folders
-2. **Backend Access Control** - Uses `api/config/access-control.json` config file
+2. **Backend Access Control** - Uses database-driven access control system
 3. **No Single Source of Truth** - Three potential sources of access rules:
    - Folder structure (`content/` vs `content-protected/`)
    - Frontmatter (`protected: true`)
-   - Backend config (`access-control.json`)
+   - Database access rules
 
 ### Current State Analysis
 
-#### Frontend Build Process (`generate-static-content.js`)
+#### Frontend Build Process (`fetch-content-from-r2.ts`)
 
 ```
 content/                      → public metadata (content-metadata.json)
@@ -41,7 +41,7 @@ content-protected/            → backend only (protected-content.json)
 - Protected content goes to `protected-content.json` (backend only)
 - Protected content **NOT included** in public metadata
 
-#### Backend Access Control (`access-control-service.ts`)
+#### Backend Access Control (`access-control-service.ts` + Database)
 
 ```json
 {
@@ -129,7 +129,7 @@ Which source of truth wins?
    - Adding new protected content requires:
      1. Create file in `content-protected/`
      2. Add `protected: true` frontmatter
-     3. Update `access-control.json`
+     3. Update database access rules
      4. Ensure slug matches exactly
      5. Ensure type matches folder
    
@@ -150,7 +150,7 @@ Which source of truth wins?
 
 **Frontend Build Script Changes:**
 ```javascript
-// In generate-static-content.js
+// In fetch-content-from-r2.ts
 function determineAccessMode(filePath, frontmatter, type, slug) {
   const isInProtectedFolder = filePath.includes('content-protected')
   const hasFrontmatter = frontmatter?.protected === true
@@ -183,7 +183,7 @@ description: "Beta tester access only"
 ---
 ```
 
-**Auto-Generate access-control.json:**
+**Auto-Generate database rules:**
 ```javascript
 // Generate config during build
 function generateAccessControlConfig(contentMetadata, protectedContent) {
@@ -213,11 +213,12 @@ function generateAccessControlConfig(contentMetadata, protectedContent) {
   return config
 }
 
-// Write to api/config/access-control.json
-fs.writeFileSync(
-  path.join(__dirname, '..', '..', 'api', 'config', 'access-control.json'),
-  JSON.stringify(config, null, 2)
-)
+// Write to database via API
+const response = await fetch('/api/internal/access-rules', {
+  method: 'POST',
+  headers: { 'X-API-Key': process.env.API_KEY },
+  body: JSON.stringify(rule)
+})
 ```
 
 **Pros:**
@@ -389,7 +390,7 @@ CREATE TABLE page_views (
 **Implement Option 1: Folder-Driven**
 
 1. Extend frontmatter to include access control
-2. Auto-generate `access-control.json` during build
+2. Auto-generate database rules during build
 3. Validate folder structure matches config
 
 **Why:**
@@ -436,7 +437,7 @@ description: "Access control description"
 ### Step 2: Update Build Script (1 hour)
 
 - Parse access control from frontmatter
-- Generate `access-control.json` automatically
+- Generate database rules automatically
 - Validate consistency
 
 ### Step 3: Validation Script (30 min)

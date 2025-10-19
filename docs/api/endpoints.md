@@ -353,7 +353,7 @@ npx tsx src/test-api-endpoints.ts
 The build script will call the content catalog endpoint:
 
 ```javascript
-// In /web/scripts/generate-static-content.js
+// In /web/scripts/fetch-content-from-r2.ts
 
 async function fetchAccessRules() {
   const response = await fetch(`${process.env.BUILD_API_URL}/api/content-catalog`, {

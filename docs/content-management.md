@@ -139,7 +139,7 @@ npm run dev-server
 
 ### 1. Content Discovery
 
-**Script:** `scripts/generate-static-content.js`
+**Script:** `scripts/fetch-content-from-r2.ts`
 
 ```javascript
 const contentTypes = ['notes', 'publications', 'ideas', 'pages']

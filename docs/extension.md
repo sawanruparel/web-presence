@@ -17,7 +17,7 @@ The Web Presence project is designed to be highly extensible. This guide covers:
 
 **Add to content processing:**
 ```javascript
-// scripts/generate-static-content.js
+// scripts/fetch-content-from-r2.ts
 const contentTypes = ['notes', 'publications', 'ideas', 'pages', 'tutorials'] // Add new type
 ```
 

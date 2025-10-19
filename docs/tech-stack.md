@@ -99,7 +99,7 @@ The Web Presence project uses a **hybrid architecture** that combines:
   "scripts": {
     "dev": "npm run build:content && vite",
     "build": "npm run build:content && tsc && vite build",
-    "build:content": "node scripts/generate-static-content.js"
+    "build:content": "tsx scripts/fetch-content-from-r2.ts"
   },
   "dependencies": {
     "react": "^18.2.0",

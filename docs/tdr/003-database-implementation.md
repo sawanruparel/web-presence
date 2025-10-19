@@ -456,7 +456,7 @@ File: `/api/src/routes/analytics.ts`
 
 ### Phase 4: Build Script Integration (Day 5)
 
-**Step 4.1: Update generate-static-content.js**
+**Step 4.1: Update fetch-content-from-r2.ts**
 
 ```javascript
 // Add at top
@@ -533,7 +533,7 @@ BUILD_API_KEY=your-build-api-key-here
 File: `/scripts/migrate-config-to-db.js`
 
 ```javascript
-// Read access-control.json
+// Read existing database rules
 // Insert into D1 database
 // Generate passwords for password-protected content
 // Validate migration
@@ -662,7 +662,7 @@ npm run build:content
 
 ### Step 4: Keep Config File as Backup
 
-- Don't delete `access-control.json` immediately
+- Keep existing database rules during migration
 - Use as reference during migration
 - Remove after successful deployment
 

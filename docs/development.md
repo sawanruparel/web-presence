@@ -205,7 +205,7 @@ content/
 
 ```
 scripts/
-├── generate-static-content.js    # Node.js content processing script
+├── fetch-content-from-r2.ts     # TypeScript content fetching script
 ├── vite-plugin-html-pages.ts    # Vite plugin (TypeScript)
 ├── html-template.ts             # HTML templates (TypeScript)
 └── dev-server-plugin.ts         # Dev server plugin (TypeScript)

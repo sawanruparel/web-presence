@@ -91,7 +91,7 @@ npm run build
 
 ## 🔧 Content Processing Pipeline
 
-### Static Content Generation (`scripts/generate-static-content.js`)
+### Content Fetching (`scripts/fetch-content-from-r2.ts`)
 
 **Input:** Markdown files in `/content/`
 **Output:** Processed content and metadata

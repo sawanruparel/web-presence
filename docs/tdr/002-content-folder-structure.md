@@ -27,14 +27,14 @@ content-protected/                ← PROTECTED content
 │   └── sample-protected-idea.md  ← Has protected: true in frontmatter
 └── pages/
 
-access-control.json               ← Rules disconnect from folders!
+database rules                   ← Rules disconnect from folders!
 ```
 
 **Problem:** Mismatch between folder structure and actual access rules!
 
 Example:
 - `content/publications/decisionrecord-io.md` is in PUBLIC folder
-- But `access-control.json` says it's `email-list` protected
+- But database rules say it's `email-list` protected
 - User sees file in public folder, assumes it's public ❌
 
 ---

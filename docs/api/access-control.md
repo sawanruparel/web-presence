@@ -16,7 +16,7 @@ The access control system provides flexible content protection with three distin
 
 ### 1. Define Access Rules
 
-Edit `api/config/access-control.json`:
+Update database access rules via API:
 
 ```json
 {
@@ -304,7 +304,7 @@ Encoded as Base64. Valid for 24 hours from issue time.
 ## Files Overview
 
 ### Backend Services
-- **`api/config/access-control.json`** - Configuration defining access for each content item
+- **Database access rules** - Configuration defining access for each content item
 - **`api/src/services/access-control-service.ts`** - Core service with validation logic
 - **`api/src/routes/protected-content.ts`** - API endpoints for access control
 
@@ -316,7 +316,7 @@ Encoded as Base64. Valid for 24 hours from issue time.
 
 ## Next Steps
 
-1. **Configure your content** - Edit `api/config/access-control.json`
+1. **Configure your content** - Update database access rules via API
 2. **Test the API** - Use curl examples above
 3. **Integrate frontend** - Update React components to use `AccessModal`
 4. **Deploy** - Push changes to production

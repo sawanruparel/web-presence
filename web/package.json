@@ -7,8 +7,6 @@
     "dev": "npm run build:content && vite",
     "build": "npm run clean && npm run build:content && tsc && vite build",
     "build:content": "tsx scripts/fetch-content-from-r2.ts",
-    "build:content:legacy": "node scripts/generate-static-content.js",
-    "copy:content": "node scripts/copy-content-files.js",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "sync:env": "node scripts/sync-env-to-pages.js",

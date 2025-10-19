@@ -263,7 +263,7 @@ The new access control API replaces the previous JSON-based configuration:
 1. **Migration Script**: `api/scripts/migrate-access-control-to-db.js`
 2. **Command**: `npm run migrate:access-control`
 3. **Process**: 
-   - Reads existing `config/access-control.json`
+   - Reads existing database rules
    - Clears existing database data
    - Inserts all access rules
    - Sets up email allowlists
