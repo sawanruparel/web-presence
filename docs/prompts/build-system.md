@@ -109,7 +109,7 @@ const __dirname = path.dirname(__filename)
 // Configuration
 const contentDir = path.join(__dirname, '..', 'content')
 const distDir = path.join(__dirname, '..', 'dist')
-const tempContentDir = path.join(__dirname, '..', 'temp-content')
+const outputDir = path.join(__dirname, '..', 'dist')
 const rivveOutputDir = path.join(__dirname, '..', 'rivve', 'html-output')
 
 // Content types

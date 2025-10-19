@@ -1,7 +1,12 @@
 import { Component } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import { ErrorFallback } from './error-fallback.tsx'
+import { GenericErrorPage } from './error-pages/generic-error'
+import { NetworkErrorPage } from './error-pages/network-error'
+import { ServerErrorPage } from './error-pages/server-error'
+import { NotFoundPage } from './error-pages/not-found'
 import { errorLogger } from '../utils/error-logger'
+import { detectErrorType, type ErrorType } from '../utils/error-detector'
 
 interface Props {
   children: ReactNode
@@ -13,16 +18,18 @@ interface Props {
 interface State {
   hasError: boolean
   error: Error | null
+  errorType: ErrorType | null
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
-    this.state = { hasError: false, error: null }
+    this.state = { hasError: false, error: null, errorType: null }
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error }
+    const errorType = detectErrorType(error)
+    return { hasError: true, error, errorType }
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -43,8 +50,9 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null })
+    this.setState({ hasError: false, error: null, errorType: null })
   }
+
 
   render() {
     if (this.state.hasError && this.state.error) {
@@ -53,14 +61,27 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback
       }
 
-      // Default fallback UI
-      return (
-        <ErrorFallback
-          error={this.state.error}
-          resetError={this.handleReset}
-          context={this.props.context}
-        />
-      )
+      // Render specialized error page based on error type
+      switch (this.state.errorType) {
+        case 'network':
+          return <NetworkErrorPage />
+        
+        case 'server':
+          return <ServerErrorPage />
+        
+        case 'not-found':
+          return <NotFoundPage />
+        
+        case 'generic':
+        default:
+          return (
+            <GenericErrorPage
+              title="Something went wrong"
+              message="We're sorry, but something unexpected happened. Please try again."
+              onRetry={this.handleReset}
+            />
+          )
+      }
     }
 
     return this.props.children

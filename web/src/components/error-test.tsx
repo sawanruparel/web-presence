@@ -10,38 +10,72 @@ export function ErrorTest() {
     throw new Error('This is a test error to demonstrate error boundaries!')
   }
 
-  const triggerError = () => {
+  const triggerGenericError = () => {
     setShouldError(true)
   }
 
-  const triggerAsyncError = async () => {
+  const triggerNetworkError = async () => {
     try {
-      // Simulate an async operation that fails
-      await new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Async operation failed!'))
-        }, 1000)
-      })
+      // Simulate a network error
+      await fetch('https://nonexistent-domain-12345.com/api/test')
     } catch (error) {
-      handleError(error as Error, 'AsyncErrorTest')
+      handleError(error as Error, 'NetworkErrorTest')
     }
   }
 
+  const triggerServerError = () => {
+    const error = new Error('Internal Server Error - 500')
+    handleError(error, 'ServerErrorTest')
+  }
+
+  const triggerNotFoundError = () => {
+    const error = new Error('Not Found - 404')
+    handleError(error, 'NotFoundErrorTest')
+  }
+
   return (
-    <div className="p-8 bg-yellow-50 border border-yellow-200 rounded-lg">
-      <h3 className="text-lg font-semibold text-yellow-800 mb-4">
-        Error Boundary Test (Development Only)
-      </h3>
+    <div className="p-6 bg-gray-100 rounded-lg">
+      <h3 className="text-lg font-semibold mb-4">Error Boundary Test</h3>
+      <p className="text-sm text-gray-600 mb-4">
+        Test the enhanced error boundary with different error types:
+      </p>
+      
       <div className="space-y-2">
-        <Button onClick={triggerError} className="mr-2">
-          Trigger Sync Error
+        <Button 
+          onClick={triggerGenericError} 
+          className="w-full"
+          variant="secondary"
+        >
+          Trigger Generic Error
         </Button>
-        <Button onClick={triggerAsyncError} variant="secondary">
-          Trigger Async Error
+        
+        <Button 
+          onClick={triggerNetworkError} 
+          className="w-full"
+          variant="secondary"
+        >
+          Trigger Network Error
+        </Button>
+        
+        <Button 
+          onClick={triggerServerError} 
+          className="w-full"
+          variant="secondary"
+        >
+          Trigger Server Error
+        </Button>
+        
+        <Button 
+          onClick={triggerNotFoundError} 
+          className="w-full"
+          variant="secondary"
+        >
+          Trigger Not Found Error
         </Button>
       </div>
-      <p className="text-sm text-yellow-700 mt-2">
-        These buttons will trigger errors to test the error boundary functionality.
+      
+      <p className="text-xs text-gray-500 mt-4">
+        Each button will trigger a different type of error to test the specialized error pages.
       </p>
     </div>
   )
