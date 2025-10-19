@@ -1,6 +1,5 @@
 import { Component } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
-import { ErrorFallback } from './error-fallback.tsx'
 import { GenericErrorPage } from './error-pages/generic-error'
 import { NetworkErrorPage } from './error-pages/network-error'
 import { ServerErrorPage } from './error-pages/server-error'

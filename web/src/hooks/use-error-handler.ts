@@ -5,7 +5,7 @@ import { errorLogger } from '../utils/error-logger'
  * This will cause the error boundary to catch the error and display appropriate UI
  */
 export function useErrorHandler() {
-  return (error: Error, context?: string) => {
+  const handleError = (error: Error, context?: string) => {
     // Log the error for debugging
     errorLogger.logError({
       error,
@@ -16,4 +16,6 @@ export function useErrorHandler() {
     // Re-throw the error to trigger the error boundary
     throw error
   }
+
+  return { handleError }
 }
