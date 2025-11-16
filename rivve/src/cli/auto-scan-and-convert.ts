@@ -160,7 +160,7 @@ function validateSEOTemplate(filePath: string): { isValid: boolean; warnings: st
     }
     
     // Check for social media fields
-    const socialFields = ['og_title', 'og_description', 'x_card', 'linkedin_title'];
+    const socialFields = ['og_title', 'og_description', 'twitter_card', 'linkedin_title'];
     const missingSocialFields: string[] = [];
     for (const field of socialFields) {
       if (!frontmatter.includes(`${field}:`)) {
@@ -260,7 +260,7 @@ function convertToHTML(
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHtml(title)}</title>
     <meta name="description" content="${escapeHtml(description)}">
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="${frontmatter?.robots || 'index, follow'}">
     <meta name="author" content="${escapeHtml(author)}">
     <meta name="generator" content="Rivve">
     <meta name="theme-color" content="#007bff">
@@ -276,22 +276,22 @@ function convertToHTML(
     <meta property="og:url" content="${frontmatter?.og_url || frontmatter?.canonical_url || `http://localhost:3000/${basename(filePath, extname(filePath))}.html`}">
     <meta property="og:title" content="${escapeHtml(frontmatter?.og_title || title)}">
     <meta property="og:description" content="${escapeHtml(frontmatter?.og_description || description)}">
-    <meta property="og:site_name" content="Rivve">
-    <meta property="og:locale" content="${frontmatter?.lang || 'en_US'}">
+    <meta property="og:site_name" content="${frontmatter?.og_site_name || 'Rivve'}">
+    <meta property="og:locale" content="${frontmatter?.og_locale || frontmatter?.lang || 'en_US'}">
     ${frontmatter?.image ? `<meta property="og:image" content="${escapeHtml(frontmatter.image)}">` : ''}
     ${frontmatter?.image_alt ? `<meta property="og:image:alt" content="${escapeHtml(frontmatter.image_alt)}">` : ''}
     <meta property="article:author" content="${escapeHtml(author)}">
     <meta property="article:published_time" content="${frontmatter?.date || new Date().toISOString().split('T')[0]}">
     <meta property="article:modified_time" content="${frontmatter?.lastmod || new Date().toISOString().split('T')[0]}">
     
-    <!-- X (Twitter) -->
-    <meta name="twitter:card" content="${frontmatter?.x_card || 'summary'}">
+    <!-- Twitter -->
+    <meta name="twitter:card" content="${frontmatter?.twitter_card || 'summary'}">
     <meta name="twitter:url" content="${frontmatter?.og_url || frontmatter?.canonical_url || `http://localhost:3000/${basename(filePath, extname(filePath))}.html`}">
-    <meta name="twitter:title" content="${escapeHtml(frontmatter?.x_title || frontmatter?.og_title || title)}">
-    <meta name="twitter:description" content="${escapeHtml(frontmatter?.x_description || frontmatter?.og_description || description)}">
-    ${frontmatter?.x_image || frontmatter?.image ? `<meta name="twitter:image" content="${escapeHtml(frontmatter?.x_image || frontmatter?.image || '')}">` : ''}
-    ${frontmatter?.x_site ? `<meta name="twitter:site" content="${escapeHtml(frontmatter.x_site)}">` : ''}
-    ${frontmatter?.x_creator ? `<meta name="twitter:creator" content="${escapeHtml(frontmatter.x_creator)}">` : ''}
+    <meta name="twitter:title" content="${escapeHtml(frontmatter?.twitter_title || frontmatter?.og_title || title)}">
+    <meta name="twitter:description" content="${escapeHtml(frontmatter?.twitter_description || frontmatter?.og_description || description)}">
+    ${frontmatter?.twitter_image || frontmatter?.image ? `<meta name="twitter:image" content="${escapeHtml(frontmatter?.twitter_image || frontmatter?.image || '')}">` : ''}
+    ${frontmatter?.twitter_site ? `<meta name="twitter:site" content="${escapeHtml(frontmatter.twitter_site)}">` : ''}
+    ${frontmatter?.twitter_creator ? `<meta name="twitter:creator" content="${escapeHtml(frontmatter.twitter_creator)}">` : ''}
     
     <!-- LinkedIn -->
     <meta name="linkedin:title" content="${escapeHtml(frontmatter?.linkedin_title || frontmatter?.og_title || title)}">
@@ -374,7 +374,7 @@ function convertToHTML(
         }
     </style>
 </head>
-<body>
+<body${frontmatter?.layout ? ` class="${escapeHtml(frontmatter.layout)}"` : ''}>
     <div class="header">
         <h1>${escapeHtml(title)}</h1>
         ${description ? `<p class="description">${escapeHtml(description)}</p>` : ''}

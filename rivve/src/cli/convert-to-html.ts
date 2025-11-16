@@ -47,12 +47,14 @@ interface Frontmatter {
   og_description?: string;
   og_type?: string;
   og_url?: string;
-  x_card?: string;
-  x_title?: string;
-  x_description?: string;
-  x_image?: string;
-  x_site?: string;
-  x_creator?: string;
+  og_site_name?: string;
+  og_locale?: string;
+  twitter_card?: string;
+  twitter_title?: string;
+  twitter_description?: string;
+  twitter_image?: string;
+  twitter_site?: string;
+  twitter_creator?: string;
   linkedin_title?: string;
   linkedin_description?: string;
   linkedin_image?: string;
@@ -111,7 +113,7 @@ function generateHTML(frontmatter: Frontmatter | null, body: string, filename: s
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHtml(title)}</title>
     <meta name="description" content="${escapeHtml(description)}">
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="${frontmatter?.robots || 'index, follow'}">
     <meta name="author" content="${escapeHtml(author)}">
     <meta name="generator" content="Rivve">
     <meta name="theme-color" content="#007bff">
@@ -127,22 +129,22 @@ function generateHTML(frontmatter: Frontmatter | null, body: string, filename: s
     <meta property="og:url" content="${frontmatter?.og_url || frontmatter?.canonical_url || `http://localhost:3000/${basename(filename, extname(filename))}.html`}">
     <meta property="og:title" content="${escapeHtml(frontmatter?.og_title || title)}">
     <meta property="og:description" content="${escapeHtml(frontmatter?.og_description || description)}">
-    <meta property="og:site_name" content="Rivve">
-    <meta property="og:locale" content="${frontmatter?.lang || 'en_US'}">
+    <meta property="og:site_name" content="${frontmatter?.og_site_name || 'Rivve'}">
+    <meta property="og:locale" content="${frontmatter?.og_locale || frontmatter?.lang || 'en_US'}">
     ${frontmatter?.image ? `<meta property="og:image" content="${escapeHtml(frontmatter.image)}">` : ''}
     ${frontmatter?.image_alt ? `<meta property="og:image:alt" content="${escapeHtml(frontmatter.image_alt)}">` : ''}
     <meta property="article:author" content="${escapeHtml(author)}">
     <meta property="article:published_time" content="${frontmatter?.date || new Date().toISOString().split('T')[0]}">
     <meta property="article:modified_time" content="${frontmatter?.lastmod || new Date().toISOString().split('T')[0]}">
     
-    <!-- X (Twitter) -->
-    <meta name="twitter:card" content="${frontmatter?.x_card || 'summary'}">
+    <!-- Twitter -->
+    <meta name="twitter:card" content="${frontmatter?.twitter_card || 'summary'}">
     <meta name="twitter:url" content="${frontmatter?.og_url || frontmatter?.canonical_url || `http://localhost:3000/${basename(filename, extname(filename))}.html`}">
-    <meta name="twitter:title" content="${escapeHtml(frontmatter?.x_title || frontmatter?.og_title || title)}">
-    <meta name="twitter:description" content="${escapeHtml(frontmatter?.x_description || frontmatter?.og_description || description)}">
-    ${frontmatter?.x_image || frontmatter?.image ? `<meta name="twitter:image" content="${escapeHtml(frontmatter?.x_image || frontmatter?.image || '')}">` : ''}
-    ${frontmatter?.x_site ? `<meta name="twitter:site" content="${escapeHtml(frontmatter.x_site)}">` : ''}
-    ${frontmatter?.x_creator ? `<meta name="twitter:creator" content="${escapeHtml(frontmatter.x_creator)}">` : ''}
+    <meta name="twitter:title" content="${escapeHtml(frontmatter?.twitter_title || frontmatter?.og_title || title)}">
+    <meta name="twitter:description" content="${escapeHtml(frontmatter?.twitter_description || frontmatter?.og_description || description)}">
+    ${frontmatter?.twitter_image || frontmatter?.image ? `<meta name="twitter:image" content="${escapeHtml(frontmatter?.twitter_image || frontmatter?.image || '')}">` : ''}
+    ${frontmatter?.twitter_site ? `<meta name="twitter:site" content="${escapeHtml(frontmatter.twitter_site)}">` : ''}
+    ${frontmatter?.twitter_creator ? `<meta name="twitter:creator" content="${escapeHtml(frontmatter.twitter_creator)}">` : ''}
     
     <!-- LinkedIn -->
     <meta name="linkedin:title" content="${escapeHtml(frontmatter?.linkedin_title || frontmatter?.og_title || title)}">
@@ -225,7 +227,7 @@ function generateHTML(frontmatter: Frontmatter | null, body: string, filename: s
         }
     </style>
 </head>
-<body>
+<body${frontmatter?.layout ? ` class="${escapeHtml(frontmatter.layout)}"` : ''}>
     <div class="header">
         <h1>${escapeHtml(title)}</h1>
         ${description ? `<p class="description">${escapeHtml(description)}</p>` : ''}
@@ -375,13 +377,13 @@ async function convertMarkdownToHTML(inputPath: string, outputDir: string) {
     // Display social media preview info
     if (frontmatter) {
       console.log('\n📱 Social Media Previews:');
-      if (frontmatter.og_title || frontmatter.x_title || frontmatter.linkedin_title) {
+      if (frontmatter.og_title || frontmatter.twitter_title || frontmatter.linkedin_title) {
         console.log(`   Open Graph Title: ${frontmatter.og_title || frontmatter.title || 'Not set'}`);
-        console.log(`   X (Twitter) Title: ${frontmatter.x_title || frontmatter.og_title || frontmatter.title || 'Not set'}`);
+        console.log(`   Twitter Title: ${frontmatter.twitter_title || frontmatter.og_title || frontmatter.title || 'Not set'}`);
         console.log(`   LinkedIn Title: ${frontmatter.linkedin_title || frontmatter.og_title || frontmatter.title || 'Not set'}`);
       }
-      if (frontmatter.image || frontmatter.x_image || frontmatter.linkedin_image) {
-        console.log(`   Featured Image: ${frontmatter.image || frontmatter.x_image || frontmatter.linkedin_image || 'Not set'}`);
+      if (frontmatter.image || frontmatter.twitter_image || frontmatter.linkedin_image) {
+        console.log(`   Featured Image: ${frontmatter.image || frontmatter.twitter_image || frontmatter.linkedin_image || 'Not set'}`);
       }
     }
     
