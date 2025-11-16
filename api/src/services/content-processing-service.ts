@@ -1,5 +1,11 @@
-import { marked } from 'marked'
-import matter from 'gray-matter'
+import { 
+  convertMarkdownToHtml, 
+  generateHtmlTemplate, 
+  parseFrontmatter,
+  removeTitleFromHtml,
+  generateExcerpt as generateExcerptUtil,
+  type Frontmatter
+} from 'mdtohtml'
 import { AccessControlService } from './access-control-service'
 import { createDatabaseService } from './database-service'
 import type { Env } from '../types/env'
@@ -60,8 +66,8 @@ export class ContentProcessingService {
     filePath: string,
     content: string
   ): Promise<ProcessedContent> {
-    // Parse frontmatter
-    const { data: frontmatter, content: body } = matter(content)
+    // Parse frontmatter using mdtohtml
+    const { frontmatter, body } = parseFrontmatter(content)
     
     // Extract slug from filename
     const slug = this.extractSlug(filePath)
@@ -70,32 +76,32 @@ export class ContentProcessingService {
     // Clean title
     const cleanTitle = this.cleanTitle(frontmatter?.title || slug)
     
-    // Convert markdown to HTML
-    const html = this.convertMarkdownToHtml(body, frontmatter)
+    // Convert markdown to HTML using mdtohtml
+    const html = convertMarkdownToHtml(body)
     
-    // Generate excerpt
-    const excerpt = this.generateExcerpt(body, frontmatter?.excerpt)
+    // Generate excerpt using mdtohtml
+    const excerpt = frontmatter?.description || generateExcerptUtil(body, 160)
     
     // Determine access mode
     const { isProtected, accessMode } = await this.determineAccessMode(
       filePath,
-      frontmatter
+      frontmatter || {}
     )
 
     return {
       slug,
       title: cleanTitle,
       date: frontmatter?.date || new Date().toISOString().split('T')[0],
-      readTime: frontmatter?.readTime || this.calculateReadTime(body),
+      readTime: frontmatter?.reading_time ? `${frontmatter.reading_time} min` : this.calculateReadTime(body),
       type: frontmatter?.type || type,
       content: body,
-      html: this.removeTitleFromHtml(html, cleanTitle),
+      html: removeTitleFromHtml(html, cleanTitle),
       excerpt,
       isProtected,
       accessMode,
       requiresPassword: accessMode === 'password',
       requiresEmail: accessMode === 'email-list',
-      frontmatter
+      frontmatter: frontmatter || {}
     }
   }
 
@@ -107,74 +113,19 @@ export class ContentProcessingService {
     jsAsset?: string,
     cssAsset?: string
   ): string {
-    const { slug, title, html, excerpt, frontmatter } = content
+    const { html, frontmatter } = content
     
-    return `<!DOCTYPE html>
-<html lang="${frontmatter?.lang || 'en'}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${this.escapeHtml(title)}</title>
-    <meta name="description" content="${this.escapeHtml(excerpt)}">
-    <meta name="robots" content="index, follow">
-    <meta name="author" content="${this.escapeHtml(Array.isArray(frontmatter?.author) ? frontmatter.author.join(', ') : frontmatter?.author || 'Unknown Author')}">
-    <meta name="generator" content="Web Presence CMS">
-    <meta name="theme-color" content="#007bff">
-    <link rel="canonical" href="${frontmatter?.canonical_url || `${this.baseUrl}/${slug}.html`}">
-    <meta name="reading-time" content="${frontmatter?.reading_time || 0}">
-    <meta name="article:published_time" content="${frontmatter?.date || new Date().toISOString().split('T')[0]}">
-    <meta name="article:modified_time" content="${frontmatter?.lastmod || new Date().toISOString().split('T')[0]}">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="${frontmatter?.og_type || 'article'}">
-    <meta property="og:url" content="${frontmatter?.og_url || frontmatter?.canonical_url || `${this.baseUrl}/${slug}.html`}">
-    <meta property="og:title" content="${this.escapeHtml(title)}">
-    <meta property="og:description" content="${this.escapeHtml(excerpt)}">
-    <meta property="og:image" content="${frontmatter?.og_image || `${this.baseUrl}/og-image.jpg`}">
-    
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="${frontmatter?.og_url || frontmatter?.canonical_url || `${this.baseUrl}/${slug}.html`}">
-    <meta property="twitter:title" content="${this.escapeHtml(title)}">
-    <meta property="twitter:description" content="${this.escapeHtml(excerpt)}">
-    <meta property="twitter:image" content="${frontmatter?.og_image || `${this.baseUrl}/og-image.jpg`}">
-    
-    ${cssAsset ? `<link rel="stylesheet" href="${cssAsset}">` : ''}
-</head>
-<body>
-    <main>
-        <article>
-            <header>
-                <h1>${this.escapeHtml(title)}</h1>
-                <div class="meta">
-                    <time datetime="${frontmatter?.date || new Date().toISOString().split('T')[0]}">
-                        ${new Date(frontmatter?.date || new Date()).toLocaleDateString()}
-                    </time>
-                    <span class="read-time">${content.readTime} read</span>
-                </div>
-            </header>
-            <div class="content">
-                ${html}
-            </div>
-        </article>
-    </main>
-    ${jsAsset ? `<script src="${jsAsset}"></script>` : ''}
-</body>
-</html>`
-  }
-
-  /**
-   * Convert markdown to HTML with proper URL handling
-   */
-  private convertMarkdownToHtml(markdown: string, frontmatter: Record<string, any>): string {
-    // Configure marked with proper URL handling
-    marked.setOptions({
-      breaks: true,
-      gfm: true
+    // Use mdtohtml's generateHtmlTemplate
+    return generateHtmlTemplate({
+      frontmatter: frontmatter as Frontmatter,
+      htmlContent: html,
+      baseUrl: this.baseUrl,
+      jsAsset,
+      cssAsset,
+      publisherName: 'Web Presence CMS'
     })
-
-    return marked.parse(markdown) as string
   }
+
 
   /**
    * Extract slug from file path
@@ -203,28 +154,6 @@ export class ContentProcessingService {
     return title.replace(/[#*`]/g, '').trim()
   }
 
-  /**
-   * Generate excerpt from content
-   */
-  private generateExcerpt(content: string, customExcerpt?: string): string {
-    if (customExcerpt) {
-      return customExcerpt
-    }
-
-    // Remove markdown formatting and get first 160 characters
-    const plainText = content
-      .replace(/#{1,6}\s+/g, '') // Remove headers
-      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
-      .replace(/\*(.*?)\*/g, '$1') // Remove italic
-      .replace(/`(.*?)`/g, '$1') // Remove code
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links
-      .replace(/\n+/g, ' ') // Replace newlines with spaces
-      .trim()
-
-    return plainText.length > 160 
-      ? plainText.substring(0, 160) + '...'
-      : plainText
-  }
 
   /**
    * Calculate reading time
@@ -236,14 +165,6 @@ export class ContentProcessingService {
     return `${minutes} min`
   }
 
-  /**
-   * Remove title from HTML if it's the first h1
-   */
-  private removeTitleFromHtml(html: string, title: string): string {
-    // Remove the first h1 if it matches the title
-    const titleRegex = new RegExp(`<h1[^>]*>${this.escapeHtml(title)}</h1>`, 'i')
-    return html.replace(titleRegex, '').trim()
-  }
 
   /**
    * Determine access mode for content
@@ -287,17 +208,6 @@ export class ContentProcessingService {
   }
 
 
-  /**
-   * Escape HTML characters
-   */
-  private escapeHtml(text: string): string {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
-  }
 
   /**
    * Generate content metadata for public content

@@ -1,0 +1,31 @@
+{
+  "name": "mdtohtml",
+  "version": "1.0.0",
+  "description": "Shared markdown to HTML converter with frontmatter support and JSON-LD structured data",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "markdown",
+    "html",
+    "frontmatter",
+    "json-ld",
+    "seo",
+    "structured-data"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "marked": "^16.4.0",
+    "gray-matter": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.7.2",
+    "typescript": "^5.8.3"
+  }
+}
+

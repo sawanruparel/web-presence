@@ -1,5 +1,5 @@
 // Utility functions for the Rivve project
 // This file can be expanded with common utilities as needed
 
-export * from './file-utils';
-export * from './validation-utils';
+export * from './file-utils.js';
+export * from './validation-utils.js';

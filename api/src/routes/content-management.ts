@@ -3,7 +3,7 @@ import type { Context } from 'hono'
 import type { Env } from '../types/env'
 import { GitHubService } from '../services/github-service'
 import { ContentProcessingService } from '../services/content-processing-service'
-import matter from 'gray-matter'
+import { parseFrontmatter } from 'mdtohtml'
 import { stringify as yamlStringify } from 'yaml'
 
 const contentManagementRouter = new Hono<{ Bindings: Env }>()
@@ -88,7 +88,7 @@ contentManagementRouter.get('/file/:type/:slug', async (c: Context) => {
 
     // Parse frontmatter
     const contentProcessor = new ContentProcessingService()
-    const { data: frontmatter, content: body } = matter(content)
+    const { frontmatter, body } = parseFrontmatter(content)
 
     return c.json({
       path: filePath,

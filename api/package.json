@@ -14,8 +14,7 @@
   },
   "dependencies": {
     "hono": "^4.0.0",
-    "marked": "^16.4.0",
-    "gray-matter": "^4.0.3",
+    "mdtohtml": "file:../mdtohtml",
     "yaml": "^2.8.1"
   },
   "devDependencies": {
