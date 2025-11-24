@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "deploy": "npm run build:deps && wrangler deploy",
+    "deploy:prod": "npm run build:deps && wrangler deploy --env production",
+    "build:deps": "npm run build --workspace=mdtohtml",
     "build": "tsc --noEmit",
     "type-check": "tsc --noEmit",
     "sync:env": "node scripts/sync-env-to-workers.js",

@@ -14,7 +14,10 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "types": ["@cloudflare/workers-types", "node"]
+    "types": ["@cloudflare/workers-types", "node"],
+    "paths": {
+      "mdtohtml": ["../mdtohtml"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
