@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "npm run build:deps && wrangler deploy",
-    "deploy:prod": "npm run build:deps && wrangler deploy --env production",
+    "deploy": "npm run build:deps && wrangler deploy --config wrangler.toml",
+    "deploy:prod": "npm run build:deps && wrangler deploy --config wrangler.toml --env production",
     "build:deps": "npm run build --workspace=mdtohtml",
     "build": "tsc --noEmit",
     "type-check": "tsc --noEmit",
