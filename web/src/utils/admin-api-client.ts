@@ -27,6 +27,12 @@ export interface ContentOverviewItem {
     updatedAt?: string
     needsRebuild?: boolean
   }
+  r2: {
+    exists: boolean
+    bucket?: 'protected' | 'public'
+    size?: number
+    uploaded?: string
+  }
   status: 'aligned' | 'github-only' | 'database-only'
 }
 
@@ -318,6 +324,46 @@ class AdminApiClient {
       return await response.json()
     } catch (error) {
       console.error('Failed to fetch build log:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Trigger content sync (requires admin token)
+   */
+  async syncContent(token: string): Promise<{
+    success: boolean
+    message: string
+    processed: number
+    uploaded: number
+    deleted: number
+    errors: string[]
+    logs: string[]
+    metadata: {
+      public: number
+      protected: number
+    }
+  }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/admin/content-sync`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please login again.')
+        }
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || errorData.error || `HTTP ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to sync content:', error)
       throw error
     }
   }

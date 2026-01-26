@@ -11,6 +11,8 @@ import { adminAuthMiddleware } from '../middleware/admin-auth'
 import { GitHubService } from '../services/github-service'
 import { createDatabaseService } from '../services/database-service'
 import { hashPassword } from '../utils/password'
+import { R2SyncService } from '../services/r2-sync-service'
+import { ContentProcessingService } from '../services/content-processing-service'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -150,6 +152,46 @@ app.get('/content-overview', adminAuthMiddleware, async (c) => {
     // Get last successful build timestamp
     const lastBuildTimestamp = await dbService.getLastSuccessfulBuildTimestamp()
     
+    // Helper function to normalize content type to plural form for R2 bucket lookup
+    // R2 buckets always use plural forms: ideas, notes, pages, publications
+    const normalizeTypeForR2 = (type: string): string => {
+      const typeMap: Record<string, string> = {
+        'idea': 'ideas',
+        'note': 'notes',
+        'page': 'pages',
+        'publication': 'publications',
+        // Already plural - keep as is
+        'ideas': 'ideas',
+        'notes': 'notes',
+        'pages': 'pages',
+        'publications': 'publications'
+      }
+      return typeMap[type.toLowerCase()] || type
+    }
+    
+    // Fetch R2 bucket contents to check if content exists
+    const r2Service = new R2SyncService(env)
+    const protectedObjects = await r2Service.listObjects('protected')
+    const publicObjects = await r2Service.listObjects('public')
+    
+    // Create maps for quick lookup: type/slug -> R2 object info
+    const protectedMap = new Map<string, { size: number; uploaded: Date }>()
+    const publicMap = new Map<string, { size: number; uploaded: Date }>()
+    
+    for (const obj of protectedObjects) {
+      if (obj.key.endsWith('.html')) {
+        const key = obj.key.replace('.html', '') // Remove .html extension
+        protectedMap.set(key, { size: obj.size, uploaded: obj.uploaded })
+      }
+    }
+    
+    for (const obj of publicObjects) {
+      if (obj.key.endsWith('.html')) {
+        const key = obj.key.replace('.html', '') // Remove .html extension
+        publicMap.set(key, { size: obj.size, uploaded: obj.uploaded })
+      }
+    }
+    
     // Combine and align data
     const allKeys = new Set([...githubContentMap.keys(), ...dbRulesMap.keys()])
     const content: Array<{
@@ -169,6 +211,12 @@ app.get('/content-overview', adminAuthMiddleware, async (c) => {
         updatedAt?: string
         needsRebuild?: boolean
       }
+      r2: {
+        exists: boolean
+        bucket?: 'protected' | 'public'
+        size?: number
+        uploaded?: string
+      }
       status: 'aligned' | 'github-only' | 'database-only'
     }> = []
     
@@ -176,6 +224,38 @@ app.get('/content-overview', adminAuthMiddleware, async (c) => {
       const [type, slug] = key.split('/')
       const githubData = githubContentMap.get(key)
       const dbData = dbRulesMap.get(key)
+      
+      // Check R2 buckets - R2 keys always use plural forms (ideas, notes, pages, publications)
+      // Normalize type to plural form to handle any singular forms from database
+      const normalizedType = normalizeTypeForR2(type)
+      const r2Key = `${normalizedType}/${slug}`
+      const protectedR2 = protectedMap.get(r2Key)
+      const publicR2 = publicMap.get(r2Key)
+      
+      let r2Status: {
+        exists: boolean
+        bucket?: 'protected' | 'public'
+        size?: number
+        uploaded?: string
+      } = {
+        exists: false
+      }
+      
+      if (protectedR2) {
+        r2Status = {
+          exists: true,
+          bucket: 'protected',
+          size: protectedR2.size,
+          uploaded: protectedR2.uploaded.toISOString()
+        }
+      } else if (publicR2) {
+        r2Status = {
+          exists: true,
+          bucket: 'public',
+          size: publicR2.size,
+          uploaded: publicR2.uploaded.toISOString()
+        }
+      }
       
       let status: 'aligned' | 'github-only' | 'database-only'
       if (githubData && dbData) {
@@ -211,6 +291,7 @@ app.get('/content-overview', adminAuthMiddleware, async (c) => {
           updatedAt: dbData?.updatedAt,
           needsRebuild
         },
+        r2: r2Status,
         status
       })
     }
@@ -466,6 +547,109 @@ app.put('/access-rules/:type/:slug', adminAuthMiddleware, async (c) => {
     return c.json({ 
       error: 'Internal Server Error',
       message: 'Failed to update access rule',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500)
+  }
+})
+
+/**
+ * POST /api/admin/content-sync
+ * 
+ * Trigger a full content sync from GitHub to R2 buckets.
+ * Protected by admin authentication middleware.
+ */
+app.post('/content-sync', adminAuthMiddleware, async (c) => {
+  try {
+    const env = c.env
+    const githubService = new GitHubService(env)
+    const contentProcessor = new ContentProcessingService(env.FRONTEND_URL || 'https://sawanruparel.com', env)
+    const r2Service = new R2SyncService(env)
+    
+    // Get all content files from GitHub
+    const allFiles = await githubService.getAllContentFiles()
+    const filesToProcess = allFiles.map(file => file.path)
+    
+    console.log(`🔄 Admin content sync: processing ${filesToProcess.length} files`)
+    
+    const processedContent: any[] = []
+    const errors: string[] = []
+    const logs: string[] = []
+    
+    logs.push(`Starting sync of ${filesToProcess.length} files...`)
+    
+    // Process each file
+    for (const filePath of filesToProcess) {
+      try {
+        logs.push(`Processing: ${filePath}`)
+        
+        // Get file content from GitHub
+        const content = await githubService.getFileContent(filePath)
+        if (!content) {
+          logs.push(`⚠️ File not found or empty: ${filePath}`)
+          continue
+        }
+        
+        // Process the content
+        const processed = await contentProcessor.processContentFile(filePath, content)
+        processedContent.push(processed)
+        
+        logs.push(`✅ Processed: ${processed.slug} (${processed.isProtected ? 'protected' : 'public'})`)
+        
+      } catch (error) {
+        const errorMsg = `Failed to process ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        logs.push(`❌ ${errorMsg}`)
+        errors.push(errorMsg)
+      }
+    }
+    
+    if (processedContent.length === 0) {
+      return c.json({
+        success: false,
+        message: 'No content processed',
+        errors,
+        logs
+      }, 400)
+    }
+    
+    logs.push(`Generating metadata for ${processedContent.length} content items...`)
+    
+    // Generate metadata
+    const contentMetadata = contentProcessor.generateContentMetadata(processedContent)
+    const protectedMetadata = contentProcessor.generateProtectedContentMetadata(processedContent)
+    
+    logs.push(`Syncing to R2 buckets...`)
+    
+    // Sync to R2
+    const syncReport = await r2Service.syncAllContent(
+      processedContent,
+      contentMetadata,
+      (content) => contentProcessor.generatePublicHtmlTemplate(content)
+    )
+    
+    logs.push(`✅ Sync completed: ${syncReport.uploaded.length} uploaded, ${syncReport.deleted.length} deleted`)
+    
+    if (syncReport.errors.length > 0) {
+      logs.push(`⚠️ Errors: ${syncReport.errors.join(', ')}`)
+    }
+    
+    return c.json({
+      success: syncReport.success,
+      message: 'Content sync completed',
+      processed: processedContent.length,
+      uploaded: syncReport.uploaded.length,
+      deleted: syncReport.deleted.length,
+      errors: [...errors, ...syncReport.errors],
+      logs,
+      metadata: {
+        public: Object.keys(contentMetadata).reduce((sum, key) => sum + contentMetadata[key].length, 0),
+        protected: Object.keys(protectedMetadata).reduce((sum, key) => sum + protectedMetadata[key].length, 0)
+      }
+    }, 200)
+  } catch (error) {
+    console.error('Error in admin content sync:', error)
+    return c.json({ 
+      error: 'Internal Server Error',
+      message: 'Failed to sync content',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, 500)
   }
