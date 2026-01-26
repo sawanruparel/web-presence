@@ -4,7 +4,8 @@
  * Password-based login form for admin panel.
  */
 
-import React, { useState, FormEvent } from 'react'
+import { useState } from 'react'
+import type { FormEvent } from 'react'
 import { useAdminAuth } from '../hooks/use-admin-auth'
 
 interface AdminLoginProps {

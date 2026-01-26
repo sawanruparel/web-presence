@@ -4,7 +4,7 @@
  * Displays all content from GitHub and database with alignment status.
  */
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useAdminAuth } from '../hooks/use-admin-auth'
 import { adminApiClient, type ContentOverviewItem } from '../utils/admin-api-client'
 import { AdminLogin } from '../components/admin-login'

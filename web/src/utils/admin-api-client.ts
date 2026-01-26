@@ -4,7 +4,11 @@
  * Handles communication with the backend API for admin operations.
  */
 
-import { getApiUrl } from '../config/environment'
+/**
+ * Admin API Client
+ * 
+ * Handles communication with the backend API for admin operations.
+ */
 
 export interface ContentOverviewItem {
   type: string
