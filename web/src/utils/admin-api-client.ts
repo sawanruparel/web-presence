@@ -24,6 +24,8 @@ export interface ContentOverviewItem {
     accessMode?: string
     description?: string | null
     allowedEmails?: string[]
+    updatedAt?: string
+    needsRebuild?: boolean
   }
   status: 'aligned' | 'github-only' | 'database-only'
 }
@@ -36,7 +38,30 @@ export interface ContentOverviewResponse {
     githubOnly: number
     databaseOnly: number
   }
+  lastBuildTimestamp: string | null
   timestamp: string
+}
+
+export interface BuildLog {
+  id: number
+  build_type: string
+  status: string
+  started_at: string
+  completed_at: string | null
+  duration_seconds: number | null
+  log_output: string | null
+  error_message: string | null
+  triggered_by: string | null
+  git_commit_sha: string | null
+  git_branch: string | null
+  created_at: string
+}
+
+export interface BuildLogsResponse {
+  buildLogs: BuildLog[]
+  total: number
+  limit: number
+  offset: number
 }
 
 class AdminApiClient {
@@ -222,6 +247,77 @@ class AdminApiClient {
       return await response.json()
     } catch (error) {
       console.error('Failed to update access rule:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get build logs (requires admin token)
+   */
+  async getBuildLogs(
+    token: string,
+    options?: {
+      limit?: number
+      offset?: number
+      status?: 'success' | 'failed' | 'in_progress'
+      buildType?: 'web' | 'api' | 'full'
+    }
+  ): Promise<BuildLogsResponse> {
+    try {
+      const params = new URLSearchParams()
+      if (options?.limit) params.append('limit', options.limit.toString())
+      if (options?.offset) params.append('offset', options.offset.toString())
+      if (options?.status) params.append('status', options.status)
+      if (options?.buildType) params.append('buildType', options.buildType)
+
+      const url = `${this.baseUrl}/api/admin/build-logs${params.toString() ? `?${params.toString()}` : ''}`
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please login again.')
+        }
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || errorData.error || `HTTP ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to fetch build logs:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get specific build log (requires admin token)
+   */
+  async getBuildLog(token: string, id: number): Promise<{ buildLog: BuildLog }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/admin/build-logs/${id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please login again.')
+        }
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || errorData.error || `HTTP ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to fetch build log:', error)
       throw error
     }
   }

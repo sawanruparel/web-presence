@@ -57,6 +57,64 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
 
   console.log('🔄 Fetching content metadata from API...')
 
+  // Create build log entry at start
+  let buildLogId: number | null = null
+  const buildStartTime = new Date().toISOString()
+  const logOutput: string[] = []
+  
+  // Store original console methods
+  const originalLog = console.log
+  const originalError = console.error
+  const originalWarn = console.warn
+  
+  // Capture console output
+  console.log = (...args: any[]) => {
+    const message = args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' ')
+    logOutput.push(`[LOG] ${message}`)
+    originalLog(...args)
+  }
+  
+  console.error = (...args: any[]) => {
+    const message = args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' ')
+    logOutput.push(`[ERROR] ${message}`)
+    originalError(...args)
+  }
+  
+  console.warn = (...args: any[]) => {
+    const message = args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' ')
+    logOutput.push(`[WARN] ${message}`)
+    originalWarn(...args)
+  }
+
+  // Create build log entry
+  try {
+    const buildLogResponse = await fetch(`${apiUrl}/api/admin/build-logs`, {
+      method: 'POST',
+      headers: {
+        'X-API-Key': apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        buildType: 'web',
+        status: 'in_progress',
+        startedAt: buildStartTime,
+        triggeredBy: process.env.CI ? 'ci' : (process.env.GITHUB_ACTIONS ? 'ci' : 'manual'),
+        gitCommitSha: process.env.GITHUB_SHA || process.env.GIT_COMMIT_SHA,
+        gitBranch: process.env.GITHUB_REF?.replace('refs/heads/', '') || process.env.GIT_BRANCH
+      }),
+    })
+
+    if (buildLogResponse.ok) {
+      const buildLogData = await buildLogResponse.json()
+      buildLogId = buildLogData.id
+      console.log(`📝 Created build log entry #${buildLogId}`)
+    } else {
+      console.warn('⚠️  Failed to create build log entry (non-fatal):', buildLogResponse.status)
+    }
+  } catch (logError) {
+    console.warn('⚠️  Failed to create build log entry (non-fatal):', logError instanceof Error ? logError.message : 'Unknown error')
+  }
+
   try {
     // Fetch content metadata from catalog endpoint
     const catalogResponse = await fetch(`${apiUrl}/api/content/catalog`, {
@@ -173,8 +231,40 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
 
     console.log('✅ Content fetch completed successfully')
 
+    // Update build log on success
+    if (buildLogId) {
+      try {
+        const buildEndTime = new Date().toISOString()
+        await fetch(`${apiUrl}/api/admin/build-logs/${buildLogId}`, {
+          method: 'PUT',
+          headers: {
+            'X-API-Key': apiKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            status: 'success',
+            completedAt: buildEndTime,
+            logOutput: logOutput.join('\n')
+          }),
+        })
+        console.log(`📝 Updated build log entry #${buildLogId} (success)`)
+      } catch (logError) {
+        console.warn('⚠️  Failed to update build log entry (non-fatal):', logError instanceof Error ? logError.message : 'Unknown error')
+      }
+    }
+
+    // Restore original console methods
+    console.log = originalLog
+    console.error = originalError
+    console.warn = originalWarn
+
   } catch (error) {
-    console.warn('⚠️  Failed to fetch content from API, creating fallback:', error.message)
+    // Restore original console methods
+    console.log = originalLog
+    console.error = originalError
+    console.warn = originalWarn
+
+    console.warn('⚠️  Failed to fetch content from API, creating fallback:', error instanceof Error ? error.message : 'Unknown error')
     
     // Create fallback content metadata
     const fallbackMetadata: ContentMetadata = {
@@ -205,6 +295,29 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
     
     console.log('✅ Created fallback content-metadata.json')
     console.log('⚠️  Note: Using empty content metadata. API may not be accessible during build.')
+
+    // Update build log on failure
+    if (buildLogId) {
+      try {
+        const buildEndTime = new Date().toISOString()
+        await fetch(`${apiUrl}/api/admin/build-logs/${buildLogId}`, {
+          method: 'PUT',
+          headers: {
+            'X-API-Key': apiKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            status: 'failed',
+            completedAt: buildEndTime,
+            logOutput: logOutput.join('\n'),
+            errorMessage: error instanceof Error ? error.message : 'Unknown error'
+          }),
+        })
+        console.log(`📝 Updated build log entry #${buildLogId} (failed)`)
+      } catch (logError) {
+        console.warn('⚠️  Failed to update build log entry (non-fatal):', logError instanceof Error ? logError.message : 'Unknown error')
+      }
+    }
   }
 }
 

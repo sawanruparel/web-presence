@@ -504,6 +504,207 @@ export class DatabaseService {
     
     return rulesWithEmails
   }
+
+  // ============================================================
+  // Build Logs
+  // ============================================================
+
+  /**
+   * Create a new build log entry
+   */
+  async createBuildLog(input: {
+    buildType: 'web' | 'api' | 'full'
+    status: 'success' | 'failed' | 'in_progress'
+    startedAt: string
+    triggeredBy?: 'manual' | 'ci' | 'webhook' | 'api'
+    gitCommitSha?: string
+    gitBranch?: string
+  }): Promise<number> {
+    const result = await this.db
+      .prepare(
+        `INSERT INTO build_logs 
+         (build_type, status, started_at, triggered_by, git_commit_sha, git_branch)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        input.buildType,
+        input.status,
+        input.startedAt,
+        input.triggeredBy || 'manual',
+        input.gitCommitSha || null,
+        input.gitBranch || null
+      )
+      .run()
+
+    return result.meta.last_row_id!
+  }
+
+  /**
+   * Update a build log entry
+   */
+  async updateBuildLog(
+    id: number,
+    updates: {
+      status?: 'success' | 'failed' | 'in_progress'
+      completedAt?: string
+      durationSeconds?: number
+      logOutput?: string
+      errorMessage?: string
+    }
+  ): Promise<boolean> {
+    const updatesList: string[] = []
+    const values: any[] = []
+
+    if (updates.status !== undefined) {
+      updatesList.push('status = ?')
+      values.push(updates.status)
+    }
+    if (updates.completedAt !== undefined) {
+      updatesList.push('completed_at = ?')
+      values.push(updates.completedAt)
+    }
+    if (updates.durationSeconds !== undefined) {
+      updatesList.push('duration_seconds = ?')
+      values.push(updates.durationSeconds)
+    }
+    if (updates.logOutput !== undefined) {
+      updatesList.push('log_output = ?')
+      values.push(updates.logOutput)
+    }
+    if (updates.errorMessage !== undefined) {
+      updatesList.push('error_message = ?')
+      values.push(updates.errorMessage)
+    }
+
+    if (updatesList.length === 0) {
+      return false
+    }
+
+    values.push(id)
+
+    const query = `UPDATE build_logs SET ${updatesList.join(', ')} WHERE id = ?`
+    await this.db.prepare(query).bind(...values).run()
+
+    return true
+  }
+
+  /**
+   * Get build log by ID
+   */
+  async getBuildLog(id: number): Promise<{
+    id: number
+    build_type: string
+    status: string
+    started_at: string
+    completed_at: string | null
+    duration_seconds: number | null
+    log_output: string | null
+    error_message: string | null
+    triggered_by: string | null
+    git_commit_sha: string | null
+    git_branch: string | null
+    created_at: string
+  } | null> {
+    const result = await this.db
+      .prepare('SELECT * FROM build_logs WHERE id = ?')
+      .bind(id)
+      .first<{
+        id: number
+        build_type: string
+        status: string
+        started_at: string
+        completed_at: string | null
+        duration_seconds: number | null
+        log_output: string | null
+        error_message: string | null
+        triggered_by: string | null
+        git_commit_sha: string | null
+        git_branch: string | null
+        created_at: string
+      }>()
+
+    return result || null
+  }
+
+  /**
+   * Get all build logs (paginated)
+   */
+  async getBuildLogs(options: {
+    limit?: number
+    offset?: number
+    status?: 'success' | 'failed' | 'in_progress'
+    buildType?: 'web' | 'api' | 'full'
+  } = {}): Promise<Array<{
+    id: number
+    build_type: string
+    status: string
+    started_at: string
+    completed_at: string | null
+    duration_seconds: number | null
+    log_output: string | null
+    error_message: string | null
+    triggered_by: string | null
+    git_commit_sha: string | null
+    git_branch: string | null
+    created_at: string
+  }>> {
+    let query = 'SELECT * FROM build_logs WHERE 1=1'
+    const params: any[] = []
+
+    if (options.status) {
+      query += ' AND status = ?'
+      params.push(options.status)
+    }
+
+    if (options.buildType) {
+      query += ' AND build_type = ?'
+      params.push(options.buildType)
+    }
+
+    query += ' ORDER BY started_at DESC'
+
+    if (options.limit) {
+      query += ' LIMIT ?'
+      params.push(options.limit)
+    }
+
+    if (options.offset) {
+      query += ' OFFSET ?'
+      params.push(options.offset)
+    }
+
+    const result = await this.db.prepare(query).bind(...params).all<{
+      id: number
+      build_type: string
+      status: string
+      started_at: string
+      completed_at: string | null
+      duration_seconds: number | null
+      log_output: string | null
+      error_message: string | null
+      triggered_by: string | null
+      git_commit_sha: string | null
+      git_branch: string | null
+      created_at: string
+    }>()
+
+    return result.results || []
+  }
+
+  /**
+   * Get last successful build timestamp
+   */
+  async getLastSuccessfulBuildTimestamp(): Promise<string | null> {
+    const result = await this.db
+      .prepare(
+        `SELECT completed_at FROM build_logs 
+         WHERE status = 'success' AND completed_at IS NOT NULL
+         ORDER BY completed_at DESC LIMIT 1`
+      )
+      .first<{ completed_at: string }>()
+
+    return result?.completed_at || null
+  }
 }
 
 // ============================================================

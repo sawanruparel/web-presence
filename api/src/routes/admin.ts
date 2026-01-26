@@ -132,6 +132,7 @@ app.get('/content-overview', adminAuthMiddleware, async (c) => {
       accessMode: string
       description: string | null
       allowedEmails: string[]
+      updatedAt: string
     }>()
     
     for (const { rule, emails } of dbRules) {
@@ -141,9 +142,13 @@ app.get('/content-overview', adminAuthMiddleware, async (c) => {
         slug: rule.slug,
         accessMode: rule.access_mode,
         description: rule.description,
-        allowedEmails: emails
+        allowedEmails: emails,
+        updatedAt: rule.updated_at
       })
     }
+
+    // Get last successful build timestamp
+    const lastBuildTimestamp = await dbService.getLastSuccessfulBuildTimestamp()
     
     // Combine and align data
     const allKeys = new Set([...githubContentMap.keys(), ...dbRulesMap.keys()])
@@ -161,6 +166,8 @@ app.get('/content-overview', adminAuthMiddleware, async (c) => {
         accessMode?: string
         description?: string | null
         allowedEmails?: string[]
+        updatedAt?: string
+        needsRebuild?: boolean
       }
       status: 'aligned' | 'github-only' | 'database-only'
     }> = []
@@ -179,6 +186,14 @@ app.get('/content-overview', adminAuthMiddleware, async (c) => {
         status = 'database-only'
       }
       
+      // Calculate if rebuild is needed
+      let needsRebuild = false
+      if (dbData && lastBuildTimestamp && dbData.updatedAt) {
+        const updatedAt = new Date(dbData.updatedAt)
+        const lastBuild = new Date(lastBuildTimestamp)
+        needsRebuild = updatedAt > lastBuild
+      }
+
       content.push({
         type,
         slug,
@@ -192,7 +207,9 @@ app.get('/content-overview', adminAuthMiddleware, async (c) => {
           exists: !!dbData,
           accessMode: dbData?.accessMode,
           description: dbData?.description,
-          allowedEmails: dbData?.allowedEmails
+          allowedEmails: dbData?.allowedEmails,
+          updatedAt: dbData?.updatedAt,
+          needsRebuild
         },
         status
       })
@@ -217,6 +234,7 @@ app.get('/content-overview', adminAuthMiddleware, async (c) => {
     return c.json({
       content,
       summary,
+      lastBuildTimestamp,
       timestamp: new Date().toISOString()
     })
   } catch (error) {

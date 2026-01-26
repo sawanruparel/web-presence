@@ -8,6 +8,7 @@ import { PublicationsPage } from './pages/PublicationsPage'
 import { IdeasPage } from './pages/IdeasPage'
 import { ContentPage } from './pages/ContentPage'
 import { AdminContentPage } from './pages/AdminContentPage'
+import { AdminBuildLogsPage } from './pages/AdminBuildLogsPage'
 
 function renderPage(pageData: PageData) {
   switch (pageData.type) {
@@ -25,6 +26,8 @@ function renderPage(pageData: PageData) {
       return <ContentPage content={pageData.data.content} type={pageData.data.type} slug={pageData.data.slug} />
     case 'admin-content':
       return <AdminContentPage />
+    case 'admin-build-logs':
+      return <AdminBuildLogsPage />
     default:
       return <AboutPage />
   }

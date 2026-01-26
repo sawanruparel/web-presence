@@ -14,7 +14,9 @@ export function AdminContentPage() {
   const { isAuthenticated, isLoading: authLoading, getToken, logout } = useAdminAuth()
   const [content, setContent] = useState<ContentOverviewItem[]>([])
   const [summary, setSummary] = useState<{ total: number; aligned: number; githubOnly: number; databaseOnly: number } | null>(null)
+  const [lastBuildTimestamp, setLastBuildTimestamp] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
@@ -62,6 +64,7 @@ export function AdminContentPage() {
       console.log('✅ Content overview fetched:', data)
       setContent(data.content)
       setSummary(data.summary)
+      setLastBuildTimestamp(data.lastBuildTimestamp || null)
       setHasFetched(true)
     } catch (err) {
       console.error('❌ Failed to fetch content overview:', err)
@@ -115,11 +118,14 @@ export function AdminContentPage() {
 
       await adminApiClient.deleteAccessRule(token, deleteConfirm.type, deleteConfirm.slug)
       
-      // Refresh content overview
-      setHasFetched(false)
-      await fetchContentOverview(true)
-      
-      setDeleteConfirm(null)
+      // Refresh content overview with loading state
+      setIsRefreshing(true)
+      try {
+        await fetchContentOverview(true)
+        setDeleteConfirm(null)
+      } finally {
+        setIsRefreshing(false)
+      }
     } catch (err) {
       console.error('Failed to delete access rule:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete access rule'
@@ -203,12 +209,15 @@ export function AdminContentPage() {
         await adminApiClient.updateAccessRule(token, editItem.type, editItem.slug, ruleData)
       }
 
-      // Refresh content overview
-      setHasFetched(false)
-      await fetchContentOverview(true)
-
-      setEditItem(null)
-      setEditForm(null)
+      // Refresh content overview with loading state
+      setIsRefreshing(true)
+      try {
+        await fetchContentOverview(true)
+        setEditItem(null)
+        setEditForm(null)
+      } finally {
+        setIsRefreshing(false)
+      }
     } catch (err) {
       console.error('Failed to save access rule:', err)
       setError(err instanceof Error ? err.message : 'Failed to save access rule')
@@ -248,7 +257,7 @@ export function AdminContentPage() {
   }
 
   // Show loading state
-  if (authLoading || isLoading) {
+  if (authLoading || (isLoading && !hasFetched)) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-background)' }}>
         <div style={{ color: 'var(--color-text-muted)' }}>Loading...</div>
@@ -310,6 +319,19 @@ export function AdminContentPage() {
     }
   }
 
+  const getContentUrl = (type: string, slug: string): string => {
+    if (type === 'pages') {
+      return `/${slug}`
+    }
+    return `/${type}/${slug}`
+  }
+
+  const formatBuildTimestamp = (timestamp: string | null): string => {
+    if (!timestamp) return 'Never'
+    const date = new Date(timestamp)
+    return date.toLocaleString()
+  }
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -322,18 +344,36 @@ export function AdminContentPage() {
             <p className="mt-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
               View all content and access control alignment
             </p>
+            {lastBuildTimestamp && (
+              <p className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                Last build: {formatBuildTimestamp(lastBuildTimestamp)}
+              </p>
+            )}
           </div>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 text-sm font-medium rounded-md border"
-            style={{ 
-              color: 'var(--color-text)', 
-              borderColor: 'var(--color-border)',
-              backgroundColor: 'var(--color-background)'
-            }}
-          >
-            Logout
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigateTo('/admin/build-logs')}
+              className="px-4 py-2 text-sm font-medium rounded-md border"
+              style={{ 
+                color: 'var(--color-text)', 
+                borderColor: 'var(--color-border)',
+                backgroundColor: 'var(--color-background)'
+              }}
+            >
+              Build Logs
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 text-sm font-medium rounded-md border"
+              style={{ 
+                color: 'var(--color-text)', 
+                borderColor: 'var(--color-border)',
+                backgroundColor: 'var(--color-background)'
+              }}
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -414,13 +454,35 @@ export function AdminContentPage() {
           </div>
         )}
 
+        {/* Refreshing Overlay */}
+        {isRefreshing && (
+          <div className="mb-4 p-3 rounded-md border" style={{ 
+            backgroundColor: 'rgba(59, 130, 246, 0.1)', 
+            borderColor: 'rgba(59, 130, 246, 0.3)' 
+          }}>
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+              <span style={{ color: '#3b82f6' }}>Refreshing...</span>
+            </div>
+          </div>
+        )}
+
         {/* Content Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto relative">
+          {isRefreshing && (
+            <div className="absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center z-10" style={{ backgroundColor: 'rgba(255, 255, 255, 0.5)' }}>
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-500 border-t-transparent"></div>
+                <span style={{ color: 'var(--color-text)' }}>Updating...</span>
+              </div>
+            </div>
+          )}
           <table className="w-full border-collapse" style={{ borderColor: 'var(--color-border)' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--color-border)' }}>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Type</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Slug</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Link</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>GitHub</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Database</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Status</th>
@@ -430,7 +492,7 @@ export function AdminContentPage() {
             <tbody>
               {filteredContent.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
+                  <td colSpan={7} className="px-4 py-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
                     No content found
                   </td>
                 </tr>
@@ -451,6 +513,20 @@ export function AdminContentPage() {
                     </td>
                     <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text)' }}>
                       {item.github.exists ? (
+                        <a
+                          href={getContentUrl(item.type, item.slug)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:text-blue-700 underline"
+                        >
+                          View
+                        </a>
+                      ) : (
+                        <span style={{ color: 'var(--color-text-muted)' }}>—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text)' }}>
+                      {item.github.exists ? (
                         <div>
                           <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                             {item.github.size ? `${(item.github.size / 1024).toFixed(1)} KB` : '—'}
@@ -468,8 +544,17 @@ export function AdminContentPage() {
                     <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text)' }}>
                       {item.database.exists ? (
                         <div>
-                          <div className="mb-1">
+                          <div className="mb-1 flex items-center gap-2">
                             {getAccessModeBadge(item.database.accessMode)}
+                            {item.database.needsRebuild && (
+                              <span 
+                                className="px-2 py-1 text-xs font-medium rounded-full"
+                                style={{ backgroundColor: 'rgba(234, 179, 8, 0.1)', color: '#eab308' }}
+                                title="Database rule updated after last build - rebuild needed"
+                              >
+                                ⚠ Rebuild
+                              </span>
+                            )}
                           </div>
                           {item.database.description && (
                             <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
