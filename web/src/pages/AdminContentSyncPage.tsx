@@ -4,7 +4,7 @@
  * Dedicated page for content synchronization with detailed bucket operations.
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useAdminAuth } from '../hooks/use-admin-auth'
 import { adminApiClient } from '../utils/admin-api-client'
 import { AdminLogin } from '../components/admin-login'
