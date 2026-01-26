@@ -142,6 +142,52 @@ class AdminApiClient {
   }
 
   /**
+   * Create access rule (requires admin token)
+   */
+  async createAccessRule(
+    token: string,
+    type: string,
+    slug: string,
+    rule: {
+      accessMode: 'open' | 'password' | 'email-list'
+      description?: string
+      password?: string
+      allowedEmails?: string[]
+    }
+  ): Promise<{ message: string; rule: any }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/admin/access-rules`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type,
+          slug,
+          accessMode: rule.accessMode,
+          description: rule.description,
+          password: rule.password,
+          allowedEmails: rule.allowedEmails
+        }),
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please login again.')
+        }
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || errorData.error || `HTTP ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to create access rule:', error)
+      throw error
+    }
+  }
+
+  /**
    * Update access rule (requires admin token)
    */
   async updateAccessRule(

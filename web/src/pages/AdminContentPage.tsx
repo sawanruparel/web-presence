@@ -167,7 +167,7 @@ export function AdminContentPage() {
         throw new Error('No authentication token')
       }
 
-      const updates: {
+      const ruleData: {
         accessMode: 'open' | 'password' | 'email-list'
         description?: string
         password?: string
@@ -177,21 +177,31 @@ export function AdminContentPage() {
         description: editForm.description || undefined
       }
 
-      if (editForm.accessMode === 'password' && editForm.password) {
-        updates.password = editForm.password
+      if (editForm.accessMode === 'password') {
+        if (!editForm.password && !editItem.database.exists) {
+          throw new Error('Password is required for password mode')
+        }
+        if (editForm.password) {
+          ruleData.password = editForm.password
+        }
       }
 
       if (editForm.accessMode === 'email-list') {
-        updates.allowedEmails = editForm.allowedEmails
+        ruleData.allowedEmails = editForm.allowedEmails
           .split('\n')
           .map(email => email.trim())
           .filter(email => email.length > 0)
       } else {
         // Clear emails if not email-list mode
-        updates.allowedEmails = []
+        ruleData.allowedEmails = []
       }
 
-      await adminApiClient.updateAccessRule(token, editItem.type, editItem.slug, updates)
+      // Create new entry if it doesn't exist, otherwise update
+      if (!editItem.database.exists) {
+        await adminApiClient.createAccessRule(token, editItem.type, editItem.slug, ruleData)
+      } else {
+        await adminApiClient.updateAccessRule(token, editItem.type, editItem.slug, ruleData)
+      }
 
       // Refresh content overview
       setHasFetched(false)
@@ -200,8 +210,8 @@ export function AdminContentPage() {
       setEditItem(null)
       setEditForm(null)
     } catch (err) {
-      console.error('Failed to update access rule:', err)
-      setError(err instanceof Error ? err.message : 'Failed to update access rule')
+      console.error('Failed to save access rule:', err)
+      setError(err instanceof Error ? err.message : 'Failed to save access rule')
     } finally {
       setIsSaving(false)
     }
@@ -502,7 +512,7 @@ export function AdminContentPage() {
                             backgroundColor: 'var(--color-background)'
                           }}
                         >
-                          Edit
+                          {item.database.exists ? 'Edit' : 'Create'}
                         </button>
                         {item.database.exists && (
                           <button
@@ -600,7 +610,7 @@ export function AdminContentPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
-                Edit Access Rule: {editItem.type}/{editItem.slug}
+                {editItem.database.exists ? 'Edit' : 'Create'} Access Rule: {editItem.type}/{editItem.slug}
               </h3>
               
               <div className="space-y-4">
@@ -645,7 +655,7 @@ export function AdminContentPage() {
                 {editForm.accessMode === 'password' && (
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
-                      Password {editItem.database.exists ? '(leave blank to keep current)' : ''}
+                      Password {editItem.database.exists ? '(leave blank to keep current)' : '(required)'}
                     </label>
                     <input
                       type="password"

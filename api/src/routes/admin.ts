@@ -230,6 +230,101 @@ app.get('/content-overview', adminAuthMiddleware, async (c) => {
 })
 
 /**
+ * POST /api/admin/access-rules
+ * 
+ * Create a new access rule in the database.
+ * Protected by admin authentication middleware.
+ */
+app.post('/access-rules', adminAuthMiddleware, async (c) => {
+  try {
+    const env = c.env
+    const body = await c.req.json() as {
+      type: string
+      slug: string
+      accessMode: 'open' | 'password' | 'email-list'
+      description?: string
+      password?: string
+      allowedEmails?: string[]
+    }
+    const dbService = createDatabaseService(env.DB)
+
+    // Validate required fields
+    if (!body.type || !body.slug || !body.accessMode) {
+      return c.json({ 
+        error: 'Bad Request',
+        message: 'Missing required fields: type, slug, accessMode' 
+      }, 400)
+    }
+
+    // Check if rule already exists
+    const existingRule = await env.DB.prepare(
+      'SELECT id FROM content_access_rules WHERE type = ? AND slug = ?'
+    ).bind(body.type, body.slug).first() as { id: number } | null
+
+    if (existingRule) {
+      return c.json({ 
+        error: 'Conflict',
+        message: `Access rule already exists for ${body.type}/${body.slug}` 
+      }, 409)
+    }
+
+    // Hash password if provided
+    let passwordHash: string | null = null
+    if (body.accessMode === 'password') {
+      if (!body.password) {
+        return c.json({ 
+          error: 'Bad Request',
+          message: 'Password is required for password mode' 
+        }, 400)
+      }
+      passwordHash = await hashPassword(body.password)
+    }
+
+    // Create access rule
+    const result = await env.DB.prepare(
+      `INSERT INTO content_access_rules 
+       (type, slug, access_mode, description, password_hash, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+    ).bind(
+      body.type,
+      body.slug,
+      body.accessMode,
+      body.description || null,
+      passwordHash
+    ).run()
+
+    const ruleId = result.meta.last_row_id
+
+    // Add email allowlist if provided
+    if (body.allowedEmails && body.allowedEmails.length > 0) {
+      for (const email of body.allowedEmails) {
+        await env.DB.prepare(
+          'INSERT INTO email_allowlist (access_rule_id, email) VALUES (?, ?)'
+        ).bind(ruleId, email.toLowerCase().trim()).run()
+      }
+    }
+
+    // Get created rule with emails
+    const { rule, emails } = await dbService.getAccessRuleWithEmails(body.type, body.slug)
+
+    return c.json({
+      message: 'Access rule created successfully',
+      rule: {
+        ...rule,
+        allowedEmails: rule?.access_mode === 'email-list' ? emails : undefined
+      }
+    }, 201)
+  } catch (error) {
+    console.error('Error creating access rule:', error)
+    return c.json({ 
+      error: 'Internal Server Error',
+      message: 'Failed to create access rule',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500)
+  }
+})
+
+/**
  * DELETE /api/admin/access-rules/:type/:slug
  * 
  * Delete an access rule from the database.
