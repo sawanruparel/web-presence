@@ -108,6 +108,77 @@ class AdminApiClient {
       throw error
     }
   }
+
+  /**
+   * Delete access rule (requires admin token)
+   */
+  async deleteAccessRule(
+    token: string,
+    type: string,
+    slug: string
+  ): Promise<{ message: string; type: string; slug: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/admin/access-rules/${type}/${slug}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please login again.')
+        }
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || errorData.error || `HTTP ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to delete access rule:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Update access rule (requires admin token)
+   */
+  async updateAccessRule(
+    token: string,
+    type: string,
+    slug: string,
+    updates: {
+      accessMode?: 'open' | 'password' | 'email-list'
+      description?: string
+      password?: string
+      allowedEmails?: string[]
+    }
+  ): Promise<{ message: string; rule: any }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/admin/access-rules/${type}/${slug}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please login again.')
+        }
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || errorData.error || `HTTP ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to update access rule:', error)
+      throw error
+    }
+  }
 }
 
 // Export singleton instance

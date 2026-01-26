@@ -20,6 +20,20 @@ export function AdminContentPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [hasFetched, setHasFetched] = useState(false)
+  
+  // Delete confirmation state
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: string; slug: string } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  
+  // Edit modal state
+  const [editItem, setEditItem] = useState<ContentOverviewItem | null>(null)
+  const [editForm, setEditForm] = useState<{
+    accessMode: 'open' | 'password' | 'email-list'
+    description: string
+    password: string
+    allowedEmails: string
+  } | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -28,8 +42,8 @@ export function AdminContentPage() {
     }
   }, [authLoading, isAuthenticated])
 
-  const fetchContentOverview = useCallback(async () => {
-    if (hasFetched && content.length > 0) {
+  const fetchContentOverview = useCallback(async (force = false) => {
+    if (!force && hasFetched && content.length > 0) {
       console.log('⏭️ Content already fetched, skipping...')
       return
     }
@@ -86,6 +100,118 @@ export function AdminContentPage() {
   const handleLogout = () => {
     logout()
     navigateTo('/')
+  }
+
+  const handleDeleteClick = (type: string, slug: string) => {
+    setDeleteConfirm({ type, slug })
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm(null)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm) return
+    
+    setIsDeleting(true)
+    setError(null)
+    
+    try {
+      const token = getToken()
+      if (!token) {
+        throw new Error('No authentication token')
+      }
+
+      await adminApiClient.deleteAccessRule(token, deleteConfirm.type, deleteConfirm.slug)
+      
+      // Refresh content overview
+      setHasFetched(false)
+      await fetchContentOverview(true)
+      
+      setDeleteConfirm(null)
+    } catch (err) {
+      console.error('Failed to delete access rule:', err)
+      setError(err instanceof Error ? err.message : 'Failed to delete access rule')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleEditClick = (item: ContentOverviewItem) => {
+    if (!item.database.exists) {
+      // If no database entry exists, initialize with defaults
+      setEditForm({
+        accessMode: 'open',
+        description: '',
+        password: '',
+        allowedEmails: ''
+      })
+    } else {
+      setEditForm({
+        accessMode: (item.database.accessMode as 'open' | 'password' | 'email-list') || 'open',
+        description: item.database.description || '',
+        password: '',
+        allowedEmails: item.database.allowedEmails?.join('\n') || ''
+      })
+    }
+    setEditItem(item)
+  }
+
+  const handleEditCancel = () => {
+    setEditItem(null)
+    setEditForm(null)
+  }
+
+  const handleEditSave = async () => {
+    if (!editItem || !editForm) return
+
+    setIsSaving(true)
+    setError(null)
+
+    try {
+      const token = getToken()
+      if (!token) {
+        throw new Error('No authentication token')
+      }
+
+      const updates: {
+        accessMode: 'open' | 'password' | 'email-list'
+        description?: string
+        password?: string
+        allowedEmails?: string[]
+      } = {
+        accessMode: editForm.accessMode,
+        description: editForm.description || undefined
+      }
+
+      if (editForm.accessMode === 'password' && editForm.password) {
+        updates.password = editForm.password
+      }
+
+      if (editForm.accessMode === 'email-list') {
+        updates.allowedEmails = editForm.allowedEmails
+          .split('\n')
+          .map(email => email.trim())
+          .filter(email => email.length > 0)
+      } else {
+        // Clear emails if not email-list mode
+        updates.allowedEmails = []
+      }
+
+      await adminApiClient.updateAccessRule(token, editItem.type, editItem.slug, updates)
+
+      // Refresh content overview
+      setHasFetched(false)
+      await fetchContentOverview(true)
+
+      setEditItem(null)
+      setEditForm(null)
+    } catch (err) {
+      console.error('Failed to update access rule:', err)
+      setError(err instanceof Error ? err.message : 'Failed to update access rule')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   // Filter content
@@ -295,12 +421,13 @@ export function AdminContentPage() {
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>GitHub</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Database</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Status</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredContent.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
+                  <td colSpan={6} className="px-4 py-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
                     No content found
                   </td>
                 </tr>
@@ -348,7 +475,19 @@ export function AdminContentPage() {
                           )}
                           {item.database.allowedEmails && item.database.allowedEmails.length > 0 && (
                             <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                              {item.database.allowedEmails.length} email{item.database.allowedEmails.length !== 1 ? 's' : ''}
+                              <div className="font-semibold">
+                                {item.database.allowedEmails.length} email{item.database.allowedEmails.length !== 1 ? 's' : ''}
+                              </div>
+                              {item.database.accessMode === 'email-list' && (
+                                <div className="mt-1 font-mono text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                                  {item.database.allowedEmails.slice(0, 3).map((email, idx) => (
+                                    <div key={idx}>{email}</div>
+                                  ))}
+                                  {item.database.allowedEmails.length > 3 && (
+                                    <div>... and {item.database.allowedEmails.length - 3} more</div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -359,12 +498,223 @@ export function AdminContentPage() {
                     <td className="px-4 py-3">
                       {getStatusBadge(item.status)}
                     </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEditClick(item)}
+                          className="px-3 py-1 text-xs font-medium rounded border"
+                          style={{ 
+                            color: 'var(--color-text)', 
+                            borderColor: 'var(--color-border)',
+                            backgroundColor: 'var(--color-background)'
+                          }}
+                        >
+                          Edit
+                        </button>
+                        {item.database.exists && (
+                          <button
+                            onClick={() => handleDeleteClick(item.type, item.slug)}
+                            className="px-3 py-1 text-xs font-medium rounded border"
+                            style={{ 
+                              color: '#ef4444', 
+                              borderColor: '#ef4444',
+                              backgroundColor: 'transparent'
+                            }}
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {deleteConfirm && (
+          <div 
+            className="fixed inset-0 flex items-center justify-center z-50"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+            onClick={handleDeleteCancel}
+          >
+            <div 
+              className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4"
+              style={{ 
+                backgroundColor: 'var(--color-background)',
+                border: '1px solid var(--color-border)'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
+                Confirm Delete
+              </h3>
+              <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
+                Are you sure you want to delete the access rule for{' '}
+                <strong style={{ color: 'var(--color-text)' }}>
+                  {deleteConfirm.type}/{deleteConfirm.slug}
+                </strong>?
+                This action cannot be undone.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleDeleteCancel}
+                  disabled={isDeleting}
+                  className="px-4 py-2 text-sm font-medium rounded border"
+                  style={{ 
+                    color: 'var(--color-text)', 
+                    borderColor: 'var(--color-border)',
+                    backgroundColor: 'var(--color-background)'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  disabled={isDeleting}
+                  className="px-4 py-2 text-sm font-medium rounded text-white"
+                  style={{ 
+                    backgroundColor: isDeleting ? '#9ca3af' : '#ef4444'
+                  }}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {editItem && editForm && (
+          <div 
+            className="fixed inset-0 flex items-center justify-center z-50"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+            onClick={handleEditCancel}
+          >
+            <div 
+              className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+              style={{ 
+                backgroundColor: 'var(--color-background)',
+                border: '1px solid var(--color-border)'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
+                Edit Access Rule: {editItem.type}/{editItem.slug}
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
+                    Access Mode
+                  </label>
+                  <select
+                    value={editForm.accessMode}
+                    onChange={(e) => setEditForm({ ...editForm, accessMode: e.target.value as 'open' | 'password' | 'email-list' })}
+                    className="w-full px-3 py-2 border rounded-md"
+                    style={{ 
+                      backgroundColor: 'var(--color-background)', 
+                      color: 'var(--color-text)',
+                      borderColor: 'var(--color-border)'
+                    }}
+                  >
+                    <option value="open">Open</option>
+                    <option value="password">Password</option>
+                    <option value="email-list">Email List</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
+                    Description
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-md"
+                    style={{ 
+                      backgroundColor: 'var(--color-background)', 
+                      color: 'var(--color-text)',
+                      borderColor: 'var(--color-border)'
+                    }}
+                    placeholder="Optional description"
+                  />
+                </div>
+
+                {editForm.accessMode === 'password' && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
+                      Password {editItem.database.exists ? '(leave blank to keep current)' : ''}
+                    </label>
+                    <input
+                      type="password"
+                      value={editForm.password}
+                      onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-md"
+                      style={{ 
+                        backgroundColor: 'var(--color-background)', 
+                        color: 'var(--color-text)',
+                        borderColor: 'var(--color-border)'
+                      }}
+                      placeholder="Enter new password"
+                    />
+                  </div>
+                )}
+
+                {editForm.accessMode === 'email-list' && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
+                      Allowed Emails (one per line)
+                    </label>
+                    <textarea
+                      value={editForm.allowedEmails}
+                      onChange={(e) => setEditForm({ ...editForm, allowedEmails: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-md font-mono text-sm"
+                      style={{ 
+                        backgroundColor: 'var(--color-background)', 
+                        color: 'var(--color-text)',
+                        borderColor: 'var(--color-border)'
+                      }}
+                      rows={6}
+                      placeholder="user@example.com&#10;admin@example.com"
+                    />
+                    <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                      Enter one email address per line
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 justify-end mt-6">
+                <button
+                  onClick={handleEditCancel}
+                  disabled={isSaving}
+                  className="px-4 py-2 text-sm font-medium rounded border"
+                  style={{ 
+                    color: 'var(--color-text)', 
+                    borderColor: 'var(--color-border)',
+                    backgroundColor: 'var(--color-background)'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditSave}
+                  disabled={isSaving}
+                  className="px-4 py-2 text-sm font-medium rounded text-white"
+                  style={{ 
+                    backgroundColor: isSaving ? '#9ca3af' : '#3b82f6'
+                  }}
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

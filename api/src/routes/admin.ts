@@ -10,7 +10,7 @@ import type { Env } from '../types/env'
 import { adminAuthMiddleware } from '../middleware/admin-auth'
 import { GitHubService } from '../services/github-service'
 import { createDatabaseService } from '../services/database-service'
-import { verifyPassword } from '../utils/password'
+import { hashPassword } from '../utils/password'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -224,6 +224,135 @@ app.get('/content-overview', adminAuthMiddleware, async (c) => {
     return c.json({ 
       error: 'Internal Server Error',
       message: 'Failed to fetch content overview',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500)
+  }
+})
+
+/**
+ * DELETE /api/admin/access-rules/:type/:slug
+ * 
+ * Delete an access rule from the database.
+ * Protected by admin authentication middleware.
+ */
+app.delete('/access-rules/:type/:slug', adminAuthMiddleware, async (c) => {
+  try {
+    const env = c.env
+    const type = c.req.param('type')
+    const slug = c.req.param('slug')
+
+    // Delete access rule (cascade will delete email allowlist)
+    const result = await env.DB.prepare(
+      'DELETE FROM content_access_rules WHERE type = ? AND slug = ?'
+    ).bind(type, slug).run()
+
+    if (result.meta.changes === 0) {
+      return c.json({ error: 'Access rule not found' }, 404)
+    }
+
+    return c.json({
+      message: 'Access rule deleted successfully',
+      type,
+      slug
+    }, 200)
+  } catch (error) {
+    console.error('Error deleting access rule:', error)
+    return c.json({ 
+      error: 'Internal Server Error',
+      message: 'Failed to delete access rule',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500)
+  }
+})
+
+/**
+ * PUT /api/admin/access-rules/:type/:slug
+ * 
+ * Update an access rule in the database.
+ * Protected by admin authentication middleware.
+ */
+app.put('/access-rules/:type/:slug', adminAuthMiddleware, async (c) => {
+  try {
+    const env = c.env
+    const type = c.req.param('type')
+    const slug = c.req.param('slug')
+    const body = await c.req.json() as {
+      accessMode?: 'open' | 'password' | 'email-list'
+      description?: string
+      password?: string
+      allowedEmails?: string[]
+    }
+    const dbService = createDatabaseService(env.DB)
+
+    // Get existing rule
+    const existingRule = await env.DB.prepare(
+      'SELECT id FROM content_access_rules WHERE type = ? AND slug = ?'
+    ).bind(type, slug).first() as { id: number } | null
+
+    if (!existingRule) {
+      return c.json({ error: 'Access rule not found' }, 404)
+    }
+
+    const ruleId = existingRule.id
+
+    // Build update query dynamically
+    const updates: string[] = []
+    const values: any[] = []
+
+    if (body.accessMode !== undefined) {
+      updates.push('access_mode = ?')
+      values.push(body.accessMode)
+    }
+
+    if (body.description !== undefined) {
+      updates.push('description = ?')
+      values.push(body.description)
+    }
+
+    if (body.password !== undefined) {
+      const passwordHash = await hashPassword(body.password)
+      updates.push('password_hash = ?')
+      values.push(passwordHash)
+    }
+
+    if (updates.length > 0) {
+      updates.push('updated_at = CURRENT_TIMESTAMP')
+      values.push(ruleId)
+
+      const updateQuery = `UPDATE content_access_rules SET ${updates.join(', ')} WHERE id = ?`
+      await env.DB.prepare(updateQuery).bind(...values).run()
+    }
+
+    // Update email allowlist if provided
+    if (body.allowedEmails !== undefined) {
+      // Clear existing allowlist
+      await env.DB.prepare('DELETE FROM email_allowlist WHERE access_rule_id = ?')
+        .bind(ruleId)
+        .run()
+
+      // Insert new allowlist entries
+      for (const email of body.allowedEmails) {
+        await env.DB.prepare(
+          'INSERT INTO email_allowlist (access_rule_id, email) VALUES (?, ?)'
+        ).bind(ruleId, email.toLowerCase().trim()).run()
+      }
+    }
+
+    // Get updated rule with emails
+    const { rule, emails } = await dbService.getAccessRuleWithEmails(type, slug)
+
+    return c.json({
+      message: 'Access rule updated successfully',
+      rule: {
+        ...rule,
+        allowedEmails: rule?.access_mode === 'email-list' ? emails : undefined
+      }
+    }, 200)
+  } catch (error) {
+    console.error('Error updating access rule:', error)
+    return c.json({ 
+      error: 'Internal Server Error',
+      message: 'Failed to update access rule',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, 500)
   }
