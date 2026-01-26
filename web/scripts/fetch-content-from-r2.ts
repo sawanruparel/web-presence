@@ -70,14 +70,53 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
     }
 
     const catalogData = await catalogResponse.json()
+    console.log(`📊 Found ${catalogData.content?.length || 0} access rules from database`)
     console.log(`📊 Found content metadata with ${Object.keys(catalogData.metadata || {}).length} content types`)
+
+    // Create a map of type/slug -> accessMode from database rules (single source of truth)
+    const accessRules = new Map<string, string>()
+    if (catalogData.content && Array.isArray(catalogData.content)) {
+      catalogData.content.forEach((rule: { type: string; slug: string; accessMode: string }) => {
+        const key = `${rule.type}/${rule.slug}`
+        accessRules.set(key, rule.accessMode)
+        console.log(`🔐 Access rule: ${key} -> ${rule.accessMode}`)
+      })
+    }
+
+    // Filter metadata to only include public content (accessMode === 'open')
+    // Database is the single source of truth for access control
+    const filterPublicContent = (items: any[], type: string): any[] => {
+      return items.filter(item => {
+        const key = `${type}/${item.slug}`
+        const accessMode = accessRules.get(key)
+        // Only include if accessMode is 'open' or not in database (default to open for backwards compatibility)
+        const isPublic = !accessMode || accessMode === 'open'
+        if (!isPublic) {
+          console.log(`🔒 Filtering out protected content: ${key} (accessMode: ${accessMode})`)
+        }
+        return isPublic
+      })
+    }
 
     // Transform metadata to match ContentList interface
     // Note: API returns singular forms (note, idea, page) but we need plural forms
-    const notes = transformContentItems(catalogData.metadata?.note || [], 'note')
-    const publications = transformContentItems(catalogData.metadata?.publications || [], 'publication')
-    const ideas = transformContentItems(catalogData.metadata?.idea || [], 'idea')
-    const pages = transformContentItems(catalogData.metadata?.page || [], 'page')
+    // Only include content that is marked as 'open' in the database
+    const notes = transformContentItems(
+      filterPublicContent(catalogData.metadata?.note || [], 'note'),
+      'note'
+    )
+    const publications = transformContentItems(
+      filterPublicContent(catalogData.metadata?.publications || [], 'publication'),
+      'publication'
+    )
+    const ideas = transformContentItems(
+      filterPublicContent(catalogData.metadata?.idea || [], 'idea'),
+      'idea'
+    )
+    const pages = transformContentItems(
+      filterPublicContent(catalogData.metadata?.page || [], 'page'),
+      'page'
+    )
     
     // Create latest array by combining all content and sorting by date
     const allContent = [...notes, ...publications, ...ideas, ...pages]
@@ -171,7 +210,11 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
 
 // CLI usage
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const apiUrl = process.env.VITE_API_BASE_URL || 'http://localhost:8787'
+  // API URL: Use BUILD_API_URL if set (for cases where build-time API differs from runtime)
+  // Otherwise fall back to VITE_API_BASE_URL (safe to expose to client - just a URL)
+  // Use BUILD_API_KEY (NOT VITE_ prefix - sensitive, build-only, should NOT be exposed to client)
+  // Build scripts have access to ALL env vars via process.env, not just VITE_ prefixed ones
+  const apiUrl = process.env.BUILD_API_URL || process.env.VITE_API_BASE_URL || 'http://localhost:8787'
   const apiKey = process.env.BUILD_API_KEY || 'dev-api-key'
   const outputDir = process.env.OUTPUT_DIR || 'dist'
 

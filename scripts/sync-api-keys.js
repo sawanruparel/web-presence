@@ -131,7 +131,7 @@ function displayEnvironmentStatus(envVars) {
   if (envVars.web) {
     console.log(`   ✅ File exists: ${envVars.web.file}`)
     console.log(`   ${envVars.web.BUILD_API_KEY ? '✅' : '❌'} BUILD_API_KEY: ${envVars.web.BUILD_API_KEY ? 'Set' : 'Missing'}`)
-    console.log(`   ${envVars.web.BUILD_API_URL ? '✅' : '❌'} BUILD_API_URL: ${envVars.web.BUILD_API_URL || 'Missing'}`)
+    console.log(`   ${envVars.web.BUILD_API_URL ? '✅' : '⚠️ '} BUILD_API_URL: ${envVars.web.BUILD_API_URL || 'Missing (will use VITE_API_BASE_URL)'}`)
     console.log(`   ${envVars.web.VITE_API_BASE_URL ? '✅' : '❌'} VITE_API_BASE_URL: ${envVars.web.VITE_API_BASE_URL || 'Missing'}`)
     console.log(`   ${envVars.web.VITE_DEV_MODE ? '✅' : '❌'} VITE_DEV_MODE: ${envVars.web.VITE_DEV_MODE || 'Missing'}`)
   } else {

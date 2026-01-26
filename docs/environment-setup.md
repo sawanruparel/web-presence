@@ -12,14 +12,17 @@ Each component has separate environment files for local development and producti
 
 ## Build Process Requirements
 
-The frontend build process requires `BUILD_API_KEY` and `BUILD_API_URL` environment variables to:
+The frontend build process requires `BUILD_API_KEY` and `VITE_API_BASE_URL` environment variables to:
 - Fetch access control rules from the API during build
 - Generate static content with proper access restrictions
 - Ensure the build process can authenticate with the backend API
 
-**Note**: `BUILD_API_URL` can be the same as `VITE_API_BASE_URL` in most cases, but they serve different purposes:
-- `VITE_API_BASE_URL`: Used by the frontend application at runtime
-- `BUILD_API_URL`: Used by the build process to fetch content metadata
+**Important Security Note**: 
+- `VITE_API_BASE_URL`: Uses `VITE_` prefix - safe to expose to client (just a URL)
+- `BUILD_API_KEY`: **DO NOT use `VITE_` prefix** - sensitive, build-only, should NOT be exposed to client bundle
+- `BUILD_API_URL`: **Optional** - if not set, build script falls back to `VITE_API_BASE_URL`. Use this if build-time API URL differs from runtime API URL (e.g., build against staging while runtime uses production)
+- Build scripts (Node.js) have access to ALL environment variables via `process.env`, not just `VITE_` prefixed ones
+- Only `VITE_` prefixed variables are exposed to client code via `import.meta.env` (Vite's security feature)
 
 ## API Key Synchronization
 
@@ -28,7 +31,7 @@ The project uses two API keys that must be identical:
 - **`INTERNAL_API_KEY`**: Used by the API server (backend) to validate incoming requests
 - **`BUILD_API_KEY`**: Used by the build script (frontend) to authenticate with the API
 
-These keys serve the same purpose but are stored in different locations and used by different components.
+These keys serve the same purpose but are stored in different locations and used by different components. The `BUILD_API_KEY` does NOT use the `VITE_` prefix to prevent it from being exposed to the client bundle.
 
 ### Synchronization Scripts
 
@@ -59,6 +62,8 @@ cd web && npm run sync:env
 ```
 
 The synchronization scripts ensure that `INTERNAL_API_KEY` and `BUILD_API_KEY` are always identical across all environments.
+
+**See [Environment Variables Analysis](./ENVIRONMENT_VARIABLES_ANALYSIS.md) for detailed explanation of why `BUILD_API_KEY` does NOT use the `VITE_` prefix.**
 
 ## R2 Storage Setup
 
@@ -355,12 +360,12 @@ The script syncs these variables from your environment file (`.env.production` o
 
 | Variable | Local | Production | Purpose |
 |----------|-------|------------|---------|
-| `VITE_API_BASE_URL` | `http://localhost:8787` | `https://web-presence-api.quoppo.workers.dev` | API endpoint URL |
+| `VITE_API_BASE_URL` | `http://localhost:8787` | `https://web-presence-api.quoppo.workers.dev` | API endpoint URL (used at runtime and build-time, safe to expose) |
 | `VITE_DEV_MODE` | `true` | `false` | Development mode flag |
 | `VITE_NODE_ENV` | `development` | `production` | Environment indicator |
 | `VITE_DEBUG` | `true` | `false` | Debug logging flag |
-| `BUILD_API_KEY` | `API_KEY_tu1ylu2nm7wnebxz05vfe` | `d458ab3fede5cfefb6f33b8aa21cc93988052c020e59075b8bdc6d95b9847246` | Build-time API authentication |
-| `BUILD_API_URL` | `http://localhost:8787` | `https://web-presence-api.quoppo.workers.dev` | Build-time API endpoint |
+| `BUILD_API_KEY` | `API_KEY_tu1ylu2nm7wnebxz05vfe` | `d458ab3fede5cfefb6f33b8aa21cc93988052c020e59075b8bdc6d95b9847246` | Build-time API authentication (NO VITE_ prefix - sensitive, build-only, not exposed to client) |
+| `BUILD_API_URL` | `http://localhost:8787` (optional) | `https://web-presence-api.quoppo.workers.dev` (optional) | Build-time API URL (optional - falls back to VITE_API_BASE_URL if not set) |
 
 ## API Key Synchronization Workflow
 

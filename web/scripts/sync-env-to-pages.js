@@ -34,11 +34,13 @@ const PROJECT_NAME = 'web-presence'
 const CLOUDFLARE_ACCOUNT_ID = '61d3245b7e3224d49a9553bdb4d1a70e' // Quoppo account
 
 // Variables to sync from .env.local to Pages
+// VITE_ prefixed variables are exposed to client code (safe ones only)
+// BUILD_API_KEY and BUILD_API_URL do NOT use VITE_ prefix (sensitive, build-only)
 const VARIABLES_TO_SYNC = [
-  'BUILD_API_KEY',
-  'BUILD_API_URL', 
-  'VITE_API_BASE_URL',
-  'VITE_DEV_MODE'
+  'BUILD_API_KEY',        // Build-only, NOT exposed to client
+  'BUILD_API_URL',        // Build-only, optional (falls back to VITE_API_BASE_URL)
+  'VITE_API_BASE_URL',    // Safe to expose (just a URL)
+  'VITE_DEV_MODE'         // Safe to expose (dev flag)
 ]
 
 // Cloudflare API configuration
