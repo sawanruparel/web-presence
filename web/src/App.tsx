@@ -9,6 +9,7 @@ import { IdeasPage } from './pages/IdeasPage'
 import { ContentPage } from './pages/ContentPage'
 import { AdminContentPage } from './pages/AdminContentPage'
 import { AdminBuildLogsPage } from './pages/AdminBuildLogsPage'
+import { AdminContentSyncPage } from './pages/AdminContentSyncPage'
 
 function renderPage(pageData: PageData) {
   switch (pageData.type) {
@@ -28,6 +29,8 @@ function renderPage(pageData: PageData) {
       return <AdminContentPage />
     case 'admin-build-logs':
       return <AdminBuildLogsPage />
+    case 'admin-content-sync':
+      return <AdminContentSyncPage />
     default:
       return <AboutPage />
   }

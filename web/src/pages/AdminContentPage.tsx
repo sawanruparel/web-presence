@@ -36,18 +36,6 @@ export function AdminContentPage() {
     allowedEmails: string
   } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  
-  // Sync modal state
-  const [isSyncing, setIsSyncing] = useState(false)
-  const [syncLogs, setSyncLogs] = useState<string[]>([])
-  const [syncResult, setSyncResult] = useState<{
-    success: boolean
-    processed: number
-    uploaded: number
-    deleted: number
-    errors: string[]
-    metadata: { public: number; protected: number }
-  } | null>(null)
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -238,53 +226,6 @@ export function AdminContentPage() {
     }
   }
 
-  const handleSyncContent = async () => {
-    setIsSyncing(true)
-    setSyncLogs([])
-    setSyncResult(null)
-    setError(null)
-
-    try {
-      const token = getToken()
-      if (!token) {
-        throw new Error('No authentication token')
-      }
-
-      const result = await adminApiClient.syncContent(token)
-      
-      setSyncLogs(result.logs || [])
-      setSyncResult({
-        success: result.success,
-        processed: result.processed,
-        uploaded: result.uploaded,
-        deleted: result.deleted,
-        errors: result.errors,
-        metadata: result.metadata
-      })
-
-      // Refresh content overview after sync
-      setIsRefreshing(true)
-      try {
-        await fetchContentOverview(true)
-      } finally {
-        setIsRefreshing(false)
-      }
-    } catch (err) {
-      console.error('Failed to sync content:', err)
-      setError(err instanceof Error ? err.message : 'Failed to sync content')
-      setSyncLogs(prev => [...prev, `❌ Error: ${err instanceof Error ? err.message : 'Unknown error'}`])
-    } finally {
-      setIsSyncing(false)
-    }
-  }
-
-  const handleCloseSyncModal = () => {
-    if (!isSyncing) {
-      setSyncLogs([])
-      setSyncResult(null)
-    }
-  }
-
   // Filter content
   const filteredContent = content.filter(item => {
     // Type filter
@@ -411,17 +352,15 @@ export function AdminContentPage() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={handleSyncContent}
-              disabled={isSyncing}
+              onClick={() => navigateTo('/admin/content-sync')}
               className="px-4 py-2 text-sm font-medium rounded-md border"
               style={{ 
-                color: isSyncing ? 'var(--color-text-muted)' : 'var(--color-text)', 
+                color: 'var(--color-text)', 
                 borderColor: 'var(--color-border)',
-                backgroundColor: isSyncing ? 'var(--color-background)' : 'var(--color-background)',
-                cursor: isSyncing ? 'not-allowed' : 'pointer'
+                backgroundColor: 'var(--color-background)'
               }}
             >
-              {isSyncing ? 'Syncing...' : 'Sync Content'}
+              Sync Content
             </button>
             <button
               onClick={() => navigateTo('/admin/build-logs')}
@@ -779,128 +718,6 @@ export function AdminContentPage() {
                   {isDeleting ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Sync Content Modal */}
-        {(isSyncing || syncLogs.length > 0 || syncResult) && (
-          <div 
-            className="fixed inset-0 flex items-center justify-center z-50"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-            onClick={handleCloseSyncModal}
-          >
-            <div 
-              className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
-              style={{ 
-                backgroundColor: 'var(--color-background)',
-                border: '1px solid var(--color-border)'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
-                  Content Sync
-                </h3>
-                {!isSyncing && (
-                  <button
-                    onClick={handleCloseSyncModal}
-                    className="text-gray-500 hover:text-gray-700"
-                    style={{ color: 'var(--color-text-muted)' }}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-
-              {isSyncing && (
-                <div className="mb-4 flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
-                  <span style={{ color: 'var(--color-text)' }}>Syncing content...</span>
-                </div>
-              )}
-
-              {syncLogs.length > 0 && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
-                    Sync Logs
-                  </h4>
-                  <div 
-                    className="p-4 rounded border font-mono text-xs overflow-auto max-h-96"
-                    style={{ 
-                      backgroundColor: 'rgba(0, 0, 0, 0.05)',
-                      borderColor: 'var(--color-border)',
-                      color: 'var(--color-text)'
-                    }}
-                  >
-                    {syncLogs.map((log, index) => (
-                      <div key={index} className="mb-1">
-                        {log}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {syncResult && (
-                <div className="space-y-3">
-                  <div className={`p-4 rounded border ${syncResult.success ? 'bg-green-50' : 'bg-red-50'}`}>
-                    <div className="text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
-                      {syncResult.success ? '✅ Sync Completed Successfully' : '❌ Sync Completed with Errors'}
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Processed:</span>{' '}
-                        <span style={{ color: 'var(--color-text)' }}>{syncResult.processed}</span>
-                      </div>
-                      <div>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Uploaded:</span>{' '}
-                        <span style={{ color: 'var(--color-text)' }}>{syncResult.uploaded}</span>
-                      </div>
-                      <div>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Deleted:</span>{' '}
-                        <span style={{ color: 'var(--color-text)' }}>{syncResult.deleted}</span>
-                      </div>
-                      <div>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Public:</span>{' '}
-                        <span style={{ color: 'var(--color-text)' }}>{syncResult.metadata.public}</span>
-                      </div>
-                      <div>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Protected:</span>{' '}
-                        <span style={{ color: 'var(--color-text)' }}>{syncResult.metadata.protected}</span>
-                      </div>
-                    </div>
-                    {syncResult.errors.length > 0 && (
-                      <div className="mt-3">
-                        <div className="text-sm font-semibold mb-1" style={{ color: '#ef4444' }}>
-                          Errors:
-                        </div>
-                        <ul className="list-disc list-inside text-xs" style={{ color: '#ef4444' }}>
-                          {syncResult.errors.map((error, index) => (
-                            <li key={index}>{error}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {!isSyncing && (
-                <div className="flex justify-end mt-4">
-                  <button
-                    onClick={handleCloseSyncModal}
-                    className="px-4 py-2 text-sm font-medium rounded border"
-                    style={{ 
-                      color: 'var(--color-text)', 
-                      borderColor: 'var(--color-border)',
-                      backgroundColor: 'var(--color-background)'
-                    }}
-                  >
-                    Close
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         )}

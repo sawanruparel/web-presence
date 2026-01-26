@@ -643,7 +643,9 @@ app.post('/content-sync', adminAuthMiddleware, async (c) => {
       metadata: {
         public: Object.keys(contentMetadata).reduce((sum, key) => sum + contentMetadata[key].length, 0),
         protected: Object.keys(protectedMetadata).reduce((sum, key) => sum + protectedMetadata[key].length, 0)
-      }
+      },
+      uploadDetails: syncReport.uploadDetails || [],
+      deleteDetails: syncReport.deleteDetails || []
     }, 200)
   } catch (error) {
     console.error('Error in admin content sync:', error)

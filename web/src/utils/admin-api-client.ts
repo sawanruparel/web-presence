@@ -343,6 +343,8 @@ class AdminApiClient {
       public: number
       protected: number
     }
+    uploadDetails?: Array<{ bucket: 'protected' | 'public'; key: string; size: number }>
+    deleteDetails?: Array<{ bucket: 'protected' | 'public'; key: string }>
   }> {
     try {
       const response = await fetch(`${this.baseUrl}/api/admin/content-sync`, {

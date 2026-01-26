@@ -1,6 +1,6 @@
 import { getAllContent, getContentBySlug } from './content-processor'
 
-export type PageType = 'about' | 'notes' | 'publications' | 'ideas' | 'content' | 'contact' | 'admin-content' | 'admin-build-logs' | '404'
+export type PageType = 'about' | 'notes' | 'publications' | 'ideas' | 'content' | 'contact' | 'admin-content' | 'admin-build-logs' | 'admin-content-sync' | '404'
 
 export interface PageData {
   type: PageType
@@ -42,6 +42,11 @@ export function getCurrentPage(): PageData {
   // Admin build logs page
   if (path === '/admin/build-logs') {
     return { type: 'admin-build-logs', data: {} }
+  }
+
+  // Admin content sync page
+  if (path === '/admin/content-sync') {
+    return { type: 'admin-content-sync', data: {} }
   }
 
   // Individual content pages

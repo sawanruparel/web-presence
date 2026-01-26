@@ -88,12 +88,14 @@ export class ContentProcessingService {
       frontmatter || {}
     )
 
+    // Always use extracted type (normalized to plural) for R2 bucket keys
+    // Frontmatter type is for display/metadata only
     return {
       slug,
       title: cleanTitle,
       date: frontmatter?.date || new Date().toISOString().split('T')[0],
       readTime: frontmatter?.reading_time ? `${frontmatter.reading_time} min` : this.calculateReadTime(body),
-      type: frontmatter?.type || type,
+      type: type, // Use extracted type (normalized to plural) for R2 keys
       content: body,
       html: removeTitleFromHtml(html, cleanTitle),
       excerpt,
@@ -137,14 +139,28 @@ export class ContentProcessingService {
 
   /**
    * Extract content type from file path
+   * Normalizes to plural forms for consistency
    */
   private extractType(filePath: string): string {
     const parts = filePath.split('/')
     const typeIndex = parts.indexOf('content')
     if (typeIndex >= 0 && typeIndex + 1 < parts.length) {
-      return parts[typeIndex + 1] // Return directory name as-is (ideas, notes, pages, publications)
+      const type = parts[typeIndex + 1]
+      // Normalize to plural forms for R2 bucket keys
+      const typeMap: Record<string, string> = {
+        'idea': 'ideas',
+        'note': 'notes',
+        'page': 'pages',
+        'publication': 'publications',
+        // Already plural - keep as is
+        'ideas': 'ideas',
+        'notes': 'notes',
+        'pages': 'pages',
+        'publications': 'publications'
+      }
+      return typeMap[type.toLowerCase()] || type
     }
-    return 'page'
+    return 'pages'
   }
 
   /**

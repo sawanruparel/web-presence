@@ -14,6 +14,8 @@ export interface SyncReport {
   errors: string[]
   totalProcessed: number
   success: boolean
+  uploadDetails?: Array<{ bucket: 'protected' | 'public'; key: string; size: number }>
+  deleteDetails?: Array<{ bucket: 'protected' | 'public'; key: string }>
 }
 
 export class R2SyncService {
@@ -156,7 +158,9 @@ export class R2SyncService {
       deleted: [],
       errors: [],
       totalProcessed: processedContent.length,
-      success: true
+      success: true,
+      uploadDetails: [],
+      deleteDetails: []
     }
 
     try {
@@ -165,11 +169,17 @@ export class R2SyncService {
       // Upload all content
       for (const content of processedContent) {
         const htmlTemplateContent = htmlTemplate(content)
+        const key = `${content.type}/${content.slug}.html`
         
         if (content.isProtected) {
           const success = await this.uploadProtectedContent(content, htmlTemplateContent)
           if (success) {
-            report.uploaded.push(`protected:${content.type}/${content.slug}.html`)
+            report.uploaded.push(`protected:${key}`)
+            report.uploadDetails!.push({
+              bucket: 'protected',
+              key,
+              size: new Blob([htmlTemplateContent]).size
+            })
           } else {
             report.errors.push(`Failed to upload protected content: ${content.slug}`)
             report.success = false
@@ -177,7 +187,12 @@ export class R2SyncService {
         } else {
           const success = await this.uploadPublicContent(content, htmlTemplateContent)
           if (success) {
-            report.uploaded.push(`public:${content.type}/${content.slug}.html`)
+            report.uploaded.push(`public:${key}`)
+            report.uploadDetails!.push({
+              bucket: 'public',
+              key,
+              size: new Blob([htmlTemplateContent]).size
+            })
           } else {
             report.errors.push(`Failed to upload public content: ${content.slug}`)
             report.success = false
@@ -186,9 +201,15 @@ export class R2SyncService {
       }
 
       // Upload metadata
+      const metadataContent = JSON.stringify(contentMetadata, null, 2)
       const metadataSuccess = await this.uploadContentMetadata(contentMetadata)
       if (metadataSuccess) {
         report.uploaded.push('public:content-metadata.json')
+        report.uploadDetails!.push({
+          bucket: 'public',
+          key: 'content-metadata.json',
+          size: new Blob([metadataContent]).size
+        })
       } else {
         report.errors.push('Failed to upload content metadata')
         report.success = false
@@ -200,12 +221,20 @@ export class R2SyncService {
         'protected'
       )
       report.deleted.push(...protectedDeleted.map(key => `protected:${key}`))
+      report.deleteDetails!.push(...protectedDeleted.map(key => ({
+        bucket: 'protected' as const,
+        key
+      })))
 
       const publicDeleted = await this.cleanupStaleObjects(
         processedContent.filter(c => !c.isProtected),
         'public'
       )
       report.deleted.push(...publicDeleted.map(key => `public:${key}`))
+      report.deleteDetails!.push(...publicDeleted.map(key => ({
+        bucket: 'public' as const,
+        key
+      })))
 
       console.log(`✅ R2 sync completed: ${report.uploaded.length} uploaded, ${report.deleted.length} deleted, ${report.errors.length} errors`)
       
