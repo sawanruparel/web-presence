@@ -76,11 +76,36 @@ export function useAdminAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(true)
 
-  // Check authentication status on mount
+  // Check authentication status on mount and when storage changes
   useEffect(() => {
-    const token = getAdminToken()
-    setIsAuthenticated(!!token)
-    setIsLoading(false)
+    const checkAuth = () => {
+      const token = getAdminToken()
+      setIsAuthenticated(!!token)
+      setIsLoading(false)
+    }
+
+    // Check immediately
+    checkAuth()
+
+    // Listen for storage changes (from other tabs/windows)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === ADMIN_TOKEN_KEY) {
+        checkAuth()
+      }
+    }
+
+    // Listen for custom auth events (from same window)
+    const handleAuthChange = () => {
+      checkAuth()
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('admin-auth-change', handleAuthChange)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('admin-auth-change', handleAuthChange)
+    }
   }, [])
 
   /**
@@ -110,6 +135,8 @@ export function useAdminAuth() {
       if (data.token) {
         storeAdminToken(data.token)
         setIsAuthenticated(true)
+        // Dispatch event to notify other hook instances
+        window.dispatchEvent(new Event('admin-auth-change'))
         return { success: true }
       }
 
@@ -134,6 +161,8 @@ export function useAdminAuth() {
   const logout = useCallback(() => {
     clearAdminToken()
     setIsAuthenticated(false)
+    // Dispatch event to notify other hook instances
+    window.dispatchEvent(new Event('admin-auth-change'))
   }, [])
 
   /**

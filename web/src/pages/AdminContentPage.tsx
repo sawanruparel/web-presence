@@ -80,21 +80,11 @@ export function AdminContentPage() {
     }
   }, [isAuthenticated, authLoading, hasFetched, fetchContentOverview])
 
-  const handleLoginSuccess = async () => {
+  const handleLoginSuccess = () => {
     console.log('✅ Login success callback called')
-    // Reset fetch flag
+    // Reset fetch flag so content will be fetched when isAuthenticated updates
     setHasFetched(false)
-    
-    // Wait a moment for state to update, then fetch
-    await new Promise(resolve => setTimeout(resolve, 100))
-    
-    const token = getToken()
-    if (token) {
-      console.log('🔄 Token available, fetching content overview...')
-      await fetchContentOverview()
-    } else {
-      console.warn('⚠️ No token available after login')
-    }
+    // The useEffect hook will automatically fetch content when isAuthenticated becomes true
   }
 
   const handleLogout = () => {
