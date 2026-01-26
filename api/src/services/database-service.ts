@@ -709,7 +709,16 @@ export class DatabaseService {
       // If build_logs table doesn't exist yet, return null
       // This can happen if migrations haven't been run
       const errorMessage = error instanceof Error ? error.message : String(error)
-      if (errorMessage.includes('no such table') || errorMessage.includes('build_logs')) {
+      const errorString = JSON.stringify(error)
+      
+      // Catch various error formats from D1/SQLite
+      if (
+        errorMessage.includes('no such table') || 
+        errorMessage.includes('build_logs') ||
+        errorMessage.includes('SQLITE_ERROR') ||
+        errorString.includes('no such table') ||
+        errorString.includes('build_logs')
+      ) {
         console.warn('build_logs table does not exist yet. Run migrations to create it.')
         return null
       }
