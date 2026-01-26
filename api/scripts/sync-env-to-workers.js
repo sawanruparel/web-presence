@@ -2,8 +2,12 @@
 /**
  * Sync Local Environment Variables to Cloudflare Workers
  * 
- * Reads environment variables from .dev.vars and uploads them to Cloudflare Workers
- * as secrets using the Wrangler CLI.
+ * Reads environment variables from .dev.vars and syncs them to Cloudflare Workers:
+ * - Sensitive variables (API keys, tokens, passwords) → stored as secrets (encrypted)
+ * - Non-sensitive variables (URLs, config) → should be set in wrangler.toml [vars] section
+ * 
+ * Secrets are synced immediately via Wrangler CLI.
+ * Plain text variables are shown for manual addition to wrangler.toml.
  */
 
 import fs from 'fs'
@@ -30,18 +34,26 @@ if (fs.existsSync(devVarsPath)) {
 // Configuration
 const PROJECT_NAME = 'web-presence-api'
 
-// Variables to sync from .dev.vars to Workers
-const VARIABLES_TO_SYNC = [
+// Sensitive variables that should be stored as secrets (encrypted)
+const SECRET_VARIABLES = [
   'INTERNAL_API_KEY',
-  'FRONTEND_URL',
-  'CORS_ORIGINS',
   'GITHUB_TOKEN',
   'GITHUB_WEBHOOK_SECRET',
+  'ADMIN_PASSWORD'
+]
+
+// Non-sensitive variables that can be stored as plain text
+const PLAIN_TEXT_VARIABLES = [
+  'FRONTEND_URL',
+  'CORS_ORIGINS',
   'GITHUB_REPO',
   'GITHUB_BRANCH',
   'PROTECTED_CONTENT_BUCKET_NAME',
   'PUBLIC_CONTENT_BUCKET_NAME'
 ]
+
+// All variables to sync
+const VARIABLES_TO_SYNC = [...SECRET_VARIABLES, ...PLAIN_TEXT_VARIABLES]
 
 async function syncEnvironmentVariables() {
   console.log('🔄 Syncing environment variables to Cloudflare Workers...')
@@ -74,11 +86,25 @@ async function syncEnvironmentVariables() {
     process.exit(1)
   }
   
+  // Separate variables into secrets and plain text
+  const secretsToSync = {}
+  const plainTextToSync = {}
+  
+  for (const [varName, varValue] of Object.entries(variablesToSync)) {
+    if (SECRET_VARIABLES.includes(varName)) {
+      secretsToSync[varName] = varValue
+    } else if (PLAIN_TEXT_VARIABLES.includes(varName)) {
+      plainTextToSync[varName] = varValue
+    }
+  }
+  
   console.log(`\n📡 Syncing ${Object.keys(variablesToSync).length} variables to Cloudflare Workers...`)
+  console.log(`   🔐 Secrets: ${Object.keys(secretsToSync).length}`)
+  console.log(`   📝 Plain text: ${Object.keys(plainTextToSync).length}`)
   
   try {
     // Check if wrangler is logged in
-    console.log('   🔍 Checking Wrangler authentication...')
+    console.log('\n   🔍 Checking Wrangler authentication...')
     try {
       execSync('npx wrangler whoami', { stdio: 'pipe' })
       console.log('   ✅ Wrangler is authenticated')
@@ -86,34 +112,60 @@ async function syncEnvironmentVariables() {
       throw new Error('Not logged in to Wrangler. Please run: npx wrangler login')
     }
     
-    // Sync each variable as a secret
-    for (const [varName, varValue] of Object.entries(variablesToSync)) {
-      console.log(`   📤 Setting ${varName}...`)
-      
-      try {
-        // Use wrangler secret put command with production environment
-        const command = `echo "${varValue}" | npx wrangler secret put ${varName} --env production`
-        execSync(command, { 
-          stdio: 'pipe',
-          shell: true
-        })
-        console.log(`   ✅ ${varName} set successfully`)
-      } catch (error) {
-        console.error(`   ❌ Failed to set ${varName}:`, error.message)
-        throw new Error(`Failed to set ${varName}`)
+    // Sync secrets (encrypted)
+    if (Object.keys(secretsToSync).length > 0) {
+      console.log('\n   🔐 Syncing secrets (encrypted)...')
+      for (const [varName, varValue] of Object.entries(secretsToSync)) {
+        console.log(`   📤 Setting secret ${varName}...`)
+        
+        try {
+          // Use wrangler secret put command with production environment
+          const command = `echo "${varValue}" | npx wrangler secret put ${varName} --env production`
+          execSync(command, { 
+            stdio: 'pipe',
+            shell: true
+          })
+          console.log(`   ✅ ${varName} set as secret`)
+        } catch (error) {
+          console.error(`   ❌ Failed to set ${varName}:`, error.message)
+          throw new Error(`Failed to set secret ${varName}`)
+        }
       }
+    }
+    
+    // Sync plain text variables
+    if (Object.keys(plainTextToSync).length > 0) {
+      console.log('\n   📝 Syncing plain text variables...')
+      console.log('   ⚠️  Note: Plain text variables should be set in wrangler.toml [vars] section')
+      console.log('   ⚠️  For now, these are only available in .dev.vars for local development')
+      console.log('   ⚠️  To set them in production, add them to wrangler.toml:')
+      console.log('')
+      console.log('   [vars]')
+      for (const [varName, varValue] of Object.entries(plainTextToSync)) {
+        console.log(`   ${varName} = "${varValue}"`)
+      }
+      console.log('')
+      console.log('   Then deploy: npm run deploy')
     }
     
     console.log('\n✅ Successfully synced environment variables!')
     console.log('=' .repeat(60))
     console.log('📊 Summary:')
     console.log(`   Project: ${PROJECT_NAME}`)
-    console.log(`   Variables synced: ${Object.keys(variablesToSync).length}`)
+    console.log(`   Secrets synced: ${Object.keys(secretsToSync).length}`)
+    console.log(`   Plain text variables: ${Object.keys(plainTextToSync).length}`)
     
     console.log('\n🔗 Next steps:')
-    console.log('   1. Deploy the worker: npm run deploy')
-    console.log('   2. Verify secrets are set: npx wrangler secret list')
-    console.log('   3. Test the API endpoints')
+    if (Object.keys(secretsToSync).length > 0) {
+      console.log('   1. Verify secrets are set: npx wrangler secret list --env production')
+    }
+    if (Object.keys(plainTextToSync).length > 0) {
+      console.log('   2. Add plain text variables to wrangler.toml [vars] section (see above)')
+      console.log('   3. Deploy the worker: npm run deploy')
+    } else {
+      console.log('   1. Deploy the worker: npm run deploy')
+      console.log('   2. Test the API endpoints')
+    }
     
   } catch (error) {
     console.error('\n❌ Failed to sync environment variables:')
