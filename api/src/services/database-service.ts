@@ -695,15 +695,26 @@ export class DatabaseService {
    * Get last successful build timestamp
    */
   async getLastSuccessfulBuildTimestamp(): Promise<string | null> {
-    const result = await this.db
-      .prepare(
-        `SELECT completed_at FROM build_logs 
-         WHERE status = 'success' AND completed_at IS NOT NULL
-         ORDER BY completed_at DESC LIMIT 1`
-      )
-      .first<{ completed_at: string }>()
+    try {
+      const result = await this.db
+        .prepare(
+          `SELECT completed_at FROM build_logs 
+           WHERE status = 'success' AND completed_at IS NOT NULL
+           ORDER BY completed_at DESC LIMIT 1`
+        )
+        .first<{ completed_at: string }>()
 
-    return result?.completed_at || null
+      return result?.completed_at || null
+    } catch (error) {
+      // If build_logs table doesn't exist yet, return null
+      // This can happen if migrations haven't been run
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (errorMessage.includes('no such table') || errorMessage.includes('build_logs')) {
+        console.warn('build_logs table does not exist yet. Run migrations to create it.')
+        return null
+      }
+      throw error
+    }
   }
 }
 
