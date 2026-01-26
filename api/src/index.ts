@@ -33,7 +33,7 @@ app.use('*', cors({
     return allowedOrigins.includes(origin) ? origin : null
   },
   allowHeaders: ['Content-Type', 'Authorization'],
-  allowMethods: ['GET', 'POST', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 }))
 
 // Routes

@@ -108,6 +108,7 @@ export function AdminContentPage() {
 
   const handleDeleteCancel = () => {
     setDeleteConfirm(null)
+    setError(null) // Clear error when closing modal
   }
 
   const handleDeleteConfirm = async () => {
@@ -131,7 +132,9 @@ export function AdminContentPage() {
       setDeleteConfirm(null)
     } catch (err) {
       console.error('Failed to delete access rule:', err)
-      setError(err instanceof Error ? err.message : 'Failed to delete access rule')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete access rule'
+      setError(errorMessage)
+      // Don't close modal on error so user can see the error and try again or cancel
     } finally {
       setIsDeleting(false)
     }
@@ -551,6 +554,11 @@ export function AdminContentPage() {
               <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
                 Confirm Delete
               </h3>
+              {error && (
+                <div className="mb-4 p-3 rounded-md" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                  <p className="text-sm" style={{ color: 'var(--color-error, #dc2626)' }}>{error}</p>
+                </div>
+              )}
               <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
                 Are you sure you want to delete the access rule for{' '}
                 <strong style={{ color: 'var(--color-text)' }}>
