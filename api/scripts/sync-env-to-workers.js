@@ -43,6 +43,7 @@ const SECRET_VARIABLES = [
 ]
 
 // Non-sensitive variables that can be stored as plain text
+// Note: CORS_ORIGINS is set in wrangler.toml [vars] section for production
 const PLAIN_TEXT_VARIABLES = [
   'FRONTEND_URL',
   'CORS_ORIGINS',
@@ -127,8 +128,14 @@ async function syncEnvironmentVariables() {
           })
           console.log(`   ✅ ${varName} set as secret`)
         } catch (error) {
-          console.error(`   ❌ Failed to set ${varName}:`, error.message)
-          throw new Error(`Failed to set secret ${varName}`)
+          // Check if the error is because the binding already exists
+          if (error.message.includes('already in use') || error.message.includes('10053')) {
+            console.log(`   ⚠️  ${varName} is already set (as variable or secret). Skipping...`)
+            console.log(`   💡 To update it, delete the existing binding first or update wrangler.toml`)
+          } else {
+            console.error(`   ❌ Failed to set ${varName}:`, error.message)
+            throw new Error(`Failed to set secret ${varName}`)
+          }
         }
       }
     }
