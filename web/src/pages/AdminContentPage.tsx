@@ -4,7 +4,7 @@
  * Displays all content from GitHub and database with alignment status.
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAdminAuth } from '../hooks/use-admin-auth'
 import { adminApiClient, type ContentOverviewItem } from '../utils/admin-api-client'
 import { AdminLogin } from '../components/admin-login'
@@ -19,6 +19,7 @@ export function AdminContentPage() {
   const [filterType, setFilterType] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [hasFetched, setHasFetched] = useState(false)
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -27,14 +28,12 @@ export function AdminContentPage() {
     }
   }, [authLoading, isAuthenticated])
 
-  // Fetch content overview when authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchContentOverview()
+  const fetchContentOverview = useCallback(async () => {
+    if (hasFetched && content.length > 0) {
+      console.log('⏭️ Content already fetched, skipping...')
+      return
     }
-  }, [isAuthenticated])
 
-  const fetchContentOverview = async () => {
     setIsLoading(true)
     setError(null)
 
@@ -44,19 +43,44 @@ export function AdminContentPage() {
         throw new Error('No authentication token')
       }
 
+      console.log('📡 Fetching content overview with token...')
       const data = await adminApiClient.getContentOverview(token)
+      console.log('✅ Content overview fetched:', data)
       setContent(data.content)
       setSummary(data.summary)
+      setHasFetched(true)
     } catch (err) {
-      console.error('Failed to fetch content overview:', err)
+      console.error('❌ Failed to fetch content overview:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch content overview')
+      setHasFetched(false)
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [getToken, hasFetched, content.length])
 
-  const handleLoginSuccess = () => {
-    // Content will be fetched automatically by useEffect
+  // Fetch content overview when authenticated
+  useEffect(() => {
+    if (isAuthenticated && !authLoading && !hasFetched) {
+      console.log('🔐 Admin authenticated, fetching content overview...')
+      fetchContentOverview()
+    }
+  }, [isAuthenticated, authLoading, hasFetched, fetchContentOverview])
+
+  const handleLoginSuccess = async () => {
+    console.log('✅ Login success callback called')
+    // Reset fetch flag
+    setHasFetched(false)
+    
+    // Wait a moment for state to update, then fetch
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    const token = getToken()
+    if (token) {
+      console.log('🔄 Token available, fetching content overview...')
+      await fetchContentOverview()
+    } else {
+      console.warn('⚠️ No token available after login')
+    }
   }
 
   const handleLogout = () => {
