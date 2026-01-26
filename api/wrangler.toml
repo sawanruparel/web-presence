@@ -48,6 +48,30 @@ bucket_name = "protected-content"
 binding = "PUBLIC_CONTENT_BUCKET"
 bucket_name = "public-content"
 
+# Production environment variables (plain text)
+[env.production.vars]
+FRONTEND_URL = "https://sawanruparel.com"
+CORS_ORIGINS = "https://sawanruparel.com,https://www.sawanruparel.com"
+GITHUB_REPO = "sawanruparel/web-presence"
+GITHUB_BRANCH = "main"
+PROTECTED_CONTENT_BUCKET_NAME = "protected-content"
+PUBLIC_CONTENT_BUCKET_NAME = "public-content"
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+persist = true
+head_sampling_rate = 1
+
 # Build configuration
 # Note: Wrangler handles TypeScript compilation automatically
 # No custom build command needed to avoid circular dependencies
