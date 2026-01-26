@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "npm run build:deps && wrangler deploy --config wrangler.toml",
-    "deploy:prod": "npm run build:deps && wrangler deploy --config wrangler.toml --env production",
+    "deploy": "npm run check:migrations:remote && npm run build:deps && wrangler deploy --config wrangler.toml",
+    "deploy:prod": "npm run check:migrations:remote && npm run build:deps && wrangler deploy --config wrangler.toml --env production",
     "build:deps": "npm run build --workspace=mdtohtml",
     "build": "tsc --noEmit",
     "type-check": "tsc --noEmit",
@@ -18,7 +18,11 @@
     "migrate:remote": "node scripts/run-migrations.js --remote",
     "migrate:verify": "node scripts/verify-migrations.js --local",
     "migrate:verify:local": "node scripts/verify-migrations.js --local",
-    "migrate:verify:remote": "node scripts/verify-migrations.js --remote"
+    "migrate:verify:remote": "node scripts/verify-migrations.js --remote",
+    "check:migrations": "node scripts/check-migrations-at-build.js --local",
+    "check:migrations:local": "node scripts/check-migrations-at-build.js --local",
+    "check:migrations:remote": "node scripts/check-migrations-at-build.js --remote",
+    "check:migrations:warn": "node scripts/check-migrations-at-build.js --remote --warn-only"
   },
   "dependencies": {
     "hono": "^4.0.0",

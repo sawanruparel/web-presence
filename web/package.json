@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "npm run build:content && vite",
-    "build": "npm run clean && npm run build:content && tsc && vite build",
+    "build": "npm run check:migrations:remote && npm run clean && npm run build:content && tsc && vite build",
     "build:content": "tsx scripts/fetch-content-from-r2.ts",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "sync:env": "node scripts/sync-env-to-pages.js",
-    "clean": "rm -rf dist rivve/html-output"
+    "clean": "rm -rf dist rivve/html-output",
+    "check:migrations:remote": "cd ../api && node scripts/check-migrations-at-build.js --remote --warn-only"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.6",
