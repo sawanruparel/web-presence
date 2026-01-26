@@ -24,6 +24,9 @@ export interface Env {
   // R2 Bucket Names (for reference)
   PROTECTED_CONTENT_BUCKET_NAME: string
   PUBLIC_CONTENT_BUCKET_NAME: string
+  
+  // Admin Authentication
+  ADMIN_PASSWORD: string
 }
 
 // Re-export D1 types for convenience

@@ -64,6 +64,7 @@ bucket_name = "public-content"
 # 
 # Required Variables:
 # - INTERNAL_API_KEY: API key for internal endpoints (build script, admin operations)
+# - ADMIN_PASSWORD: Password for admin panel authentication
 # 
 # Database Configuration:
 # - Local: web-presence-db-local (ID: a298a621-daa5-4001-b2b7-863ff2523a0e)

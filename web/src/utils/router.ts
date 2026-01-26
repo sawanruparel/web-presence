@@ -1,6 +1,6 @@
 import { getAllContent, getContentBySlug } from './content-processor'
 
-export type PageType = 'about' | 'notes' | 'publications' | 'ideas' | 'content' | 'contact' | '404'
+export type PageType = 'about' | 'notes' | 'publications' | 'ideas' | 'content' | 'contact' | 'admin-content' | '404'
 
 export interface PageData {
   type: PageType
@@ -32,6 +32,11 @@ export function getCurrentPage(): PageData {
 
   if (path === '/ideas') {
     return { type: 'ideas', data: { ideas: allContent.ideas } }
+  }
+
+  // Admin content page
+  if (path === '/admin/content') {
+    return { type: 'admin-content', data: {} }
   }
 
   // Individual content pages

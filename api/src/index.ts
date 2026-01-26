@@ -11,6 +11,7 @@ import { internalRouter } from './routes/internal'
 import { contentSyncRouter } from './routes/content-sync'
 import { contentManagementRouter } from './routes/content-management'
 import { accessControlRouter } from './routes/access-control'
+import { adminRouter } from './routes/admin'
 import { errorHandler } from './middleware/error-handler'
 import type { Env } from './types/env'
 
@@ -44,6 +45,7 @@ app.route('/api/internal', internalRouter)
 app.route('/api/internal/content-sync', contentSyncRouter)
 app.route('/api/content-management', contentManagementRouter)
 app.route('/api/access-control', accessControlRouter)
+app.route('/api/admin', adminRouter)
 
 // Error handling
 app.onError(errorHandler)

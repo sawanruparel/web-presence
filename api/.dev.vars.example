@@ -22,5 +22,8 @@ GITHUB_BRANCH=main
 PROTECTED_CONTENT_BUCKET_NAME=protected-content
 PUBLIC_CONTENT_BUCKET_NAME=public-content
 
+# Admin Password (for admin panel authentication)
+ADMIN_PASSWORD=all-content
+
 # Note: DATABASE_ID is configured in wrangler.toml
 # Note: NODE_ENV is handled by Cloudflare Workers automatically

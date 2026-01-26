@@ -24,7 +24,9 @@ export const config = {
     verifyPassword: '/auth/verify',
     protectedContent: '/auth/content',
     accessCheck: '/auth/access',
-    health: '/health'
+    health: '/health',
+    adminAuth: '/api/admin/auth',
+    adminContentOverview: '/api/admin/content-overview'
   }
 } as const
 
