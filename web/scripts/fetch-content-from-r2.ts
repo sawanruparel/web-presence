@@ -86,6 +86,8 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
     originalWarn(...args)
   }
 
+  console.log(`🔗 Connecting to API at ${apiUrl}...`)
+
   // Create build log entry
   try {
     const buildLogResponse = await fetch(`${apiUrl}/api/admin/build-logs`, {
@@ -109,14 +111,18 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
       buildLogId = buildLogData.id
       console.log(`📝 Created build log entry #${buildLogId}`)
     } else {
-      console.warn('⚠️  Failed to create build log entry (non-fatal):', buildLogResponse.status)
+      console.warn(`⚠️  Failed to create build log entry (non-fatal): HTTP ${buildLogResponse.status}`)
     }
   } catch (logError) {
-    console.warn('⚠️  Failed to create build log entry (non-fatal):', logError instanceof Error ? logError.message : 'Unknown error')
+    const logErrMsg = logError instanceof Error ? logError.message : 'Unknown error'
+    const logErrCause = logError instanceof Error && logError.cause ? ` (${logError.cause})` : ''
+    console.warn(`⚠️  Failed to create build log entry (non-fatal): ${logErrMsg}${logErrCause}`)
+    console.warn(`   This usually means the API server is not running at ${apiUrl}`)
   }
 
   try {
     // Fetch content metadata from catalog endpoint
+    console.log(`📡 Fetching content catalog from ${apiUrl}/api/content/catalog...`)
     const catalogResponse = await fetch(`${apiUrl}/api/content/catalog`, {
       headers: {
         'X-API-Key': apiKey
@@ -124,12 +130,27 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
     })
 
     if (!catalogResponse.ok) {
-      throw new Error(`Failed to fetch content catalog: ${catalogResponse.status}`)
+      throw new Error(`HTTP ${catalogResponse.status}: ${catalogResponse.statusText}`)
     }
 
     const catalogData = await catalogResponse.json()
     console.log(`📊 Found ${catalogData.content?.length || 0} access rules from database`)
     console.log(`📊 Found content metadata with ${Object.keys(catalogData.metadata || {}).length} content types`)
+    
+    // Debug: Log the actual structure of metadata
+    if (catalogData.metadata) {
+      console.log(`🔍 Metadata keys: ${Object.keys(catalogData.metadata).join(', ')}`)
+      Object.keys(catalogData.metadata).forEach(key => {
+        const items = catalogData.metadata[key]
+        if (Array.isArray(items)) {
+          console.log(`   ${key}: ${items.length} items`)
+        } else {
+          console.log(`   ${key}: ${typeof items} (not an array)`)
+        }
+      })
+    } else {
+      console.warn('⚠️  No metadata found in API response')
+    }
 
     // Create a map of type/slug -> accessMode from database rules (single source of truth)
     const accessRules = new Map<string, string>()
@@ -157,22 +178,23 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
     }
 
     // Transform metadata to match ContentList interface
-    // Note: API returns singular forms (note, idea, page) but we need plural forms
+    // Metadata uses plural keys: notes, ideas, pages, publications
+    // Access rules also use plural types, so we need to match them
     // Only include content that is marked as 'open' in the database
     const notes = transformContentItems(
-      filterPublicContent(catalogData.metadata?.note || [], 'note'),
+      filterPublicContent(catalogData.metadata?.notes || [], 'notes'),
       'note'
     )
     const publications = transformContentItems(
-      filterPublicContent(catalogData.metadata?.publications || [], 'publication'),
+      filterPublicContent(catalogData.metadata?.publications || [], 'publications'),
       'publication'
     )
     const ideas = transformContentItems(
-      filterPublicContent(catalogData.metadata?.idea || [], 'idea'),
+      filterPublicContent(catalogData.metadata?.ideas || [], 'ideas'),
       'idea'
     )
     const pages = transformContentItems(
-      filterPublicContent(catalogData.metadata?.page || [], 'page'),
+      filterPublicContent(catalogData.metadata?.pages || [], 'pages'),
       'page'
     )
     
@@ -264,7 +286,13 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
     console.error = originalError
     console.warn = originalWarn
 
-    console.warn('⚠️  Failed to fetch content from API, creating fallback:', error instanceof Error ? error.message : 'Unknown error')
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorDetails = error instanceof Error && error.cause ? ` (${error.cause})` : ''
+    
+    console.error('❌ Failed to fetch content from API:', errorMessage + errorDetails)
+    console.error(`   API URL: ${apiUrl}`)
+    console.error(`   Make sure the API server is running at ${apiUrl}`)
+    console.warn('⚠️  Creating fallback with empty content metadata...')
     
     // Create fallback content metadata
     const fallbackMetadata: ContentMetadata = {
