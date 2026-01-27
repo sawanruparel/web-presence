@@ -84,8 +84,9 @@ npx wrangler login
 # Create database
 npx wrangler d1 create web-presence-db
 
-# Run migrations
-npx wrangler d1 execute web-presence-db --file=./migrations/0001_initial_schema.sql
+# Run migrations using the migration runner
+cd api
+npm run migrate:remote
 ```
 
 ### 3. Create R2 Buckets
@@ -149,9 +150,23 @@ npx wrangler d1 create web-presence-db
 
 ### 2. Run Migrations
 
+This project uses a custom migration system. Use the migration runner:
+
 ```bash
-npx wrangler d1 execute web-presence-db --file=./migrations/0001_initial_schema.sql
+cd api
+npm run migrate:remote
 ```
+
+Or apply migrations manually:
+
+```bash
+# Apply migrations in order
+npx wrangler d1 execute web-presence-db --remote --file=./migrations/0000_migrations_table.sql
+npx wrangler d1 execute web-presence-db --remote --file=./migrations/0001_initial_schema.sql
+npx wrangler d1 execute web-presence-db --remote --file=./migrations/0002_build_logs.sql
+```
+
+**Note:** This project uses `schema_migrations` (custom tracking table) as the single source of truth. Migrations are tracked with metadata including who applied them, execution time, and descriptions. Cloudflare's `d1_migrations` table is not used.
 
 ### 3. Seed Database (Optional)
 

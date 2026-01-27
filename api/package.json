@@ -22,7 +22,10 @@
     "check:migrations": "node scripts/check-migrations-at-build.js --local",
     "check:migrations:local": "node scripts/check-migrations-at-build.js --local",
     "check:migrations:remote": "node scripts/check-migrations-at-build.js --remote",
-    "check:migrations:warn": "node scripts/check-migrations-at-build.js --remote --warn-only"
+    "check:migrations:warn": "node scripts/check-migrations-at-build.js --remote --warn-only",
+    "diagnose:db": "node scripts/diagnose-database.js --local",
+    "diagnose:db:local": "node scripts/diagnose-database.js --local",
+    "diagnose:db:remote": "node scripts/diagnose-database.js --remote"
   },
   "dependencies": {
     "hono": "^4.0.0",

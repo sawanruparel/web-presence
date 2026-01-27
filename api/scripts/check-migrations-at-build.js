@@ -83,11 +83,20 @@ async function checkMigrationsTable() {
           }
         }
       } catch (e) {
-        // JSON parse failed
+        // JSON parse failed - log for debugging in warn-only mode
+        if (warnOnly) {
+          console.warn(`⚠️  Failed to parse wrangler output: ${e.message}`)
+        }
       }
     }
     return false
   } catch (error) {
+    // If wrangler command fails (e.g., not authenticated in CI), provide helpful error
+    if (warnOnly) {
+      console.warn(`⚠️  Could not check migrations table (wrangler command failed): ${error.message}`)
+      console.warn(`   This is expected in CI/build environments where wrangler may not be authenticated.`)
+      console.warn(`   To verify migrations manually, run: npm run diagnose:db:remote`)
+    }
     return false
   }
 }
@@ -155,9 +164,11 @@ async function main() {
     const tableExists = await checkMigrationsTable()
     
     if (!tableExists) {
-      const message = `❌ Migrations tracking table does not exist in ${environment} database.\n   Run: npm run migrate:${isRemote ? 'remote' : 'local'}`
+      const message = `❌ Migrations tracking table does not exist in ${environment} database.\n   Run: npm run migrate:${isRemote ? 'remote' : 'local'}\n   Or verify manually: npm run diagnose:db:${isRemote ? 'remote' : 'local'}`
       if (warnOnly) {
         console.warn(`\n⚠️  ${message}\n`)
+        console.warn(`   Note: If this is a CI/build environment, wrangler may not be authenticated.`)
+        console.warn(`   The build will continue, but verify migrations manually if needed.\n`)
         return
       } else {
         console.error(`\n${message}\n`)

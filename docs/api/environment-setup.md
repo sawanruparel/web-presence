@@ -162,13 +162,47 @@ npx wrangler d1 create web-presence-db
 
 ### 2. Run Database Migrations
 
+This project uses a **custom migration system** with `wrangler d1 execute` (not Cloudflare's built-in `wrangler d1 migrations apply`). The custom system tracks migrations in the `schema_migrations` table with rich metadata.
+
+**Recommended: Use the migration runner**
+
 ```bash
+cd api
+
 # Run migrations for local database
-npx wrangler d1 execute web-presence-db-local --file=./migrations/0001_initial_schema.sql
+npm run migrate:local
 
 # Run migrations for production database
-npx wrangler d1 execute web-presence-db --file=./migrations/0001_initial_schema.sql
+npm run migrate:remote
 ```
+
+**Alternative: Manual migration**
+
+```bash
+# Run migrations for local database (in order)
+npx wrangler d1 execute web-presence-db-local --local --file=./migrations/0000_migrations_table.sql
+npx wrangler d1 execute web-presence-db-local --local --file=./migrations/0001_initial_schema.sql
+npx wrangler d1 execute web-presence-db-local --local --file=./migrations/0002_build_logs.sql
+
+# Run migrations for production database (in order)
+npx wrangler d1 execute web-presence-db --remote --file=./migrations/0000_migrations_table.sql
+npx wrangler d1 execute web-presence-db --remote --file=./migrations/0001_initial_schema.sql
+npx wrangler d1 execute web-presence-db --remote --file=./migrations/0002_build_logs.sql
+```
+
+**Verify migrations:**
+
+```bash
+# Check migration status
+npm run migrate:verify:local   # Local database
+npm run migrate:verify:remote   # Production database
+
+# Or diagnose database state
+npm run diagnose:db:local
+npm run diagnose:db:remote
+```
+
+**Note:** This project uses `schema_migrations` (custom tracking table) as the single source of truth. Cloudflare's `d1_migrations` table is not used and has been removed.
 
 ### 3. Migrate Access Control Data
 

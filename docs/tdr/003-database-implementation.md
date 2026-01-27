@@ -378,19 +378,29 @@ database_id = "YOUR_DATABASE_ID_HERE"
 # Create migrations directory
 mkdir -p api/migrations
 
-# Create initial migration
-npx wrangler d1 migrations create web-presence-db initial-schema
+# Create migration SQL files manually
+# Example: api/migrations/0000_migrations_table.sql
+# Example: api/migrations/0001_initial_schema.sql
 ```
 
 **Step 1.4: Apply Migrations**
 
+This project uses a custom migration system with `wrangler d1 execute` (not Cloudflare's built-in `wrangler d1 migrations apply`). The custom system provides richer metadata tracking.
+
 ```bash
 # Local development
-npx wrangler d1 migrations apply web-presence-db --local
+cd api
+npm run migrate:local
 
-# Production (later)
-npx wrangler d1 migrations apply web-presence-db --remote
+# Production
+npm run migrate:remote
+
+# Or manually:
+npx wrangler d1 execute web-presence-db --local --file=./migrations/0000_migrations_table.sql
+npx wrangler d1 execute web-presence-db --local --file=./migrations/0001_initial_schema.sql
 ```
+
+**Note:** This project uses `schema_migrations` (custom tracking table) as the single source of truth. Cloudflare's `d1_migrations` table is not used.
 
 ### Phase 2: Backend Services (Days 2-3)
 

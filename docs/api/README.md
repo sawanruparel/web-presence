@@ -12,6 +12,32 @@ The backend API is built with Hono and Cloudflare Workers, providing content man
 - **[Endpoints](./endpoints.md)** - API endpoint reference
 - **[Access Control](./access-control.md)** - Content access control system
 - **[Deployment](./deployment.md)** - Deployment and configuration
+- **[Environment Setup](./environment-setup.md)** - Local and production setup
+- **[Testing Guide](./testing-guide.md)** - Testing strategies and examples
+
+## Database Migrations
+
+This project uses a **custom migration system** with `wrangler d1 execute` (not Cloudflare's built-in `wrangler d1 migrations apply`). Migrations are tracked in the `schema_migrations` table with rich metadata.
+
+**Quick Commands:**
+
+```bash
+cd api
+
+# Apply migrations
+npm run migrate:local      # Local database
+npm run migrate:remote     # Production database
+
+# Verify migrations
+npm run migrate:verify:local
+npm run migrate:verify:remote
+
+# Diagnose database
+npm run diagnose:db:local
+npm run diagnose:db:remote
+```
+
+See `api/scripts/MIGRATIONS.md` for detailed migration documentation.
 
 ## Quick Start
 

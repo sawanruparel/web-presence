@@ -4,7 +4,23 @@ This document describes how to manage database migrations in this project.
 
 ## Overview
 
-Migrations are SQL files stored in `/api/migrations/` that modify the database schema. The migration system tracks which migrations have been applied to prevent duplicate execution.
+Migrations are SQL files stored in `/api/migrations/` that modify the database schema. This project uses a **custom migration system** that tracks migrations in the `schema_migrations` table with rich metadata.
+
+### Migration System Architecture
+
+- **Custom Migration System**: Uses `wrangler d1 execute --file=` to apply migrations
+- **Tracking Table**: `schema_migrations` (custom table with rich metadata)
+- **Not Used**: Cloudflare's `d1_migrations` table (removed - we use our own tracking)
+
+### Why Custom System?
+
+The custom migration system provides:
+- **Rich Metadata**: Tracks who applied migrations, execution time, descriptions
+- **Manual Control**: Can apply migrations manually and still track them
+- **Better Debugging**: Execution times and descriptions help troubleshoot issues
+- **Flexibility**: Handle edge cases and manual fixes easily
+
+**Note**: This project does NOT use `wrangler d1 migrations apply` (Cloudflare's built-in migration system). We use `wrangler d1 execute --file=` directly and track migrations in our own `schema_migrations` table.
 
 ## Migration Files
 
@@ -109,13 +125,15 @@ npm run migrate:remote
 
 ## Migration Tracking Table
 
-The `schema_migrations` table tracks:
+The `schema_migrations` table is the **single source of truth** for migration tracking in this project. It tracks:
 - `migration_name` - Unique identifier (e.g., '0001_initial_schema')
 - `migration_file` - Full filename
 - `applied_at` - Timestamp when applied
 - `applied_by` - User/system that applied it
 - `execution_time_ms` - How long it took
 - `description` - Description from migration file
+
+**Important**: This project does NOT use Cloudflare's `d1_migrations` table. The `schema_migrations` table is the only migration tracking system used. Cloudflare's built-in migration system (`wrangler d1 migrations apply`) is not used - we use `wrangler d1 execute --file=` directly and track migrations in our custom table.
 
 ## Best Practices
 
