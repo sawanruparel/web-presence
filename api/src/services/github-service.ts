@@ -203,7 +203,9 @@ export class GitHubService {
   }
 
   /**
-   * Get all content files from the content directory
+   * Get all content files from the content directory.
+   * Includes pages (e.g. content/pages/about.md, content/pages/contact.md) so
+   * about and contact stay in sync when running admin content-sync or full sync.
    */
   async getAllContentFiles(): Promise<GitHubFile[]> {
     const contentTypes = ['notes', 'ideas', 'publications', 'pages']
@@ -220,13 +222,15 @@ export class GitHubService {
   }
 
   /**
-   * Get files that changed in a webhook payload
+   * Get files that changed in a webhook payload.
+   * Includes any content/*.md, so content/pages/about.md and content/pages/contact.md
+   * trigger sync on push.
    */
   getChangedFiles(payload: GitHubWebhookPayload): string[] {
     const changedFiles: string[] = []
 
     for (const commit of payload.commits) {
-      // Only process files in content directory
+      // Any .md under content/ (includes content/pages/about.md, content/pages/contact.md)
       const contentFiles = [
         ...commit.added,
         ...commit.modified,

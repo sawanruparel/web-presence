@@ -95,6 +95,17 @@ npm run build
    - Generate static HTML files
    - Copy static assets
 
+### When content updates reach the site
+
+Two things must happen for **about** and **contact** (and other content) to show updates on the server:
+
+1. **Content sync** (GitHub webhook or admin content-sync) must run for the changed files.  
+   - The webhook includes any `content/**/*.md`, so `content/pages/about.md` and `content/pages/contact.md` already trigger sync.  
+   - Admin content-sync uses `getAllContentFiles()`, which includes the `pages` directory.
+
+2. **Frontend build** (e.g. Cloudflare Pages) must run so the site pulls fresh data from R2.  
+   - If you use **Build watch paths** in Cloudflare Pages, include `content/` (or at least `content/pages/`) in the “include” paths. Otherwise pushes that only change content will skip the build and the live site will keep serving the previous build.
+
 ## 🔧 Content Processing Pipeline
 
 ### Content Fetching (`scripts/fetch-content-from-r2.ts`)
@@ -104,10 +115,11 @@ npm run build
 **Output:** Processed content and metadata
 
 **Steps:**
-1. **File Discovery** (Node.js)
+1. **File Discovery** (Node.js)  
+   The build script fetches from the API catalog; the API’s content metadata includes `notes`, `ideas`, `publications`, and **`pages`** (about, contact, etc.).
    ```javascript
    const contentTypes = ['notes', 'publications', 'ideas', 'pages']
-   // Scan each content type directory using Node.js fs module
+   // Catalog includes pages; fetch-content-from-r2 uses catalogData.metadata?.pages
    ```
 
 2. **Frontmatter Parsing** (Node.js)

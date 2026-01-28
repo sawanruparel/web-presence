@@ -1,6 +1,11 @@
 import type { Env } from '../types/env'
 import type { ProcessedContent } from './content-processing-service'
 
+/** R2 object key for a content item. Must match keys used in content-metadata.json (type = top-level key). */
+export function contentObjectKey(type: string, slug: string): string {
+  return `${type}/${slug}.html`
+}
+
 export interface R2Object {
   key: string
   size: number
@@ -32,7 +37,7 @@ export class R2SyncService {
    */
   async uploadProtectedContent(content: ProcessedContent, htmlTemplate: string): Promise<boolean> {
     try {
-      const key = `${content.type}/${content.slug}.html`
+      const key = contentObjectKey(content.type, content.slug)
       
       await this.protectedBucket.put(key, htmlTemplate, {
         httpMetadata: {
@@ -53,7 +58,7 @@ export class R2SyncService {
    */
   async uploadPublicContent(content: ProcessedContent, htmlTemplate: string): Promise<boolean> {
     try {
-      const key = `${content.type}/${content.slug}.html`
+      const key = contentObjectKey(content.type, content.slug)
       
       await this.publicBucket.put(key, htmlTemplate, {
         httpMetadata: {
@@ -166,10 +171,20 @@ export class R2SyncService {
     try {
       console.log(`🔄 Starting R2 sync for ${processedContent.length} content items`)
 
-      // Upload all content
+      // Ensure contentMetadata keys match what we upload: each public item must exist under metadata[content.type]
+      const publicContent = processedContent.filter(c => !c.isProtected)
+      for (const content of publicContent) {
+        const arr = contentMetadata[content.type]
+        const inMetadata = Array.isArray(arr) && arr.some((item: { slug?: string }) => item.slug === content.slug)
+        if (!inMetadata) {
+          console.warn(`⚠️ Public content ${content.type}/${content.slug} has no entry in contentMetadata.${content.type} – metadata may be out of sync with uploaded HTML`)
+        }
+      }
+
+      // Upload all content (keys must match content-metadata.json: type/slug.html, type = metadata top-level key)
       for (const content of processedContent) {
         const htmlTemplateContent = htmlTemplate(content)
-        const key = `${content.type}/${content.slug}.html`
+        const key = contentObjectKey(content.type, content.slug)
         
         if (content.isProtected) {
           const success = await this.uploadProtectedContent(content, htmlTemplateContent)
@@ -270,7 +285,7 @@ export class R2SyncService {
    */
   async getPublicHtml(type: string, slug: string): Promise<string | null> {
     try {
-      const key = `${type}/${slug}.html`
+      const key = contentObjectKey(type, slug)
       return await this.getObject('public', key)
     } catch (error) {
       console.error(`❌ Failed to get public HTML ${type}/${slug}:`, error)
@@ -291,7 +306,7 @@ export class R2SyncService {
       // Get all objects in the bucket
       const allObjects = await r2Bucket.list()
       const currentKeys = new Set(
-        currentContent.map(content => `${content.type}/${content.slug}.html`)
+        currentContent.map(content => contentObjectKey(content.type, content.slug))
       )
       
       // Find objects that are not in the current content set

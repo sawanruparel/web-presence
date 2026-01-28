@@ -193,6 +193,7 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
       filterPublicContent(catalogData.metadata?.ideas || [], 'ideas'),
       'idea'
     )
+    // Include pages (about, contact) from catalog; sync pipeline already includes content/pages/*.md
     const pages = transformContentItems(
       filterPublicContent(catalogData.metadata?.pages || [], 'pages'),
       'page'
