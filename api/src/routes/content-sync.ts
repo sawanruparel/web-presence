@@ -50,7 +50,7 @@ contentSyncRouter.post('/webhook', async (c: Context) => {
     console.log(`🔄 Processing ${changedFiles.length} changed files`)
 
     // Process the changes
-    const contentResult = await processContentChanges(env, changedFiles)
+    const contentResult = await processContentChanges(env, changedFiles, { fullSync: false })
 
     return c.json({
       message: 'Content sync completed',
@@ -98,7 +98,7 @@ contentSyncRouter.post('/manual', async (c: Context) => {
     console.log(`🔄 Manual sync: processing ${filesToProcess.length} files`)
 
     // Process the files
-    const contentResult = await processContentChanges(env, filesToProcess)
+    const contentResult = await processContentChanges(env, filesToProcess, { fullSync: full_sync })
 
     return c.json({
       message: 'Manual sync completed',
@@ -169,7 +169,77 @@ contentSyncRouter.get('/status', async (c: Context) => {
 /**
  * Process content changes (shared logic for webhook and manual sync)
  */
-async function processContentChanges(env: Env, filePaths: string[]) {
+const contentTypes = ['notes', 'ideas', 'publications', 'pages'] as const
+type ContentType = typeof contentTypes[number]
+
+function normalizePublicMetadata(metadata: Record<string, any> | null): Record<ContentType, any[]> {
+  const normalized: Record<ContentType, any[]> = {
+    notes: [],
+    ideas: [],
+    publications: [],
+    pages: []
+  }
+
+  if (!metadata) {
+    return normalized
+  }
+
+  for (const type of contentTypes) {
+    if (Array.isArray(metadata[type])) {
+      normalized[type] = metadata[type]
+    }
+  }
+
+  return normalized
+}
+
+function sortByDateDesc(items: Array<{ date?: string }>): Array<{ date?: string }> {
+  return [...items].sort((a, b) => {
+    const aTime = a.date ? new Date(a.date).getTime() : 0
+    const bTime = b.date ? new Date(b.date).getTime() : 0
+    return bTime - aTime
+  })
+}
+
+function mergePublicMetadata(
+  existingMetadata: Record<string, any> | null,
+  updatedMetadata: Record<string, any>,
+  processedContent: Array<{ type: string; slug: string; isProtected: boolean }>
+): Record<ContentType, any[]> {
+  const normalized = normalizePublicMetadata(existingMetadata)
+  const merged: Record<ContentType, any[]> = {
+    notes: [],
+    ideas: [],
+    publications: [],
+    pages: []
+  }
+
+  for (const type of contentTypes) {
+    const currentItems = normalized[type]
+    const currentMap = new Map(currentItems.map(item => [item.slug, item]))
+    const updatedItems = Array.isArray(updatedMetadata[type]) ? updatedMetadata[type] : []
+    const updatedMap = new Map(updatedItems.map(item => [item.slug, item]))
+
+    const processedForType = processedContent.filter(content => content.type === type)
+    for (const content of processedForType) {
+      if (content.isProtected) {
+        currentMap.delete(content.slug)
+      } else if (updatedMap.has(content.slug)) {
+        currentMap.set(content.slug, updatedMap.get(content.slug))
+      }
+    }
+
+    merged[type] = sortByDateDesc(Array.from(currentMap.values()))
+  }
+
+  return merged
+}
+
+async function processContentChanges(
+  env: Env,
+  filePaths: string[],
+  options: { fullSync: boolean }
+) {
   const githubService = new GitHubService(env)
   const contentProcessor = new ContentProcessingService(env.FRONTEND_URL || 'https://sawanruparel.com', env)
   const r2Service = new R2SyncService(env)
@@ -211,14 +281,19 @@ async function processContentChanges(env: Env, filePaths: string[]) {
   }
 
   // Generate metadata
-  const contentMetadata = contentProcessor.generateContentMetadata(processedContent)
+  const updatedMetadata = contentProcessor.generateContentMetadata(processedContent)
   const protectedMetadata = contentProcessor.generateProtectedContentMetadata(processedContent)
+  const existingMetadata = options.fullSync ? null : await r2Service.getAllPublicContent()
+  const contentMetadata = options.fullSync
+    ? updatedMetadata
+    : mergePublicMetadata(existingMetadata, updatedMetadata, processedContent)
 
   // Sync to R2
   const syncReport = await r2Service.syncAllContent(
     processedContent,
     contentMetadata,
-    (content) => contentProcessor.generatePublicHtmlTemplate(content)
+    (content) => contentProcessor.generatePublicHtmlTemplate(content),
+    { cleanupStale: options.fullSync }
   )
 
   return {

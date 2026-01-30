@@ -156,7 +156,8 @@ export class R2SyncService {
   async syncAllContent(
     processedContent: ProcessedContent[],
     contentMetadata: Record<string, any>,
-    htmlTemplate: (content: ProcessedContent) => string
+    htmlTemplate: (content: ProcessedContent) => string,
+    options: { cleanupStale?: boolean } = {}
   ): Promise<SyncReport> {
     const report: SyncReport = {
       uploaded: [],
@@ -230,26 +231,28 @@ export class R2SyncService {
         report.success = false
       }
 
-      // Cleanup stale objects
-      const protectedDeleted = await this.cleanupStaleObjects(
-        processedContent.filter(c => c.isProtected),
-        'protected'
-      )
-      report.deleted.push(...protectedDeleted.map(key => `protected:${key}`))
-      report.deleteDetails!.push(...protectedDeleted.map(key => ({
-        bucket: 'protected' as const,
-        key
-      })))
+      if (options.cleanupStale !== false) {
+        // Cleanup stale objects
+        const protectedDeleted = await this.cleanupStaleObjects(
+          processedContent.filter(c => c.isProtected),
+          'protected'
+        )
+        report.deleted.push(...protectedDeleted.map(key => `protected:${key}`))
+        report.deleteDetails!.push(...protectedDeleted.map(key => ({
+          bucket: 'protected' as const,
+          key
+        })))
 
-      const publicDeleted = await this.cleanupStaleObjects(
-        processedContent.filter(c => !c.isProtected),
-        'public'
-      )
-      report.deleted.push(...publicDeleted.map(key => `public:${key}`))
-      report.deleteDetails!.push(...publicDeleted.map(key => ({
-        bucket: 'public' as const,
-        key
-      })))
+        const publicDeleted = await this.cleanupStaleObjects(
+          processedContent.filter(c => !c.isProtected),
+          'public'
+        )
+        report.deleted.push(...publicDeleted.map(key => `public:${key}`))
+        report.deleteDetails!.push(...publicDeleted.map(key => ({
+          bucket: 'public' as const,
+          key
+        })))
+      }
 
       console.log(`✅ R2 sync completed: ${report.uploaded.length} uploaded, ${report.deleted.length} deleted, ${report.errors.length} errors`)
       
