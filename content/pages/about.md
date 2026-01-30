@@ -1,39 +1,39 @@
 ---
-title: "Current Focus: Applied Generative AI, AI + Physical Systems,"
-description: "Experienced in AI, healthcare, and physical products, focusing on applied Generative AI, AI + Physical Systems, venture building, and mentorship. Not inter"
-slug: current-focus-applied-generative-ai-ai-physical-systems
+title: "Sawan Ruparel"
+description: "Experienced in AI, healthcare, and physical products, focusing on real-world systems with tangible costs and messy environments. Specializes in Applied Gen"
+slug: about-sawan-ruparel
 date: 2026-01-30
 lastmod: 2026-01-30
 draft: false
-canonical_url: "http://localhost:3000/current-focus-applied-generative-ai-ai-physical-systems"
+canonical_url: "https://sawanruparel.com/applied-generative-ai-ai-physical-systems-venture-buil"
 robots: "index, follow"
 author: Editorial Team
 tags:
+- complex systems
 - AI
 - healthcare
 - physical products
+- applied AI
 - venture building
-- Generative AI
-- technical strategy
 reading_time: 3
 keywords:
+- real-world systems
+- AI
+- healthcare
+- physical products
 - applied Generative AI
 - AI + Physical Systems
 - "Venture Building & Technical Strategy"
 - "Teaching & Mentorship"
-- GenAI failures
-- hardware startups
-- good engineering
-- First Principles
-og_title: Exploring Applied Generative AI and AI in Physical Systems
-og_description: "Experienced in AI, healthcare, and physical products, specializing in applied Generative AI, AI + Physical Systems, venture building, and mentorship. Let's innovate together!"
+og_title: "About Sawan Ruparel"
+og_description: "Experienced in AI, healthcare, and physical products, specializing in real-world systems with tangible costs and messy environments. Applied Gen expert."
 og_type: article
-og_url: "http://localhost:3000/current-focus-applied-generative-ai-ai-physical-systems"
+og_url: "https://sawanruparel.com/applied-generative-ai-ai-physical-systems-venture-buil"
 og_site_name: Rivve
 og_locale: en_US
 twitter_card: summary
-twitter_title: Exploring Applied Generative AI and AI in Physical Systems
-twitter_description: "Experienced in AI, healthcare, and physical products, specializing in applied Generative AI, AI + Physical Systems, venture building, and mentorship. Ready to innovate and inspire!"
+twitter_title: "About Sawan Ruparel"
+twitter_description: "Specialist in AI, healthcare, and physical products, tackling real-world systems with tangible costs and messy environments. Expert in Applied Gen."
 twitter_site: "@thisissawan"
 twitter_creator: "@thisissawan"
 lang: en-US

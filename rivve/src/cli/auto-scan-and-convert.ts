@@ -39,7 +39,7 @@ if (!skipAI && !process.env.OPENAI_API_KEY) {
 
 // Site configuration
 const siteConfig: SiteConfig = {
-  baseUrl: process.env.SITE_BASE_URL || "http://localhost:3000",
+  baseUrl: process.env.SITE_BASE_URL || "https://sawanruparel.com",
   defaultAuthor: process.env.SITE_DEFAULT_AUTHOR || "Editorial Team",
   defaultLang: process.env.SITE_DEFAULT_LANG || "en",
   env: "prod",
@@ -74,14 +74,14 @@ interface ProcessedFile {
  */
 function findMarkdownFiles(dir: string, baseDir: string): string[] {
   const files: string[] = [];
-  
+
   try {
     const items = readdirSync(dir);
-    
+
     for (const item of items) {
       const fullPath = join(dir, item);
       const stat = statSync(fullPath);
-      
+
       if (stat.isDirectory()) {
         // Skip all subdirectories - only process files in the base folder
         console.log(`⏭️  Skipping subdirectory: ${item}`);
@@ -96,7 +96,7 @@ function findMarkdownFiles(dir: string, baseDir: string): string[] {
   } catch (error) {
     console.error(`Error reading directory ${dir}:`, error);
   }
-  
+
   return files;
 }
 
@@ -107,7 +107,7 @@ function needsProcessing(filePath: string): boolean {
   if (forceRegenerate) {
     return true;
   }
-  
+
   // For now, always process if force is not set, we'll check frontmatter freshness later
   return true;
 }
@@ -117,41 +117,41 @@ function needsProcessing(filePath: string): boolean {
  */
 function validateSEOTemplate(filePath: string): { isValid: boolean; warnings: string[] } {
   const warnings: string[] = [];
-  
+
   try {
     const content = readFileSync(filePath, 'utf-8');
-    
+
     // Check if file has frontmatter
     const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
     if (!frontmatterMatch) {
       warnings.push('No frontmatter found - file should use seo-template.md as template');
       return { isValid: false, warnings };
     }
-    
+
     const frontmatter = frontmatterMatch[1];
-    
+
     // Check for required SEO template fields
     const requiredFields = [
       'title',
-      'description', 
+      'description',
       'slug',
       'date',
       'lastmod',
       'canonical_url',
       'robots'
     ];
-    
+
     const missingFields: string[] = [];
     for (const field of requiredFields) {
       if (!frontmatter || !frontmatter.includes(`${field}:`)) {
         missingFields.push(field);
       }
     }
-    
+
     if (missingFields.length > 0) {
       warnings.push(`Missing required SEO template fields: ${missingFields.join(', ')}`);
     }
-    
+
     // Check for social media fields
     const socialFields = ['og_title', 'og_description', 'twitter_card', 'linkedin_title'];
     const missingSocialFields: string[] = [];
@@ -160,11 +160,11 @@ function validateSEOTemplate(filePath: string): { isValid: boolean; warnings: st
         missingSocialFields.push(field);
       }
     }
-    
+
     if (missingSocialFields.length > 0) {
       warnings.push(`Missing social media fields: ${missingSocialFields.join(', ')}`);
     }
-    
+
     return { isValid: warnings.length === 0, warnings };
   } catch (error) {
     warnings.push(`Error reading file: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -181,24 +181,24 @@ async function generateFrontmatterForFile(
 ): Promise<{ yaml: string; data: any; policy: any } | null> {
   try {
     const content = readFileSync(filePath, 'utf-8');
-    
+
     // Extract body content (skip existing frontmatter)
     const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
     const bodyContent = frontmatterMatch ? (frontmatterMatch[2] || content) : content;
-    
+
     // Create article input
     const article: ArticleInput = {
       body: bodyContent,
       locale: "en-US"
     };
-    
+
     // Generate frontmatter
     const result = await createFrontmatter(article, {
       ai,
       site: siteConfig,
       policy: policyConfig
     });
-    
+
     return result;
   } catch (error) {
     console.error(`❌ Error generating frontmatter for ${filePath}:`, error);
@@ -210,23 +210,23 @@ async function generateFrontmatterForFile(
  * Process a single markdown file - generate/enhance frontmatter only
  */
 async function processFile(
-  filePath: string, 
+  filePath: string,
   ai: OpenAIAIProvider | null
 ): Promise<ProcessedFile> {
   const relativePath = relative(scanPath, filePath);
-  
+
   const result: ProcessedFile = {
     inputPath: filePath,
     title: basename(filePath, extname(filePath)),
     hasFrontmatter: false,
     processed: false
   };
-  
+
   try {
     // Validate SEO template usage
     console.log(`📄 Processing: ${relativePath}`);
     const validation = validateSEOTemplate(filePath);
-    
+
     if (!validation.isValid) {
       console.log(`  ⚠️  SEO Template Validation Failed:`);
       validation.warnings.forEach(warning => {
@@ -235,37 +235,37 @@ async function processFile(
     } else {
       console.log(`  ✅ SEO Template validation passed`);
     }
-    
+
     // Check if processing is needed
     if (!needsProcessing(filePath)) {
       result.processed = true;
       result.title = 'Skipped (up to date)';
       return result;
     }
-    
+
     // Read the markdown file
     const content = readFileSync(filePath, 'utf-8');
-    
+
     // Parse frontmatter
     const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
     const existingFrontmatter = frontmatterMatch ? frontmatterMatch[1] : '';
     const bodyContent = frontmatterMatch ? (frontmatterMatch[2] || content) : content;
-    
+
     result.hasFrontmatter = !!existingFrontmatter;
-    
+
     let frontmatter: any = null;
     let finalContent = content;
-    
+
     if (ai && !skipAI) {
       // Generate AI frontmatter
       console.log(`  🤖 Generating AI frontmatter...`);
       const aiResult = await generateFrontmatterForFile(filePath, ai);
-      
+
       if (aiResult) {
         frontmatter = aiResult.data;
         finalContent = aiResult.yaml + '\n' + bodyContent;
         console.log(`  ✅ AI frontmatter generated`);
-        
+
         // Write back to the file (in-place update)
         writeFileSync(filePath, finalContent, 'utf-8');
         result.processed = true;
@@ -289,12 +289,12 @@ async function processFile(
       console.log(`  ⚠️  No frontmatter found and AI processing skipped`);
       result.error = 'No frontmatter and AI skipped';
     }
-    
+
   } catch (error) {
     result.error = error instanceof Error ? error.message : 'Unknown error';
     console.log(`  ❌ Error: ${result.error}`);
   }
-  
+
   return result;
 }
 
@@ -315,35 +315,35 @@ function checkSEOTemplate(): void {
  */
 async function main() {
   checkSEOTemplate();
-  
+
   // Initialize AI provider if not skipping
   let ai: OpenAIAIProvider | null = null;
   if (!skipAI) {
     console.log('Testing OpenAI API key...');
     const testResult = await testOpenAIKey(process.env.OPENAI_API_KEY!, process.env.OPENAI_MODEL || "gpt-3.5-turbo");
-    
+
     if (!testResult.success) {
       console.error('❌ OpenAI API key test failed:');
       console.error(`   Error: ${testResult.error}`);
       process.exit(1);
     }
-    
+
     console.log(`✅ OpenAI API key test successful (using ${testResult.model})`);
-    
+
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
     ai = new OpenAIAIProvider(openai, process.env.OPENAI_MODEL || "gpt-3.5-turbo");
   }
-  
+
   // Find markdown files
   console.log('\n🔍 Finding markdown files...');
   const files = findMarkdownFiles(scanPath, scanPath);
   console.log(`Found ${files.length} markdown file(s)\n`);
-  
+
   if (files.length === 0) {
     console.log('No markdown files found. Exiting.');
     return;
   }
-  
+
   // Process each file
   const processedFiles: ProcessedFile[] = [];
   for (const file of files) {
@@ -351,21 +351,21 @@ async function main() {
     processedFiles.push(result);
     console.log(''); // Empty line for readability
   }
-  
+
   // Summary
   console.log('\n📊 Summary:');
   console.log(`   Total files: ${processedFiles.length}`);
   console.log(`   Processed: ${processedFiles.filter(f => f.processed).length}`);
   console.log(`   Skipped: ${processedFiles.filter(f => !f.processed && !f.error).length}`);
   console.log(`   Errors: ${processedFiles.filter(f => f.error).length}`);
-  
+
   if (processedFiles.some(f => f.error)) {
     console.log('\n❌ Files with errors:');
     processedFiles.filter(f => f.error).forEach(f => {
       console.log(`   - ${relative(scanPath, f.inputPath)}: ${f.error}`);
     });
   }
-  
+
   console.log('\n✅ Frontmatter generation complete!');
   console.log('💡 Tip: Use mdtohtml or your build system to convert markdown to HTML');
 }
