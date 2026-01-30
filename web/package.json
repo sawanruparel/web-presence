@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm run build:content && vite",
-    "build": "npm run check:migrations:remote && npm run clean && npm run build:content && tsc && vite build",
+    "build": "npm run check:migrations:remote && npm run clean && npm run build:content:sync && tsc && vite build",
     "build:content": "tsx scripts/fetch-content-from-r2.ts",
     "build:content:sync": "tsx scripts/fetch-content-from-r2.ts --sync",
     "preview": "vite preview",
