@@ -55,31 +55,63 @@ function transformContentItems(items: any[], type: 'note' | 'publication' | 'ide
 export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
   const { apiUrl, apiKey, outputDir } = options
 
+  // Check if sync is requested
+  const shouldSync = process.argv.includes('--sync')
+
+  if (shouldSync) {
+    console.log('🔄 Triggering content sync before fetch...')
+    try {
+      const syncResponse = await fetch(`${apiUrl}/api/internal/content-sync/manual`, {
+        method: 'POST',
+        headers: {
+          'X-API-Key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          full_sync: true
+        })
+      })
+
+      if (!syncResponse.ok) {
+        throw new Error(`Sync failed with status: ${syncResponse.status} ${syncResponse.statusText}`)
+      }
+
+      const syncResult = await syncResponse.json()
+      console.log('✅ Content sync completed successfully')
+      console.log('📊 Sync result:', JSON.stringify(syncResult, null, 2))
+    } catch (error) {
+      console.error('❌ Failed to sync content:', error)
+      // We decide here if sync failure should stop the build. 
+      // Usually yes, if explicit sync was requested.
+      throw error
+    }
+  }
+
   console.log('🔄 Fetching content metadata from API...')
 
   // Create build log entry at start
   let buildLogId: number | null = null
   const buildStartTime = new Date().toISOString()
   const logOutput: string[] = []
-  
+
   // Store original console methods
   const originalLog = console.log
   const originalError = console.error
   const originalWarn = console.warn
-  
+
   // Capture console output
   console.log = (...args: any[]) => {
     const message = args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' ')
     logOutput.push(`[LOG] ${message}`)
     originalLog(...args)
   }
-  
+
   console.error = (...args: any[]) => {
     const message = args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' ')
     logOutput.push(`[ERROR] ${message}`)
     originalError(...args)
   }
-  
+
   console.warn = (...args: any[]) => {
     const message = args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' ')
     logOutput.push(`[WARN] ${message}`)
@@ -136,7 +168,7 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
     const catalogData = await catalogResponse.json()
     console.log(`📊 Found ${catalogData.content?.length || 0} access rules from database`)
     console.log(`📊 Found content metadata with ${Object.keys(catalogData.metadata || {}).length} content types`)
-    
+
     // Debug: Log the actual structure of metadata
     if (catalogData.metadata) {
       console.log(`🔍 Metadata keys: ${Object.keys(catalogData.metadata).join(', ')}`)
@@ -198,13 +230,13 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
       filterPublicContent(catalogData.metadata?.pages || [], 'pages'),
       'page'
     )
-    
+
     // Create latest array by combining all content and sorting by date
     const allContent = [...notes, ...publications, ...ideas, ...pages]
     const latest = allContent
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 10) // Get latest 10 items
-    
+
     const contentMetadata: ContentMetadata = {
       notes,
       publications,
@@ -238,12 +270,12 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
     // Write content metadata to both locations
     const distMetadataPath = path.join(outputDir, 'content-metadata.json')
     const srcMetadataPath = path.join(srcDataDir, 'content-metadata.json')
-    
+
     const metadataJson = JSON.stringify(contentMetadata, null, 2)
-    
+
     fs.writeFileSync(distMetadataPath, metadataJson)
     fs.writeFileSync(srcMetadataPath, metadataJson)
-    
+
     console.log(`✅ Created content-metadata.json in dist and src/data`)
 
     // Note: In a full implementation, you would:
@@ -289,12 +321,12 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     const errorDetails = error instanceof Error && error.cause ? ` (${error.cause})` : ''
-    
+
     console.error('❌ Failed to fetch content from API:', errorMessage + errorDetails)
     console.error(`   API URL: ${apiUrl}`)
     console.error(`   Make sure the API server is running at ${apiUrl}`)
     console.warn('⚠️  Creating fallback with empty content metadata...')
-    
+
     // Create fallback content metadata
     const fallbackMetadata: ContentMetadata = {
       notes: [],
@@ -318,10 +350,10 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
     const metadataJson = JSON.stringify(fallbackMetadata, null, 2)
     const distMetadataPath = path.join(outputDir, 'content-metadata.json')
     const srcMetadataPath = path.join(srcDataDir, 'content-metadata.json')
-    
+
     fs.writeFileSync(distMetadataPath, metadataJson)
     fs.writeFileSync(srcMetadataPath, metadataJson)
-    
+
     console.log('✅ Created fallback content-metadata.json')
     console.log('⚠️  Note: Using empty content metadata. API may not be accessible during build.')
 

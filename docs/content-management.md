@@ -137,78 +137,68 @@ npm run dev-server
 
 ## 🔄 Content Processing Pipeline
 
-### 1. Content Discovery
-
-**Script:** `scripts/fetch-content-from-r2.ts`
-
-```javascript
-const contentTypes = ['notes', 'publications', 'ideas', 'pages']
-contentTypes.forEach(type => {
-  const typeDir = path.join(contentDir, type)
-  const files = fs.readdirSync(typeDir).filter(file => file.endsWith('.md'))
-  // Process each markdown file
-})
-```
-
-### 2. Frontmatter Parsing
-
-```javascript
-function parseFrontmatter(content) {
-  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/)
-  if (!frontmatterMatch) {
-    return { frontmatter: null, body: content }
-  }
-  
-  const frontmatterYaml = frontmatterMatch[1]
-  const body = frontmatterMatch[2]
-  
-  try {
-    const frontmatter = parse(frontmatterYaml)
-    return { frontmatter, body }
-  } catch (error) {
-    console.warn('Warning: Could not parse frontmatter YAML:', error)
-    return { frontmatter: null, body: content }
-  }
-}
-```
-
-### 3. Content Processing
-
-```javascript
-// Generate excerpt
-const excerpt = body.split('\n\n')[0]?.replace(/[#*]/g, '').trim().substring(0, 150) + '...'
-
-// Convert markdown to HTML
-const html = marked(body)
-
-// Remove first h1 tag (displayed separately)
-const htmlWithoutTitle = html.replace(/<h1[^>]*>.*?<\/h1>\s*/i, '')
-
-// Clean title (remove type prefixes)
-let cleanTitle = frontmatter?.title || slug
-const typePrefixes = ['Idea: ', 'Publication: ', 'Note: ']
-for (const prefix of typePrefixes) {
-  if (cleanTitle.startsWith(prefix)) {
-    cleanTitle = cleanTitle.substring(prefix.length)
-    break
-  }
-}
-```
-
-### 4. Metadata Generation
-
-```javascript
-const contentItem = {
-  slug,                    // File name without extension
-  title: cleanTitle,       // Cleaned title
-  date: frontmatter?.date || new Date().toISOString().split('T')[0],
-  readTime: frontmatter?.readTime || '1 min',
-  type: frontmatter?.type || type.slice(0, -1),
-  content: body,           // Raw markdown
-  html: htmlWithoutTitle,  // Processed HTML
-  excerpt                  // Auto-generated excerpt
-}
-```
+### 1. Content Discovery & Comparison
+ 
+ **Script:** `web/scripts/fetch-content-from-r2.ts`
+ 
+ The web build process does **not** process local markdown files directly. Instead, it interacts with the web-presence-api, which serves as the central source of truth.
+ 
+ #### Modes:
+ 
+ 1.  **Fast Fetch (Default)**: `npm run build:content`
+     *   Fetches current content metadata from `/api/content/catalog`.
+     *   Uses this metadata to generate `src/data/content-metadata.json` and static HTML files.
+     *   Fast, but requires content to be already synced to the API/database.
+ 
+ 2.  **Sync & Fetch**: `npm run build:content:sync`
+     *   Triggers a manual sync on the API: `POST /api/internal/content-sync/manual`.
+     *   The API fetches the latest markdown from **GitHub**, converts it to HTML using `mdtohtml`, and updates its database and R2 storage.
+     *   Once sync is complete, the script proceeds to fetch the fresh content.
+     *   **Note**: Requires `BUILD_API_KEY` environment variable.
+ 
+ ### 2. Frontmatter Parsing & HTML Conversion (API Side)
+ 
+ All markdown processing happens within the **API** workspace (using the `mdtohtml` shared package), specifically in `ContentProcessingService`.
+ 
+ ```typescript
+ // api/src/services/content-processing-service.ts
+ import { convertMarkdownToHtml, parseFrontmatter } from 'mdtohtml'
+ 
+ async function processContentFile(filePath, content) {
+   // 1. Parse Frontmatter
+   const { frontmatter, body } = parseFrontmatter(content)
+   
+   // 2. Convert to HTML
+   const html = convertMarkdownToHtml(body)
+   
+   // 3. Determine Access Control
+   const { isProtected, accessMode } = await determineAccessMode(filePath, frontmatter)
+   
+   return {
+     slug,
+     title,
+     html,
+     accessMode,
+     // ...
+   }
+ }
+ ```
+ 
+ ### 3. Metadata Generation
+ 
+ The API generates metadata objects that are consumed by the frontend:
+ 
+ ```typescript
+ interface ContentMetadata {
+   slug: string
+   title: string
+   date: string
+   readTime: string
+   type: string // 'note', 'publication', 'idea', 'page'
+   excerpt: string
+   // ...
+ }
+ ```
 
 ### 5. HTML Generation
 
