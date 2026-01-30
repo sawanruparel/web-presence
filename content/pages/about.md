@@ -1,11 +1,47 @@
 ---
-title: "Sawan Ruparel"
-date: "2026-01-27"
-readTime: "2 min"
-type: "page"
+title: "Current Focus: Applied Generative AI, AI + Physical Systems,"
+description: "Experienced in AI, healthcare, and physical products, focusing on applied Generative AI, AI + Physical Systems, venture building, and mentorship. Not inter"
+slug: current-focus-applied-generative-ai-ai-physical-systems
+date: 2026-01-30
+lastmod: 2026-01-30
+draft: false
+canonical_url: "http://localhost:3000/current-focus-applied-generative-ai-ai-physical-systems"
+robots: "index, follow"
+author: Editorial Team
+tags:
+- AI
+- healthcare
+- physical products
+- venture building
+- Generative AI
+- technical strategy
+reading_time: 3
+keywords:
+- applied Generative AI
+- AI + Physical Systems
+- "Venture Building & Technical Strategy"
+- "Teaching & Mentorship"
+- GenAI failures
+- hardware startups
+- good engineering
+- First Principles
+og_title: Exploring Applied Generative AI and AI in Physical Systems
+og_description: "Experienced in AI, healthcare, and physical products, specializing in applied Generative AI, AI + Physical Systems, venture building, and mentorship. Let's innovate together!"
+og_type: article
+og_url: "http://localhost:3000/current-focus-applied-generative-ai-ai-physical-systems"
+og_site_name: Rivve
+og_locale: en_US
+twitter_card: summary
+twitter_title: Exploring Applied Generative AI and AI in Physical Systems
+twitter_description: "Experienced in AI, healthcare, and physical products, specializing in applied Generative AI, AI + Physical Systems, venture building, and mentorship. Ready to innovate and inspire!"
+twitter_site: "@thisissawan"
+twitter_creator: "@thisissawan"
+lang: en-US
+schema_type: Article
+changefreq: weekly
+priority: 0.7
+layout: default
 ---
-
-# What I’m Doing Now
 
 I work on **complex, real-world systems** — often at the intersection of **AI, healthcare, and physical products** — where ideas are tested by constraints, not slides.
 

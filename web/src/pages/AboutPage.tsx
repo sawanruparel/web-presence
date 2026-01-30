@@ -21,9 +21,6 @@ export function AboutPage() {
     <main className="mx-auto max-w-2xl px-4 py-12 leading-relaxed" style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }}>
       <header>
         <h1 className="text-3xl font-semibold" style={{ color: 'var(--color-text)' }}>{aboutContent.title}</h1>
-        <p className="mt-2" style={{ color: 'var(--color-text-muted)' }}>
-          Building ventures at the intersection of AI and hardware.
-        </p>
         <PageNavigation currentPage="about" />
       </header>
 
