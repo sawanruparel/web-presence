@@ -14,7 +14,7 @@ export interface ConverterOptions extends Partial<MarkedOptions> {
  * Default converter options
  */
 const DEFAULT_OPTIONS: ConverterOptions = {
-  breaks: true,
+  breaks: false,
   gfm: true
 }
 
@@ -23,10 +23,10 @@ const DEFAULT_OPTIONS: ConverterOptions = {
  */
 export function convertMarkdownToHtml(markdown: string, options?: ConverterOptions): string {
   const opts = { ...DEFAULT_OPTIONS, ...options }
-  
+
   // Configure marked with options
   marked.setOptions(opts as MarkedOptions)
-  
+
   return marked.parse(markdown) as string
 }
 
@@ -45,19 +45,19 @@ export function removeTitleFromHtml(html: string, title: string): string {
  */
 export function generateExcerpt(content: string, maxLength: number = 160): string {
   const plainText = stripMarkdown(content)
-  
+
   if (plainText.length <= maxLength) {
     return plainText
   }
-  
+
   // Try to cut at word boundary
   const cut = plainText.substring(0, maxLength - 1)
   const lastSpace = cut.lastIndexOf(' ')
-  
+
   if (lastSpace > maxLength * 0.6) {
     return cut.substring(0, lastSpace) + '...'
   }
-  
+
   return cut + '...'
 }
 

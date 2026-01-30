@@ -120,7 +120,9 @@ export class GitHubService {
 
     try {
       // GitHub returns content as base64 encoded
-      const decoded = atob(file.content)
+      const binaryString = atob(file.content)
+      const bytes = Uint8Array.from(binaryString, c => c.charCodeAt(0))
+      const decoded = new TextDecoder('utf-8').decode(bytes)
       return decoded
     } catch (error) {
       console.error(`Error decoding file content ${path}:`, error)
