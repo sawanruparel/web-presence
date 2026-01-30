@@ -11,20 +11,20 @@ interface ContentRendererProps {
   showNavigation?: boolean
 }
 
-export function ContentRenderer({ 
-  content, 
-  contentType, 
-  slug, 
-  showHeader = true, 
-  showNavigation: _showNavigation = true 
+export function ContentRenderer({
+  content,
+  contentType,
+  slug,
+  showHeader = true,
+  showNavigation: _showNavigation = true
 }: ContentRendererProps) {
   const [isProtected, setIsProtected] = useState(false)
-  
-  const { 
-    checkAccess, 
-    verifyCredentials, 
-    fetchContent, 
-    isModalOpen, 
+
+  const {
+    checkAccess,
+    verifyCredentials,
+    fetchContent,
+    isModalOpen,
     closeModal,
     accessMode,
     isLoading: hookLoading,
@@ -97,7 +97,7 @@ export function ContentRenderer({
         }
       }
     }
-    
+
     checkContent()
   }, [content, contentType, slug, checkAccess, fetchContent])
 
@@ -140,7 +140,7 @@ export function ContentRenderer({
           {isNotFound ? 'Content Not Found' : 'Access Denied'}
         </h1>
         <p style={{ color: 'var(--color-text-muted)' }}>
-          {isNotFound 
+          {isNotFound
             ? 'The content you\'re looking for doesn\'t exist.'
             : hookError || 'You do not have access to this content.'
           }
@@ -188,13 +188,13 @@ export function ContentRenderer({
             </span>
           )}
         </h2>
-        
+
         <div className="text-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>
           {displayContent?.date} · {displayContent?.readTime}
         </div>
       </section>
 
-      <article className="prose prose-lg max-w-none" style={{ color: 'var(--color-text)' }}>
+      <article className="prose prose-lg prose-blue dark:prose-invert max-w-none">
         {displayContent?.html ? (
           <div dangerouslySetInnerHTML={{ __html: displayContent.html }} />
         ) : (
@@ -211,7 +211,7 @@ export function ContentRenderer({
         isLoading={hookLoading}
         error={hookError || undefined}
       />
-      
+
       {/* Debug info */}
       {process.env.NODE_ENV === 'development' && (
         <div style={{ position: 'fixed', top: 0, right: 0, background: 'black', color: 'white', padding: '10px', fontSize: '12px', zIndex: 9999 }}>
