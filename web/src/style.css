@@ -2,13 +2,13 @@
 @plugin '@tailwindcss/typography';
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap');
 
-@theme {
+:root {
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-serif: 'Source Serif 4', 'Charter', 'Georgia', serif;
 
   --radius-4xl: 2rem;
 
-  /* Color palette - Light mode */
+  /* Color palette - Default (Light) */
   --color-background: #ffffff;
   --color-text: #171717;
   --color-text-muted: #737373;
@@ -17,9 +17,9 @@
   --color-divider: #e5e5e5;
 }
 
-/* Dark mode support */
+/* Dark mode support - System preference or explicit class */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light) {
     --color-background: #0a0a0a;
     --color-text: #fafafa;
     --color-text-muted: #a3a3a3;
@@ -27,6 +27,15 @@
     --color-accent-hover: #93c5fd;
     --color-divider: #262626;
   }
+}
+
+:root.dark {
+  --color-background: #0a0a0a;
+  --color-text: #fafafa;
+  --color-text-muted: #a3a3a3;
+  --color-accent: #60a5fa;
+  --color-accent-hover: #93c5fd;
+  --color-divider: #262626;
 }
 
 @keyframes move-x {
