@@ -21,10 +21,10 @@ export function ContentPageWrapper({
         <h1 className="text-3xl font-semibold" style={{ color: 'var(--color-text)' }}>
           {title}
         </h1>
-        <p className="mt-2" style={{ color: 'var(--color-text-muted)' }}>
+        <PageNavigation currentPage={currentPage} />
+        <p className="mt-4 text-sm" style={{ color: 'var(--color-text-muted)' }}>
           {description}
         </p>
-        <PageNavigation currentPage={currentPage} />
       </header>
 
       {children}
