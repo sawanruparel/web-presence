@@ -38,6 +38,19 @@
   --color-divider: #262626;
 }
 
+/* Prose dark mode: apply inversion when .dark class is set (manual toggle, not media query) */
+:root.dark .prose {
+  --tw-prose-body: var(--color-text);
+  --tw-prose-headings: var(--color-text);
+  --tw-prose-bold: var(--color-text);
+  --tw-prose-links: var(--color-accent);
+  --tw-prose-code: var(--color-text);
+  --tw-prose-quotes: var(--color-text-muted);
+  --tw-prose-counters: var(--color-text-muted);
+  --tw-prose-bullets: var(--color-text-muted);
+  color: var(--color-text);
+}
+
 @keyframes move-x {
   0% {
     transform: translateX(var(--move-x-from));

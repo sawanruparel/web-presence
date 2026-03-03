@@ -195,7 +195,7 @@ export function ContentRenderer({
         </div>
       </section>
 
-      <article className="prose prose-lg prose-blue dark:prose-invert max-w-none">
+      <article className="prose prose-neutral dark:prose-invert max-w-none">
         {displayContent?.html ? (
           <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(displayContent.html) }} />
         ) : (

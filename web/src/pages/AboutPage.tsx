@@ -34,7 +34,7 @@ export function AboutPage() {
       </header>
 
       <section className="mt-10">
-        <div className="prose prose-lg prose-neutral dark:prose-invert max-w-none" style={{ color: 'var(--color-text)', fontFamily: 'var(--font-serif)', lineHeight: '1.8' }}>
+        <div className="prose prose-neutral dark:prose-invert max-w-none" style={{ color: 'var(--color-text)', fontFamily: 'var(--font-serif)' }}>
           {aboutContent.html ? (
             <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(aboutContent.html) }} />
           ) : (
