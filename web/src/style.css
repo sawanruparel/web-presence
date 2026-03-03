@@ -38,6 +38,18 @@
   --color-divider: #262626;
 }
 
+/* Tighten prose spacing: blank lines between list items cause <p> wrappers with large margins */
+.prose li > p {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Reduce horizontal rule (---) section divider spacing */
+.prose hr {
+  margin-top: 1.75rem;
+  margin-bottom: 1.75rem;
+}
+
 /* Prose dark mode: apply inversion when .dark class is set (manual toggle, not media query) */
 :root.dark .prose {
   --tw-prose-body: var(--color-text);
