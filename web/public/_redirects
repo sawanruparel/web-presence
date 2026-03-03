@@ -1,0 +1,11 @@
+/ /index.html 200
+/about /index.html 200
+/contact /index.html 200
+/notes /index.html 200
+/publications /index.html 200
+/ideas /index.html 200
+/notes/* /index.html 200
+/publications/* /index.html 200
+/ideas/* /index.html 200
+/admin/* /index.html 200
+/* /404.html 404

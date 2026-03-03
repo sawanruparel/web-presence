@@ -19,6 +19,7 @@ export interface ProcessedContent {
   content: string
   html: string
   excerpt: string
+  draft: boolean
   isProtected: boolean
   accessMode: 'open' | 'password' | 'email-list'
   requiresPassword: boolean
@@ -99,6 +100,7 @@ export class ContentProcessingService {
       content: body,
       html: removeTitleFromHtml(html, cleanTitle),
       excerpt,
+      draft: frontmatter?.draft === true,
       isProtected,
       accessMode,
       requiresPassword: accessMode === 'password',
@@ -232,6 +234,11 @@ export class ContentProcessingService {
     const metadata: Record<string, ContentMetadata[]> = {}
 
     for (const content of processedContent) {
+      // Skip drafts — they should never be published
+      if (content.draft) {
+        console.log(`⏭️  Skipping draft: ${content.type}/${content.slug}`)
+        continue
+      }
       if (!content.isProtected) {
         if (!metadata[content.type]) {
           metadata[content.type] = []
@@ -260,6 +267,7 @@ export class ContentProcessingService {
     const metadata: Record<string, ProtectedContentMetadata[]> = {}
 
     for (const content of processedContent) {
+      if (content.draft) continue // Never publish drafts, even to protected bucket
       if (content.isProtected) {
         if (!metadata[content.type]) {
           metadata[content.type] = []

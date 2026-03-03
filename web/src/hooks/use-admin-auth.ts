@@ -39,16 +39,18 @@ function isTokenValid(token: string): boolean {
 }
 
 /**
- * Get admin token from localStorage
+ * Get admin token from sessionStorage.
+ * sessionStorage is tab-scoped and not accessible across origins,
+ * making it safer than localStorage for admin session tokens.
  */
 function getAdminToken(): string | null {
-  const token = localStorage.getItem(ADMIN_TOKEN_KEY)
+  const token = sessionStorage.getItem(ADMIN_TOKEN_KEY)
   if (!token) {
     return null
   }
   
   if (!isTokenValid(token)) {
-    localStorage.removeItem(ADMIN_TOKEN_KEY)
+    sessionStorage.removeItem(ADMIN_TOKEN_KEY)
     return null
   }
   
@@ -56,17 +58,17 @@ function getAdminToken(): string | null {
 }
 
 /**
- * Store admin token in localStorage
+ * Store admin token in sessionStorage (tab-scoped, cleared on tab close)
  */
 function storeAdminToken(token: string): void {
-  localStorage.setItem(ADMIN_TOKEN_KEY, token)
+  sessionStorage.setItem(ADMIN_TOKEN_KEY, token)
 }
 
 /**
- * Remove admin token from localStorage
+ * Remove admin token from sessionStorage
  */
 function clearAdminToken(): void {
-  localStorage.removeItem(ADMIN_TOKEN_KEY)
+  sessionStorage.removeItem(ADMIN_TOKEN_KEY)
 }
 
 /**

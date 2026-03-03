@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async'
 import type { ContentItem } from '../utils/content-processor'
 import { ContentPageWrapper } from '../components/ContentPageWrapper'
 import { ContentRenderer } from '../components/ContentRenderer'
@@ -9,6 +10,12 @@ interface ContentPageProps {
 }
 
 export function ContentPage({ content, type, slug }: ContentPageProps) {
+  const pageTitle = content?.title
+    ? `${content.title} — Sawan Ruparel`
+    : `${type.charAt(0).toUpperCase() + type.slice(1)} — Sawan Ruparel`
+  const pageDescription = content?.excerpt || ''
+  const pageUrl = `https://sawanruparel.com/${type}/${slug}`
+
   return (
     <ContentPageWrapper
       currentPage={type}
@@ -19,6 +26,15 @@ export function ContentPage({ content, type, slug }: ContentPageProps) {
         'Concepts and explorations in technology and design.'
       }
     >
+      <Helmet>
+        <title>{pageTitle}</title>
+        {pageDescription && <meta name="description" content={pageDescription} />}
+        <meta property="og:title" content={pageTitle} />
+        {pageDescription && <meta property="og:description" content={pageDescription} />}
+        <meta property="og:url" content={pageUrl} />
+        <meta property="og:type" content="article" />
+        {content?.date && <meta property="article:published_time" content={content.date} />}
+      </Helmet>
       <ContentRenderer
         content={content}
         contentType={type}

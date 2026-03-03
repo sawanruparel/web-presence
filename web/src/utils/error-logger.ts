@@ -39,9 +39,6 @@ class ErrorLogger {
     // In production, you would typically send to an error reporting service
     // For now, we'll just log to console
     console.error('Production Error:', errorData)
-
-    // TODO: Integrate with error reporting service like Sentry, LogRocket, etc.
-    // Example: Sentry.captureException(error, { extra: errorData })
   }
 
   logNetworkError(error: Error, url: string, method: string = 'GET'): void {

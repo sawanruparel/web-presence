@@ -2,8 +2,7 @@ import { Plugin } from 'vite'
 import fs from 'fs'
 import path from 'path'
 import { generateHTMLTemplate, processRivveHTML, ContentData } from './html-template'
-import { marked } from 'marked'
-import { parse } from 'yaml'
+import { convertMarkdownToHtml, parseFrontmatter, type Frontmatter } from '../../mdtohtml/src/index.ts'
 
 export interface HTMLPagesPluginOptions {
   contentDir: string
@@ -11,60 +10,65 @@ export interface HTMLPagesPluginOptions {
   rivveOutputDir: string
 }
 
-function parseFrontmatter(content: string) {
-  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/)
-  
-  if (!frontmatterMatch) {
-    return { frontmatter: null, body: content }
-  }
-  
-  const frontmatterYaml = frontmatterMatch[1]
-  const body = frontmatterMatch[2]
-  
-  try {
-    const frontmatter = parse(frontmatterYaml)
-    return { frontmatter, body }
-  } catch (error) {
-    console.warn('Warning: Could not parse frontmatter YAML:', error)
-    return { frontmatter: null, body: content }
-  }
+interface ContentItem {
+  slug: string
+  title: string
+  date: string
+  readTime: string
+  type: string
+  content: string
+  html: string
+  excerpt: string
 }
 
-export function generateContentMetadata(contentDir: string, rivveOutputDir: string) {
-  const allContent = {}
-  const contentMetadata = {}
+interface ContentMetadataMap {
+  notes: ContentItem[]
+  publications: ContentItem[]
+  ideas: ContentItem[]
+  pages: ContentItem[]
+  latest: ContentItem[]
+}
+
+type ParsedFrontmatter = Frontmatter
+
+export function generateContentMetadata(contentDir: string, _rivveOutputDir: string): ContentMetadataMap {
+  const contentMetadata: Record<string, ContentItem[]> = {}
   const contentTypes = ['notes', 'publications', 'ideas', 'pages']
 
   contentTypes.forEach(type => {
     const typeDir = path.join(contentDir, type)
-    
+
     if (!fs.existsSync(typeDir)) {
-      allContent[type] = []
       contentMetadata[type] = []
       return
     }
 
     const files = fs.readdirSync(typeDir).filter(file => file.endsWith('.md'))
-    const typeContent = []
-    const typeMetadata = []
+    const typeItems: ContentItem[] = []
 
     files.forEach(file => {
       const slug = file.replace('.md', '')
       const filePath = path.join(typeDir, file)
       const fileContents = fs.readFileSync(filePath, 'utf8')
       const { frontmatter, body } = parseFrontmatter(fileContents)
-      
+
+      // Skip drafts — never include in build output
+      if (frontmatter?.draft === true) {
+        console.log(`⏭️  Skipping draft: ${type}/${slug}`)
+        return
+      }
+
       // Generate excerpt
       const excerpt = body.split('\n\n')[0]?.replace(/[#*]/g, '').trim().substring(0, 150) + '...'
-      
+
       // Convert markdown to HTML
-      const html = marked(body)
-      
+      const html = convertMarkdownToHtml(body)
+
       // Remove the first h1 tag from HTML since we'll display the title separately
       const htmlWithoutTitle = html.replace(/<h1[^>]*>.*?<\/h1>\s*/i, '')
-      
+
       // Clean up title by removing type prefixes
-      let cleanTitle = frontmatter?.title || slug
+      let cleanTitle = (frontmatter?.title as string) || slug
       const typePrefixes = ['Idea: ', 'Publication: ', 'Note: ']
       for (const prefix of typePrefixes) {
         if (cleanTitle.startsWith(prefix)) {
@@ -73,46 +77,37 @@ export function generateContentMetadata(contentDir: string, rivveOutputDir: stri
         }
       }
 
-      const contentItem = {
+      typeItems.push({
         slug,
         title: cleanTitle,
-        date: frontmatter?.date || new Date().toISOString().split('T')[0],
-        readTime: frontmatter?.readTime || '1 min',
-        type: frontmatter?.type || type.slice(0, -1),
+        date: (frontmatter?.date as string) || new Date().toISOString().split('T')[0],
+        readTime: frontmatter?.reading_time ? `${frontmatter.reading_time} min` : '1 min',
+        type: (frontmatter?.type as string) || type.slice(0, -1),
         content: body,
         html: htmlWithoutTitle,
         excerpt
-      }
-
-      typeContent.push(contentItem)
-      typeMetadata.push({
-        slug,
-        title: contentItem.title,
-        date: contentItem.date,
-        readTime: contentItem.readTime,
-        type: contentItem.type,
-        excerpt: contentItem.excerpt,
-        content: contentItem.content,
-        html: contentItem.html
       })
     })
 
-    allContent[type] = typeContent.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    contentMetadata[type] = typeMetadata.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    contentMetadata[type] = typeItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   })
 
   return {
-    notes: contentMetadata.notes,
-    publications: contentMetadata.publications,
-    ideas: contentMetadata.ideas,
-    pages: contentMetadata.pages,
-    latest: [...contentMetadata.notes, ...contentMetadata.publications, ...contentMetadata.ideas]
+    notes: contentMetadata['notes'] ?? [],
+    publications: contentMetadata['publications'] ?? [],
+    ideas: contentMetadata['ideas'] ?? [],
+    pages: contentMetadata['pages'] ?? [],
+    latest: [
+      ...(contentMetadata['notes'] ?? []),
+      ...(contentMetadata['publications'] ?? []),
+      ...(contentMetadata['ideas'] ?? [])
+    ]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 3)
   }
 }
 
-export function generateRivveHTMLFiles(contentDir: string, rivveOutputDir: string) {
+export function generateRivveHTMLFiles(contentDir: string, rivveOutputDir: string): void {
   // Ensure rivve output directory exists
   if (!fs.existsSync(rivveOutputDir)) {
     fs.mkdirSync(rivveOutputDir, { recursive: true })
@@ -122,7 +117,7 @@ export function generateRivveHTMLFiles(contentDir: string, rivveOutputDir: strin
 
   contentTypes.forEach(type => {
     const typeDir = path.join(contentDir, type)
-    
+
     if (!fs.existsSync(typeDir)) {
       return
     }
@@ -134,7 +129,13 @@ export function generateRivveHTMLFiles(contentDir: string, rivveOutputDir: strin
       const filePath = path.join(typeDir, file)
       const fileContents = fs.readFileSync(filePath, 'utf8')
       const { frontmatter, body } = parseFrontmatter(fileContents)
-      
+
+      // Skip drafts
+      if (frontmatter?.draft === true) {
+        console.log(`⏭️  Skipping draft rivve HTML: ${type}/${slug}`)
+        return
+      }
+
       // Generate rivve HTML
       const rivveHtml = generateRivveHTML(frontmatter, body, slug)
       const htmlFile = path.join(rivveOutputDir, `${slug}.html`)
@@ -143,19 +144,19 @@ export function generateRivveHTMLFiles(contentDir: string, rivveOutputDir: strin
   })
 }
 
-function generateRivveHTML(frontmatter: any, body: string, slug: string): string {
+function generateRivveHTML(frontmatter: ParsedFrontmatter | null, body: string, slug: string): string {
   const title = frontmatter?.title || slug
   const description = frontmatter?.description || ''
   const author = Array.isArray(frontmatter?.author) 
     ? frontmatter.author.join(', ') 
     : frontmatter?.author || 'Unknown Author'
   
-  const tags = frontmatter?.tags || []
-  const categories = frontmatter?.categories || []
-  const keywords = frontmatter?.keywords || []
+  const tags = (frontmatter?.tags as string[]) || []
+  const categories = (frontmatter?.categories as string[]) || []
+  const keywords = (frontmatter?.keywords as string[]) || []
   
   // Convert markdown to HTML
-  const htmlContent = marked(body)
+  const htmlContent = convertMarkdownToHtml(body)
   
   return `<!DOCTYPE html>
 <html lang="${frontmatter?.lang || 'en'}">
@@ -349,8 +350,8 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
         
         // Read from src/data which was populated by build:content step
         const srcMetadataPath = path.join(__dirname, '..', 'src', 'data', 'content-metadata.json')
-        const metadata = fs.existsSync(srcMetadataPath) 
-          ? JSON.parse(fs.readFileSync(srcMetadataPath, 'utf-8'))
+        const metadata: ContentMetadataMap = fs.existsSync(srcMetadataPath)
+          ? JSON.parse(fs.readFileSync(srcMetadataPath, 'utf-8')) as ContentMetadataMap
           : generateContentMetadata(contentDir, rivveOutputDir)
         
         // Process each content type
@@ -381,7 +382,7 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
             fs.mkdirSync(typeDir, { recursive: true })
           }
           
-          typeContent.forEach((item: any) => {
+          typeContent.forEach((item: ContentItem) => {
             const { slug } = item
             
             // Try to find rivve HTML file
@@ -404,13 +405,17 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
           })
         })
         
-        // Generate index page
+        // Generate index page (uses the metadata map for context if needed)
         generateIndexPage(outputDir, metadata, jsAsset, cssAsset)
         
         // Copy content metadata to dist directory
         const metadataPath = path.join(outputDir, 'content-metadata.json')
         fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2))
         console.log('Copied content-metadata.json to dist directory')
+
+        // Generate robots.txt from build-time protected route data
+        generateRobotsTxt(outputDir)
+        console.log('Generated robots.txt in dist directory')
         
       } catch (error) {
         console.error('Error generating HTML pages:', error)
@@ -419,7 +424,41 @@ export function htmlPagesPlugin(options: HTMLPagesPluginOptions): Plugin {
   }
 }
 
-function generateIndexPage(outputDir: string, metadata: any, jsAsset?: string, cssAsset?: string) {
+function generateRobotsTxt(outputDir: string): void {
+  const protectedRoutesPath = path.join(__dirname, '..', 'src', 'data', 'protected-routes.json')
+  let protectedRoutes: string[] = []
+
+  if (fs.existsSync(protectedRoutesPath)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(protectedRoutesPath, 'utf-8'))
+      if (Array.isArray(parsed)) {
+        protectedRoutes = Array.from(new Set(parsed.filter((route): route is string => typeof route === 'string'))).sort()
+      }
+    } catch (error) {
+      console.warn('Could not parse protected-routes.json for robots generation:', error)
+    }
+  }
+
+  const lines = [
+    'User-agent: *',
+    'Allow: /',
+    '',
+    '# Never index admin pages',
+    'Disallow: /admin/'
+  ]
+
+  if (protectedRoutes.length > 0) {
+    lines.push('', '# Protected content paths (generated at build time)')
+    for (const route of protectedRoutes) {
+      lines.push(`Disallow: ${route}`)
+    }
+  }
+
+  lines.push('')
+  fs.writeFileSync(path.join(outputDir, 'robots.txt'), lines.join('\n'))
+}
+
+function generateIndexPage(outputDir: string, _metadata: ContentMetadataMap, jsAsset?: string, cssAsset?: string) {
   // Use actual asset paths if provided, otherwise fall back to dev paths
   const jsPath = jsAsset || '/src/main.tsx'
   const cssPath = cssAsset || '/src/style.css'

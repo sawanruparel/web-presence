@@ -9,6 +9,9 @@ import { useAdminAuth } from '../hooks/use-admin-auth'
 import { adminApiClient, type ContentOverviewItem } from '../utils/admin-api-client'
 import { AdminLogin } from '../components/admin-login'
 import { navigateTo } from '../utils/router'
+import { DeleteConfirmModal } from '../components/admin/DeleteConfirmModal'
+import { EditAccessModal, type EditFormState } from '../components/admin/EditAccessModal'
+import { ContentFilterBar } from '../components/admin/ContentFilterBar'
 
 export function AdminContentPage() {
   const { isAuthenticated, isLoading: authLoading, getToken, logout } = useAdminAuth()
@@ -29,12 +32,7 @@ export function AdminContentPage() {
   
   // Edit modal state
   const [editItem, setEditItem] = useState<ContentOverviewItem | null>(null)
-  const [editForm, setEditForm] = useState<{
-    accessMode: 'open' | 'password' | 'email-list'
-    description: string
-    password: string
-    allowedEmails: string
-  } | null>(null)
+  const [editForm, setEditForm] = useState<EditFormState | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
   // Redirect to login if not authenticated
@@ -410,53 +408,14 @@ export function AdminContentPage() {
         )}
 
         {/* Filters */}
-        <div className="mb-4 flex flex-wrap gap-4 items-center">
-          <div className="flex-1 min-w-[200px]">
-            <input
-              type="text"
-              placeholder="Search by type, slug, or description..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
-              style={{ 
-                backgroundColor: 'var(--color-background)', 
-                color: 'var(--color-text)',
-                borderColor: 'var(--color-border)'
-              }}
-            />
-          </div>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-2 border rounded-md"
-            style={{ 
-              backgroundColor: 'var(--color-background)', 
-              color: 'var(--color-text)',
-              borderColor: 'var(--color-border)'
-            }}
-          >
-            <option value="all">All Types</option>
-            <option value="notes">Notes</option>
-            <option value="ideas">Ideas</option>
-            <option value="publications">Publications</option>
-            <option value="pages">Pages</option>
-          </select>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 border rounded-md"
-            style={{ 
-              backgroundColor: 'var(--color-background)', 
-              color: 'var(--color-text)',
-              borderColor: 'var(--color-border)'
-            }}
-          >
-            <option value="all">All Status</option>
-            <option value="aligned">Aligned</option>
-            <option value="github-only">GitHub Only</option>
-            <option value="database-only">Database Only</option>
-          </select>
-        </div>
+        <ContentFilterBar
+          searchQuery={searchQuery}
+          filterType={filterType}
+          filterStatus={filterStatus}
+          onSearchChange={setSearchQuery}
+          onTypeChange={setFilterType}
+          onStatusChange={setFilterStatus}
+        />
 
         {/* Error Message */}
         {error && (
@@ -559,7 +518,7 @@ export function AdminContentPage() {
                           <div className="mb-1 flex items-center gap-2">
                             {getAccessModeBadge(item.database.accessMode)}
                             {item.database.needsRebuild && (
-                              <span 
+                              <span
                                 className="px-2 py-1 text-xs font-medium rounded-full"
                                 style={{ backgroundColor: 'rgba(234, 179, 8, 0.1)', color: '#eab308' }}
                                 title="Database rule updated after last build - rebuild needed"
@@ -592,7 +551,13 @@ export function AdminContentPage() {
                           )}
                         </div>
                       ) : (
-                        <span style={{ color: 'var(--color-text-muted)' }}>No rule</span>
+                        <span
+                          className="px-2 py-1 text-xs font-medium rounded"
+                          style={{ backgroundColor: 'rgba(234, 179, 8, 0.15)', color: '#ca8a04' }}
+                          title="No access rule set — content defaults to open. Add a rule to make it explicit."
+                        >
+                          ⚠ No rule (defaults open)
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text)' }}>
@@ -666,190 +631,26 @@ export function AdminContentPage() {
 
         {/* Delete Confirmation Modal */}
         {deleteConfirm && (
-          <div 
-            className="fixed inset-0 flex items-center justify-center z-50"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-            onClick={handleDeleteCancel}
-          >
-            <div 
-              className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4"
-              style={{ 
-                backgroundColor: 'var(--color-background)',
-                border: '1px solid var(--color-border)'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
-                Confirm Delete
-              </h3>
-              {error && (
-                <div className="mb-4 p-3 rounded-md" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                  <p className="text-sm" style={{ color: 'var(--color-error, #dc2626)' }}>{error}</p>
-                </div>
-              )}
-              <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
-                Are you sure you want to delete the access rule for{' '}
-                <strong style={{ color: 'var(--color-text)' }}>
-                  {deleteConfirm.type}/{deleteConfirm.slug}
-                </strong>?
-                This action cannot be undone.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={handleDeleteCancel}
-                  disabled={isDeleting}
-                  className="px-4 py-2 text-sm font-medium rounded border"
-                  style={{ 
-                    color: 'var(--color-text)', 
-                    borderColor: 'var(--color-border)',
-                    backgroundColor: 'var(--color-background)'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteConfirm}
-                  disabled={isDeleting}
-                  className="px-4 py-2 text-sm font-medium rounded text-white"
-                  style={{ 
-                    backgroundColor: isDeleting ? '#9ca3af' : '#ef4444'
-                  }}
-                >
-                  {isDeleting ? 'Deleting...' : 'Delete'}
-                </button>
-              </div>
-            </div>
-          </div>
+          <DeleteConfirmModal
+            target={deleteConfirm}
+            isDeleting={isDeleting}
+            error={error}
+            onCancel={handleDeleteCancel}
+            onConfirm={handleDeleteConfirm}
+          />
         )}
 
         {/* Edit Modal */}
         {editItem && editForm && (
-          <div 
-            className="fixed inset-0 flex items-center justify-center z-50"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-            onClick={handleEditCancel}
-          >
-            <div 
-              className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
-              style={{ 
-                backgroundColor: 'var(--color-background)',
-                border: '1px solid var(--color-border)'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
-                {editItem.database.exists ? 'Edit' : 'Create'} Access Rule: {editItem.type}/{editItem.slug}
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
-                    Access Mode
-                  </label>
-                  <select
-                    value={editForm.accessMode}
-                    onChange={(e) => setEditForm({ ...editForm, accessMode: e.target.value as 'open' | 'password' | 'email-list' })}
-                    className="w-full px-3 py-2 border rounded-md"
-                    style={{ 
-                      backgroundColor: 'var(--color-background)', 
-                      color: 'var(--color-text)',
-                      borderColor: 'var(--color-border)'
-                    }}
-                  >
-                    <option value="open">Open</option>
-                    <option value="password">Password</option>
-                    <option value="email-list">Email List</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
-                    Description
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.description}
-                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md"
-                    style={{ 
-                      backgroundColor: 'var(--color-background)', 
-                      color: 'var(--color-text)',
-                      borderColor: 'var(--color-border)'
-                    }}
-                    placeholder="Optional description"
-                  />
-                </div>
-
-                {editForm.accessMode === 'password' && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
-                      Password {editItem.database.exists ? '(leave blank to keep current)' : '(required)'}
-                    </label>
-                    <input
-                      type="password"
-                      value={editForm.password}
-                      onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-md"
-                      style={{ 
-                        backgroundColor: 'var(--color-background)', 
-                        color: 'var(--color-text)',
-                        borderColor: 'var(--color-border)'
-                      }}
-                      placeholder="Enter new password"
-                    />
-                  </div>
-                )}
-
-                {editForm.accessMode === 'email-list' && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
-                      Allowed Emails (one per line)
-                    </label>
-                    <textarea
-                      value={editForm.allowedEmails}
-                      onChange={(e) => setEditForm({ ...editForm, allowedEmails: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-md font-mono text-sm"
-                      style={{ 
-                        backgroundColor: 'var(--color-background)', 
-                        color: 'var(--color-text)',
-                        borderColor: 'var(--color-border)'
-                      }}
-                      rows={6}
-                      placeholder="user@example.com&#10;admin@example.com"
-                    />
-                    <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                      Enter one email address per line
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-3 justify-end mt-6">
-                <button
-                  onClick={handleEditCancel}
-                  disabled={isSaving}
-                  className="px-4 py-2 text-sm font-medium rounded border"
-                  style={{ 
-                    color: 'var(--color-text)', 
-                    borderColor: 'var(--color-border)',
-                    backgroundColor: 'var(--color-background)'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleEditSave}
-                  disabled={isSaving}
-                  className="px-4 py-2 text-sm font-medium rounded text-white"
-                  style={{ 
-                    backgroundColor: isSaving ? '#9ca3af' : '#3b82f6'
-                  }}
-                >
-                  {isSaving ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </div>
-          </div>
+          <EditAccessModal
+            item={editItem}
+            form={editForm}
+            isSaving={isSaving}
+            error={error}
+            onChange={setEditForm}
+            onCancel={handleEditCancel}
+            onSave={handleEditSave}
+          />
         )}
       </div>
     </div>

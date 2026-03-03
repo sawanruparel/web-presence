@@ -10,6 +10,7 @@ import { ContentPage } from './pages/ContentPage'
 import { AdminContentPage } from './pages/AdminContentPage'
 import { AdminBuildLogsPage } from './pages/AdminBuildLogsPage'
 import { AdminContentSyncPage } from './pages/AdminContentSyncPage'
+import { NotFoundPage } from './pages/NotFoundPage'
 
 function renderPage(pageData: PageData) {
   switch (pageData.type) {
@@ -31,8 +32,10 @@ function renderPage(pageData: PageData) {
       return <AdminBuildLogsPage />
     case 'admin-content-sync':
       return <AdminContentSyncPage />
+    case '404':
+      return <NotFoundPage />
     default:
-      return <AboutPage />
+      return <NotFoundPage />
   }
 }
 

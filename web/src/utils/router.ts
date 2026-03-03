@@ -66,8 +66,8 @@ export function getCurrentPage(): PageData {
     }
   }
 
-  // 404 - return about for now
-  return { type: 'about', data: {} }
+  // 404 - unknown route
+  return { type: '404', data: {} }
 }
 
 export function navigateTo(path: string) {

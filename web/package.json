@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "npm run build:content && vite",
+    "seed:content": "tsx scripts/seed-content.ts",
+    "dev:local": "npm run seed:content && vite",
+    "preview:content": "tsx ../scripts/preview-content.ts",
     "build": "npm run clean && npm run build:content:sync && tsc && vite build",
     "build:content": "tsx scripts/fetch-content-from-r2.ts",
     "build:content:sync": "tsx scripts/fetch-content-from-r2.ts --sync",
@@ -18,14 +21,17 @@
     "@headlessui/react": "^2.2.6",
     "@heroicons/react": "^2.2.0",
     "clsx": "^2.1.1",
+    "dompurify": "^3.3.1",
     "framer-motion": "^12.23.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-helmet-async": "^2.0.5",
     "yaml": "^2.8.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.11",
     "@tailwindcss/typography": "^0.5.19",
+    "@types/dompurify": "^3.0.5",
     "@types/marked": "^5.0.2",
     "@types/node": "^24.7.2",
     "@types/react": "^18.2.0",

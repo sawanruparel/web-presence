@@ -36,6 +36,53 @@ interface FetchOptions {
   outputDir: string
 }
 
+interface ContentAccessRule {
+  type: string
+  slug: string
+  accessMode: 'open' | 'password' | 'email-list'
+}
+
+function normalizeRouteType(type: string): string {
+  const lower = type.toLowerCase()
+  const map: Record<string, string> = {
+    note: 'notes',
+    notes: 'notes',
+    publication: 'publications',
+    publications: 'publications',
+    idea: 'ideas',
+    ideas: 'ideas',
+    page: 'pages',
+    pages: 'pages'
+  }
+  return map[lower] || lower
+}
+
+function accessRuleToPath(rule: ContentAccessRule): string {
+  const type = normalizeRouteType(rule.type)
+  if (type === 'pages') {
+    return `/${rule.slug}`
+  }
+  return `/${type}/${rule.slug}`
+}
+
+function extractProtectedRoutes(rules: ContentAccessRule[]): string[] {
+  return Array.from(
+    new Set(
+      rules
+        .filter((rule) => rule.accessMode !== 'open')
+        .map(accessRuleToPath)
+    )
+  ).sort()
+}
+
+function writeProtectedRoutes(srcDataDir: string, routes: string[]): void {
+  const payload = JSON.stringify(routes, null, 2)
+
+  const srcProtectedRoutesPath = path.join(srcDataDir, 'protected-routes.json')
+
+  fs.writeFileSync(srcProtectedRoutesPath, payload)
+}
+
 /**
  * Transform raw content items to match ContentItem interface
  */
@@ -194,10 +241,15 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
       })
     }
 
-    // Filter metadata to only include public content (accessMode === 'open')
+    // Filter metadata to only include public, non-draft content
     // Database is the single source of truth for access control
     const filterPublicContent = (items: any[], type: string): any[] => {
       return items.filter(item => {
+        // Never include drafts in the public build
+        if (item.draft === true) {
+          console.log(`📝 Filtering out draft: ${type}/${item.slug}`)
+          return false
+        }
         const key = `${type}/${item.slug}`
         const accessMode = accessRules.get(key)
         // Only include if accessMode is 'open' or not in database (default to open for backwards compatibility)
@@ -208,6 +260,11 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
         return isPublic
       })
     }
+
+    const protectedRoutes = extractProtectedRoutes(
+      (catalogData.content || []) as ContentAccessRule[]
+    )
+    console.log(`🤖 Protected routes for robots generation: ${protectedRoutes.length}`)
 
     // Transform metadata to match ContentList interface
     // Metadata uses plural keys: notes, ideas, pages, publications
@@ -257,6 +314,9 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
     if (!fs.existsSync(srcDataDir)) {
       fs.mkdirSync(srcDataDir, { recursive: true })
     }
+
+    writeProtectedRoutes(srcDataDir, protectedRoutes)
+    console.log('✅ Wrote protected-routes.json in src/data')
 
     // Create type directories in dist
     const contentTypes = ['notes', 'ideas', 'publications', 'pages']
@@ -345,6 +405,9 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
     if (!fs.existsSync(srcDataDir)) {
       fs.mkdirSync(srcDataDir, { recursive: true })
     }
+
+    writeProtectedRoutes(srcDataDir, [])
+    console.log('✅ Wrote empty protected-routes.json fallback')
 
     // Write fallback metadata
     const metadataJson = JSON.stringify(fallbackMetadata, null, 2)

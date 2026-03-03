@@ -15,7 +15,6 @@ export function useTheme() {
 
     useEffect(() => {
         const root = document.documentElement;
-        const systemQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
         // Function to apply the correct class
         const applyTheme = () => {

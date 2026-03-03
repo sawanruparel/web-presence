@@ -52,8 +52,8 @@ Each TDR follows this structure:
 ### 005 - Build System
 - **File**: `005-build-system.md`
 - **Status**: Accepted
-- **Date**: October 16, 2025
-- **Summary**: Decision to use Vite as the build tool with custom plugins for content processing and static HTML generation.
+- **Date**: March 3, 2026
+- **Summary**: Decision to harden publishing/build behavior (draft filtering, robots generation, sanitation, mdtohtml consolidation, and static 404 support).
 
 ## Creating New TDRs
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { ContentItem } from '../utils/content-processor'
 import { useProtectedContent } from '../hooks/use-protected-content'
 import { AccessModal } from './access-modal'
+import { sanitizeHtml } from '../utils/sanitize-html'
 
 interface ContentRendererProps {
   content: ContentItem | null
@@ -196,7 +197,7 @@ export function ContentRenderer({
 
       <article className="prose prose-lg prose-blue dark:prose-invert max-w-none">
         {displayContent?.html ? (
-          <div dangerouslySetInnerHTML={{ __html: displayContent.html }} />
+          <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(displayContent.html) }} />
         ) : (
           <div className="whitespace-pre-wrap">{displayContent?.content}</div>
         )}
