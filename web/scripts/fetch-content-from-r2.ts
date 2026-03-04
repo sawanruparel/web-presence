@@ -104,6 +104,7 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
 
   // Check if sync is requested
   const shouldSync = process.argv.includes('--sync')
+  const strictSync = process.env.BUILD_CONTENT_SYNC_STRICT === 'true'
 
   if (shouldSync) {
     console.log('🔄 Triggering content sync before fetch...')
@@ -120,17 +121,24 @@ export async function fetchContentFromR2(options: FetchOptions): Promise<void> {
       })
 
       if (!syncResponse.ok) {
-        throw new Error(`Sync failed with status: ${syncResponse.status} ${syncResponse.statusText}`)
+        const syncError = new Error(`Sync failed with status: ${syncResponse.status} ${syncResponse.statusText}`)
+        if (strictSync) {
+          throw syncError
+        }
+        console.warn(`⚠️  Content sync skipped (non-fatal): ${syncError.message}`)
+      } else {
+        const syncResult = await syncResponse.json()
+        console.log('✅ Content sync completed successfully')
+        console.log('📊 Sync result:', JSON.stringify(syncResult, null, 2))
       }
-
-      const syncResult = await syncResponse.json()
-      console.log('✅ Content sync completed successfully')
-      console.log('📊 Sync result:', JSON.stringify(syncResult, null, 2))
     } catch (error) {
-      console.error('❌ Failed to sync content:', error)
-      // We decide here if sync failure should stop the build. 
-      // Usually yes, if explicit sync was requested.
-      throw error
+      if (strictSync) {
+        console.error('❌ Failed to sync content:', error)
+        throw error
+      }
+      console.warn(
+        `⚠️  Content sync endpoint unavailable; continuing with metadata fetch (${error instanceof Error ? error.message : 'unknown error'})`
+      )
     }
   }
 
