@@ -33,11 +33,11 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-12 text-sm flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center sm:gap-0" style={{ color: 'var(--color-text-muted)' }}>
-      <span>© {year} · built by cursor, chatgpt, gemini.</span>
+    <footer className="site-footer" style={{ color: 'var(--color-text-muted)' }}>
+      <span>© {year} Sawan Ruparel.</span>
       <div className="flex items-center gap-4">
         <ThemeSwitcher />
-        <div className="w-px h-4 bg-gray-300 dark:bg-gray-700" />
+        <div className="w-px h-4 bg-gray-300 dark:bg-gray-700" aria-hidden="true" />
         <a href="/rss" className="hover:underline">RSS</a>
         <a href="/resume" className="hover:underline">Resume</a>
         <a href="https://linkedin.com/in/sawanruparel" className="hover:underline" target="_blank" rel="noopener noreferrer">LinkedIn</a>

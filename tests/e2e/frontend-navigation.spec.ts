@@ -17,6 +17,10 @@ test.describe('Frontend Navigation', () => {
   test('should navigate to different content sections', async ({ page }) => {
     await page.goto('/');
 
+    // Navigate to start here section
+    await page.click('a[href="/start-here"]');
+    await expect(page).toHaveURL(/\/start-here/);
+
     // Navigate to ideas section
     await page.click('a[href="/ideas"]');
     await expect(page).toHaveURL(/\/ideas/);
@@ -47,6 +51,13 @@ test.describe('Frontend Navigation', () => {
     const firstCard = contentCards.first();
     await expect(firstCard.locator('h2')).toBeVisible();
     await expect(firstCard.locator('p').first()).toBeVisible();
+  });
+
+  test('should keep systems playbook route compatibility', async ({ page }) => {
+    await page.goto('/notes');
+
+    await expect(page).toHaveURL(/\/notes/);
+    await expect(page.locator('h1')).toContainText('Systems Playbook');
   });
 
   test('should handle responsive design', async ({ page }) => {

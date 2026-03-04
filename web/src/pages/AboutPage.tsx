@@ -1,26 +1,29 @@
 import { Helmet } from 'react-helmet-async'
-import { Footer } from '../components/footer'
-import { PageNavigation } from '../components/page-navigation'
 import { getPageBySlug } from '../utils/content-processor'
 import { sanitizeHtml } from '../utils/sanitize-html'
+import { PageShell } from '../components/PageShell'
+import { AuthoritySignals } from '../components/AuthoritySignals'
 
 export function AboutPage() {
   const aboutContent = getPageBySlug('about')
 
   if (!aboutContent) {
     return (
-      <main className="mx-auto max-w-2xl px-4 py-12 leading-relaxed" style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }}>
+      <PageShell currentPage="about" title="About" description="Applied systems work across AI, healthcare, and physical products.">
         <div className="text-center">
           <h1 className="text-2xl font-semibold mb-4">Page not found</h1>
           <p>Sorry, the about page content could not be loaded.</p>
         </div>
-        <Footer />
-      </main>
+      </PageShell>
     )
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 leading-relaxed" style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }}>
+    <PageShell
+      currentPage="about"
+      title={aboutContent.title}
+      description="Applied systems work where deployment constraints, incentives, and real-world reliability matter."
+    >
       <Helmet>
         <title>Sawan Ruparel</title>
         <meta name="description" content={aboutContent.excerpt || 'Personal site of Sawan Ruparel — notes, publications, and ideas.'} />
@@ -28,12 +31,7 @@ export function AboutPage() {
         <meta property="og:description" content={aboutContent.excerpt || 'Personal site of Sawan Ruparel.'} />
         <meta property="og:url" content="https://sawanruparel.com/" />
       </Helmet>
-      <header>
-        <h1 className="text-3xl font-semibold" style={{ color: 'var(--color-text)' }}>{aboutContent.title}</h1>
-        <PageNavigation currentPage="about" />
-      </header>
-
-      <section className="mt-10">
+      <section>
         <div className="prose prose-neutral dark:prose-invert max-w-none" style={{ color: 'var(--color-text)', fontFamily: 'var(--font-serif)' }}>
           {aboutContent.html ? (
             <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(aboutContent.html) }} />
@@ -42,8 +40,7 @@ export function AboutPage() {
           )}
         </div>
       </section>
-
-      <Footer />
-    </main>
+      <AuthoritySignals />
+    </PageShell>
   )
 }

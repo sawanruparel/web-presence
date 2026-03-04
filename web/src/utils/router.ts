@@ -1,6 +1,6 @@
 import { getAllContent, getContentBySlug } from './content-processor'
 
-export type PageType = 'about' | 'notes' | 'publications' | 'ideas' | 'content' | 'contact' | 'admin-content' | 'admin-build-logs' | 'admin-content-sync' | '404'
+export type PageType = 'about' | 'start-here' | 'notes' | 'publications' | 'ideas' | 'content' | 'contact' | 'admin-content' | 'admin-build-logs' | 'admin-content-sync' | '404'
 
 export interface PageData {
   type: PageType
@@ -19,6 +19,11 @@ export function getCurrentPage(): PageData {
   // Contact page
   if (path === '/contact') {
     return { type: 'contact', data: {} }
+  }
+
+  // Start Here page
+  if (path === '/start-here') {
+    return { type: 'start-here', data: {} }
   }
 
   // Section pages

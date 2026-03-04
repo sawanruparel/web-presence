@@ -35,7 +35,7 @@ export function ContentRenderer({
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'notes': return 'Note'
+      case 'notes': return 'Systems Playbook Entry'
       case 'publications': return 'Publication'
       case 'ideas': return 'Idea'
       default: return 'Article'
@@ -44,7 +44,7 @@ export function ContentRenderer({
 
   const getTypeDescription = (type: string) => {
     switch (type) {
-      case 'notes': return 'Quick thoughts and observations.'
+      case 'notes': return 'Frameworks and essays on deployed systems.'
       case 'publications': return 'Books, papers, talks, and other external publications.'
       case 'ideas': return 'Concepts and explorations in technology and design.'
       default: return ''

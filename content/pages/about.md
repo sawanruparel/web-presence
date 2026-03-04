@@ -1,146 +1,62 @@
 ---
 title: "Sawan Ruparel"
-description: "Experienced in AI, healthcare, and physical products, focusing on real-world systems with tangible costs and messy environments. Specializes in Applied Gen"
-slug: about-sawan-ruparel
-date: 2026-01-30
-lastmod: 2026-01-30
-draft: false
-canonical_url: "https://sawanruparel.com/applied-generative-ai-ai-physical-systems-venture-buil"
-robots: "index, follow"
-author: Editorial Team
-tags:
-- complex systems
-- AI
-- healthcare
-- physical products
-- applied AI
-- venture building
-reading_time: 3
-keywords:
-- real-world systems
-- AI
-- healthcare
-- physical products
-- applied Generative AI
-- AI + Physical Systems
-- "Venture Building & Technical Strategy"
-- "Teaching & Mentorship"
-og_title: "About Sawan Ruparel"
-og_description: "Experienced in AI, healthcare, and physical products, specializing in real-world systems with tangible costs and messy environments. Applied Gen expert."
-og_type: article
-og_url: "https://sawanruparel.com/applied-generative-ai-ai-physical-systems-venture-buil"
-og_site_name: Rivve
-og_locale: en_US
-twitter_card: summary
-twitter_title: "About Sawan Ruparel"
-twitter_description: "Specialist in AI, healthcare, and physical products, tackling real-world systems with tangible costs and messy environments. Expert in Applied Gen."
-twitter_site: "@thisissawan"
-twitter_creator: "@thisissawan"
-lang: en-US
-schema_type: Article
-changefreq: weekly
-priority: 0.7
-layout: default
+date: "2026-03-03"
+readTime: "4 min"
+type: "page"
 ---
 
-I work on **complex, real-world systems** — often at the intersection of **AI, healthcare, and physical products** — where ideas are tested by constraints, not slides.
+I work on **high-consequence systems** at the intersection of AI, healthcare, and physical products.
 
-I’m most interested in problems where:
+The environments I care about are usually messy:
 
-* The environment is messy
-* Incentives are misaligned
-* Failure has tangible costs
-* Software alone isn’t enough
+- constraints are non-negotiable,
+- incentives are not aligned by default,
+- and failure has real cost outside software.
 
----
+I am less interested in model novelty than in whether systems survive contact with operations.
 
 ## Current Focus
 
-At the moment, my work clusters around four overlapping pillars:
+### Applied Generative AI
 
-### 1. Applied Generative AI
+Designing GenAI systems where correctness, auditability, and operational reliability matter more than polished demos.
 
-Designing GenAI systems that operate in real environments — where correctness, auditability, and system design matter more than demos.
+### AI + Physical Systems
 
-### 2. AI + Physical Systems
+Building products where sensing, control, and decision loops have to perform in real environments, not just controlled test rigs.
 
-Building products that combine embedded systems, robotics, and AI — moving beyond dashboards into systems that sense, decide, and act in the physical world.
+### Venture Building and Technical Strategy
 
-### 3. Venture Building & Technical Strategy
+Working with teams that need architecture and market reality to meet early, especially in regulated or hardware-adjacent domains.
 
-Building and scaling ventures where technical architecture and market reality must meet early to survive. I work with teams on product architecture and engineering execution, especially where software meets hardware or regulation.
+### Teaching and Mentorship
 
-### 4. Teaching & Mentorship
+Teaching Applied GenAI at the **University of Connecticut** and mentoring engineers building durable systems.
 
-Teaching applied Generative AI at the University of Connecticut and mentoring engineers who want to build durable systems, not just prototypes.
+## Frameworks I Use
 
-I am deliberately **not** focused on:
+Across domains, the same structural failures keep repeating. I use named frameworks so teams can reason with shared language.
 
-* hype-driven AI projects
-* consumer social products
-* ideas without a credible path to real-world deployment
+- **The Demo Wall**
+  The gap between an impressive prototype and a production system that can absorb uncertainty.
+- **Invisible Friction**
+  The hidden incentives and process overhead that quietly collapse good technical plans.
+- **Boundary Gaps**
+  Failure at handoffs between hardware, software, and operations.
+- **Edge Failures**
+  Issues that do not appear in ideal conditions but dominate outcomes in the field.
 
----
-
-## Working Across Domains
-
-While much of my recent work sits in healthcare and hardware, I’m less interested in industries than in **recurring problem structures**.
-
-I carry the same way of thinking across domains.
-
-Across very different sectors, I keep encountering the same patterns:
-
-* **Edge Failures**
-  Systems that work in controlled settings but fail at the margins.
-
-* **Invisible Friction**
-  Incentives that quietly undermine otherwise sound technical design.
-
-* **The Demo Wall**
-  Models that look impressive but collapse under real-world constraints.
-
-* **Boundary Gaps**
-  Hardware–software interfaces that teams consistently underestimate.
-
-The domains change. The constraints rhyme.
-
----
+These frameworks are expanded in **The Systems Playbook**.
 
 ## Core Beliefs
 
-* **Most GenAI failures aren’t model failures — they’re systems failures.**
-  Data flows, validation, incentives, and integration matter more than prompt tuning.
+- Most GenAI failures are systems failures before they are model failures.
+- Speed without judgment increases entropy.
+- Tradeoffs should be explicit, documented, and revisited.
+- Clarity under constraints is a better predictor of success than novelty.
 
-* **Speed without judgment increases entropy.**
-  Moving fast only helps if you’re clear about what *not* to build.
+## Start Here
 
-* **Hardware startups rarely fail from lack of innovation.**
-  They fail from invisible fixed costs, supply-chain realities, and manufacturing complexity.
+If you are new to my work, begin at [Start Here](/start-here).
 
-* **Good engineering is about tradeoffs made explicit.**
-  Cleverness is a distant second to clarity.
-
----
-
-## How I Work
-
-* **First Principles**
-  I start here, especially when constraints are non-obvious.
-
-* **High-Stakes Environments**
-  I’m comfortable operating in ambiguous, regulated, and high-consequence spaces.
-
-* **Execution Bias**
-  I prefer small, sharp teams. Documents are useful only if they lead to execution.
-
-* **Strong Opinions, Loosely Held**
-  I value clear thinking and direct communication.
-
----
-
-## Where to Go Next
-
-* Read essays on **building real systems**
-* Explore **projects and technical artifacts**
-* View **teaching notes** from my GenAI courses
-* Reach out if you’re building something genuinely hard and want a thoughtful conversation
+It is a curated path through three pieces that explain how I think about applied AI deployment, failure patterns, and system design under pressure.

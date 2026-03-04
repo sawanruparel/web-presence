@@ -26,7 +26,7 @@ export function ContentListRenderer({ items, contentType, onItemClick }: Content
             <li
               key={item.slug}
               data-testid="content-card"
-              className="border-b py-6"
+              className="border-b py-7"
               style={{ borderColor: 'var(--color-divider)' }}
             >
               <a
@@ -35,15 +35,15 @@ export function ContentListRenderer({ items, contentType, onItemClick }: Content
                 onClick={(e) => handleContentClick(e, item)}
               >
                 <h2
-                  className="text-lg font-medium mb-1 transition-colors group-hover:underline"
-                  style={{ color: 'var(--color-text)' }}
+                  className="mb-2 transition-colors group-hover:underline"
+                  style={{ color: 'var(--color-text)', fontFamily: 'var(--font-sans)', fontSize: '1.2rem', fontWeight: 600 }}
                 >
                   {item.title}
                 </h2>
-                <p className="text-sm mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                <p className="text-sm mb-2" style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-sans)', letterSpacing: '0.02em' }}>
                   {item.date} · {item.readTime}
                 </p>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+                <p className="leading-relaxed" style={{ color: 'var(--color-text-muted)', fontSize: '1.02rem' }}>
                   {item.excerpt}
                 </p>
               </a>

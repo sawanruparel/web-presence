@@ -10,21 +10,41 @@ interface ContentPageProps {
 }
 
 export function ContentPage({ content, type, slug }: ContentPageProps) {
+  const getSectionTitle = (sectionType: ContentPageProps['type']) => {
+    switch (sectionType) {
+      case 'notes':
+        return 'The Systems Playbook'
+      case 'publications':
+        return 'Publications'
+      case 'ideas':
+      default:
+        return 'Ideas'
+    }
+  }
+
+  const getSectionDescription = (sectionType: ContentPageProps['type']) => {
+    switch (sectionType) {
+      case 'notes':
+        return 'Frameworks and essays on deployed systems where constraints are real.'
+      case 'publications':
+        return 'Books, papers, talks, and other external publications.'
+      case 'ideas':
+      default:
+        return 'Concepts and explorations in technology and design.'
+    }
+  }
+
   const pageTitle = content?.title
     ? `${content.title} — Sawan Ruparel`
-    : `${type.charAt(0).toUpperCase() + type.slice(1)} — Sawan Ruparel`
+    : `${getSectionTitle(type)} — Sawan Ruparel`
   const pageDescription = content?.excerpt || ''
   const pageUrl = `https://sawanruparel.com/${type}/${slug}`
 
   return (
     <ContentPageWrapper
       currentPage={type}
-      title={`${type.charAt(0).toUpperCase() + type.slice(1)}`}
-      description={
-        type === 'notes' ? 'Quick thoughts and observations.' :
-        type === 'publications' ? 'Books, papers, talks, and other external publications.' :
-        'Concepts and explorations in technology and design.'
-      }
+      title={getSectionTitle(type)}
+      description={getSectionDescription(type)}
     >
       <Helmet>
         <title>{pageTitle}</title>

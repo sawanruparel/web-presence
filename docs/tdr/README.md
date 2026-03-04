@@ -55,6 +55,12 @@ Each TDR follows this structure:
 - **Date**: March 3, 2026
 - **Summary**: Decision to harden publishing/build behavior (draft filtering, robots generation, sanitation, mdtohtml consolidation, and static 404 support).
 
+### 006 - High-Trust Editorial Repositioning And Guided Site Flow
+- **File**: `006-high-trust-editorial-repositioning.md`
+- **Status**: Accepted
+- **Date**: March 3, 2026
+- **Summary**: Decision to adopt a typography-first high-trust design, add a Start Here guided path, rebrand Notes to Systems Playbook while preserving `/notes`, ship authority signaling, and exclude newsletter integration in this phase.
+
 ## Creating New TDRs
 
 When making significant technical decisions:

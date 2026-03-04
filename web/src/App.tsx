@@ -2,6 +2,7 @@ import { ErrorBoundary } from './components/error-boundary.tsx'
 import { useState, useEffect } from 'react'
 import { getCurrentPage, type PageData } from './utils/router'
 import { AboutPage } from './pages/AboutPage'
+import { StartHerePage } from './pages/StartHerePage'
 import { ContactPage } from './pages/ContactPage'
 import { NotesPage } from './pages/NotesPage'
 import { PublicationsPage } from './pages/PublicationsPage'
@@ -16,6 +17,8 @@ function renderPage(pageData: PageData) {
   switch (pageData.type) {
     case 'about':
       return <AboutPage />
+    case 'start-here':
+      return <StartHerePage />
     case 'contact':
       return <ContactPage />
     case 'notes':

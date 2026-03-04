@@ -11,13 +11,13 @@ export function NotesPage({ notes }: NotesPageProps) {
   return (
     <ContentPageWrapper
       currentPage="notes"
-      title="Notes"
-      description="Thoughts and observations on building and making."
+      title="The Systems Playbook"
+      description="Frameworks, field notes, and long-form essays on applied systems that have to work outside the demo."
     >
       <Helmet>
-        <title>Notes — Sawan Ruparel</title>
-        <meta name="description" content="Quick thoughts and observations on technology, building, and making." />
-        <meta property="og:title" content="Notes — Sawan Ruparel" />
+        <title>The Systems Playbook — Sawan Ruparel</title>
+        <meta name="description" content="Frameworks and essays on why applied AI and physical systems succeed or fail in production." />
+        <meta property="og:title" content="The Systems Playbook — Sawan Ruparel" />
         <meta property="og:url" content="https://sawanruparel.com/notes" />
       </Helmet>
       <ContentListRenderer
