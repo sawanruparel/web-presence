@@ -1,3 +1,5 @@
+import { Link } from './link'
+
 interface PageNavigationProps {
   currentPage?: string
 }
@@ -17,14 +19,15 @@ export function PageNavigation({ currentPage }: PageNavigationProps) {
       {links.map(({ href, label, key }) => {
         const isActive = currentPage === key
         return (
-          <a
+          <Link
             key={key}
             href={href}
+            aria-current={isActive ? 'page' : undefined}
             className={`transition-colors hover:underline ${isActive ? 'font-semibold' : ''}`}
             style={{ color: isActive ? 'var(--color-text)' : 'var(--color-text-muted)' }}
           >
             {label}
-          </a>
+          </Link>
         )
       })}
     </nav>
